@@ -1,0 +1,183 @@
+  generator client {
+    provider = "prisma-client-js"
+  }
+
+  datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+  }
+
+  enum Role {
+    manager
+    kitchen_staff
+  }
+
+  enum ActionType {
+    stockin
+    stockout
+  }
+model Province {
+  id        Int         @id @default(autoincrement())
+  name_th   String
+  name_en   String
+  districts District[]
+}
+
+model District {
+  id         Int          @id @default(autoincrement())
+  name_th    String
+  name_en    String
+  provinceId Int
+  province   Province     @relation(fields: [provinceId], references: [id])
+  subdistrict Subdistrict[]
+}
+
+model Subdistrict {
+  id         Int        @id @default(autoincrement())
+  name_th    String
+  name_en    String
+  districtId Int
+  district   District   @relation(fields: [districtId], references: [id])
+}
+
+  model store {
+    store_id   Int      @id @default(autoincrement())
+    name       String   @db.VarChar(255)
+    address    String?
+    phone      String?
+    email      String?  @unique
+    created_at DateTime @default(now())
+
+    users      user[]
+  }
+
+  model user {
+    user_id   Int     @id @default(autoincrement())
+    email     String  @db.VarChar(100)
+    name      String  @db.VarChar(255)
+    password  String  @db.VarChar(100)
+    role      Role
+
+    store_id  Int
+    store     store   @relation(fields: [store_id], references: [store_id])
+
+    stockins   stockin[]
+    stockouts  stockout[]
+    histories  history[]
+    batches    batch[]
+  }
+
+  model units {
+    unit_id   Int      @id @default(autoincrement())
+    unit_name String   @db.VarChar(100)
+
+    stockins        stockin[]
+    stockouts       stockout[]
+    ingredient_list ingredients[]
+    inventories     ingredient_now[]
+  }
+
+  model categories {
+    category_id   Int      @id @default(autoincrement())
+    category_name String   @db.VarChar(100)
+    description   String?
+
+    ingredients ingredients[]
+  }
+
+  model ingredients {
+    ingredient_id Int     @id @default(autoincrement())
+    category_id   Int
+    name          String  @db.VarChar(100)
+    shelflife_day String  @db.VarChar(50)
+    unit_id       Int
+
+    category    categories     @relation(fields: [category_id], references: [category_id])
+    unit        units          @relation(fields: [unit_id], references: [unit_id])
+    stockins    stockin[]
+    stockouts   stockout[]
+    inventories ingredient_now[]
+    expiry_tack expiry_tack[]
+  }
+
+  model batch {
+    batch_id     Int       @id @default(autoincrement())
+    created_at   DateTime  @default(now())
+    user_id      Int
+    description  String?   @db.VarChar(255)
+
+    user        user        @relation(fields: [user_id], references: [user_id])
+    stockins    stockin[]
+    stockouts   stockout[]
+    inventory   ingredient_now[]
+    expiry      expiry_tack[]
+  }
+
+  model stockin {
+    stockin_id    Int       @id @default(autoincrement())
+    batch_id      Int?
+    expiry_date   DateTime
+    ingredient_id Int
+    quantity      Float
+    received_date DateTime
+    unit_id       Int
+    user_id       Int
+
+    batch      batch?      @relation(fields: [batch_id], references: [batch_id])
+    ingredient ingredients @relation(fields: [ingredient_id], references: [ingredient_id])
+    unit       units       @relation(fields: [unit_id], references: [unit_id])
+    user       user        @relation(fields: [user_id], references: [user_id])
+    histories  history[]
+  }
+
+  model stockout {
+    stockout_id   Int       @id @default(autoincrement())
+    batch_id      Int?
+    ingredient_id Int
+    quantity      Float
+    out_date      DateTime
+    unit_id       Int
+    user_id       Int
+
+    batch      batch?      @relation(fields: [batch_id], references: [batch_id])
+    ingredient ingredients @relation(fields: [ingredient_id], references: [ingredient_id])
+    unit       units       @relation(fields: [unit_id], references: [unit_id])
+    user       user        @relation(fields: [user_id], references: [user_id])
+    histories  history[]
+  }
+
+  model history {
+    history_id  Int        @id @default(autoincrement())
+    action_type ActionType
+    stockin_id  Int?
+    stockout_id Int?
+    user_id  Int
+
+    stockin  stockin?  @relation(fields: [stockin_id], references: [stockin_id])
+    stockout stockout? @relation(fields: [stockout_id], references: [stockout_id])
+    user     user      @relation(fields: [user_id], references: [user_id])
+  }
+
+  model ingredient_now {
+    inventory_id  Int       @id @default(autoincrement())
+    batch_id      Int
+    ingredient_id Int
+    last_update   DateTime
+    quantity      Float
+    unit_id       Int
+
+    batch      batch       @relation(fields: [batch_id], references: [batch_id])
+    ingredient ingredients @relation(fields: [ingredient_id], references: [ingredient_id])
+    unit       units       @relation(fields: [unit_id], references: [unit_id])
+  }
+
+  model expiry_tack {
+    batch_id      Int
+    ingredient_id Int
+    expiry_date   DateTime
+
+    @@id([batch_id, ingredient_id])
+
+    batch      batch       @relation(fields: [batch_id], references: [batch_id])
+    ingredient ingredients @relation(fields: [ingredient_id], references: [ingredient_id])
+  }
