@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import { signSession, cookieHeader } from '@/utils/auth';
+import { Cookie } from 'next/font/google';
 
 export async function POST(req) {
   try {
@@ -34,6 +35,7 @@ export async function POST(req) {
       sid: user.store_id,
       email: user.email,
     });
+    const cookie = `token=${token};Path=/; HttpOnly; Max-Age=3600; SameSite=Lax`;
 
     return new Response(
       JSON.stringify({
@@ -43,12 +45,12 @@ export async function POST(req) {
           name: user.name,
           role: user.role,
           store_id: user.store_id,
-           headers: { 'Set-Cookie': cookieHeader(token) },
+          token,
         },
       }),
       {
         status: 200,
-        headers: { 'Set-Cookie': cookieHeader(token) },
+        headers: { 'Set-Cookie': cookie },
       }
     );
   } catch (e) {
