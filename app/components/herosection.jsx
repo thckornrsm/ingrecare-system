@@ -19,7 +19,7 @@ function HeroSection() {
 
         {/* mockup */}
         <div className="hero-right">
-          <img src="/pic/mockup.jpg" alt="mockup" />
+          <img src=".../pic/mockup.svg" alt="mockup" />
         </div>
       </div>
     </section>

@@ -5,7 +5,7 @@ function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-logo">
-        <><img src="pic/logo.svg" alt="logo" /></>
+        {/*<><img src="pic/logo.svg" alt="logo" /></>*/}
         IngreCare
         </div>
       <div className="navbar-links">
