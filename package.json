@@ -10,7 +10,11 @@
   },
   "dependencies": {
     "@prisma/client": "^6.12.0",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "csv-parser": "^3.2.0",
+    "jose": "^6.1.0",
+    "jsonwebtoken": "^9.0.2",
     "next": "15.4.2",
     "react": "19.1.0",
     "react-dom": "19.1.0"
@@ -19,5 +23,9 @@
     "@tailwindcss/postcss": "^4",
     "prisma": "^6.12.0",
     "tailwindcss": "^4"
-  }
+  },
+  "prisma": {
+    "seed": "node utils/importProvinces.js"
+  },
+  "type": "module"
 }

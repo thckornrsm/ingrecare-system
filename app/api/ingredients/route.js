@@ -1,0 +1,135 @@
+import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server';
+
+// GET: ดึงข้อมูลวัตถุดิบทั้งหมด (สามารถกรองตาม category_id ได้)
+export async function GET(req) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const categoryId = searchParams.get('categoryId');
+
+    const whereClause = categoryId ? { category_id: parseInt(categoryId, 10) } : {};
+
+    const ingredients = await prisma.ingredients.findMany({
+      where: whereClause,
+      include: {
+        category: {
+          select: { category_name: true }, // ดึงชื่อหมวดหมู่มาด้วย
+        },
+        unit: {
+          select: { unit_name: true }, // ดึงชื่อหน่วยนับมาด้วย
+        },
+      },
+      orderBy: {
+        ingredient_id: 'asc',
+      },
+    });
+
+    return NextResponse.json(ingredients);
+  } catch (error) {
+    console.error("INGREDIENTS_FETCH_ERROR", error);
+    return NextResponse.json(
+      { error: 'ไม่สามารถดึงข้อมูลวัตถุดิบได้' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST: สร้างวัตถุดิบใหม่
+export async function POST(req) {
+  try {
+    const { name, category_id, unit_id, shelflife_day } = await req.json();
+
+    if (!name || !category_id || !unit_id || !shelflife_day) {
+      return NextResponse.json(
+        { error: 'กรุณากรอกข้อมูลให้ครบ: name, category_id, unit_id, shelflife_day' },
+        { status: 400 }
+      );
+    }
+
+    const newIngredient = await prisma.ingredients.create({
+      data: {
+        name,
+        category_id: parseInt(category_id, 10),
+        unit_id: parseInt(unit_id, 10),
+        shelflife_day,
+      },
+    });
+
+    return NextResponse.json(newIngredient, { status: 201 });
+  } catch (error) {
+    console.error("INGREDIENTS_CREATE_ERROR", error);
+    return NextResponse.json(
+      { error: 'ไม่สามารถสร้างวัตถุดิบได้' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT: อัปเดตข้อมูลวัตถุดิบ
+export async function PUT(req) {
+  try {
+    const { ingredient_id, name, category_id, unit_id, shelflife_day } = await req.json();
+
+    if (!ingredient_id) {
+        return NextResponse.json({ error: 'กรุณาระบุ ingredient_id' }, { status: 400 });
+    }
+
+    const updatedIngredient = await prisma.ingredients.update({
+      where: {
+        ingredient_id: parseInt(ingredient_id, 10),
+      },
+      data: {
+        name,
+        category_id: category_id ? parseInt(category_id, 10) : undefined,
+        unit_id: unit_id ? parseInt(unit_id, 10) : undefined,
+        shelflife_day,
+      },
+    });
+
+    return NextResponse.json(updatedIngredient);
+  } catch (error) {
+    if (error.code === 'P2025') {
+       return NextResponse.json({ error: 'ไม่พบวัตถุดิบที่ต้องการแก้ไข' }, { status: 404 });
+    }
+    console.error("INGREDIENTS_UPDATE_ERROR", error);
+    return NextResponse.json(
+      { error: 'ไม่สามารถอัปเดตวัตถุดิบได้' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE: ลบวัตถุดิบ
+export async function DELETE(req) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'กรุณาระบุ id ของวัตถุดิบที่ต้องการลบ' },
+        { status: 400 }
+      );
+    }
+
+    await prisma.ingredients.delete({
+      where: {
+        ingredient_id: parseInt(id, 10),
+      },
+    });
+
+    return NextResponse.json({ message: 'ลบวัตถุดิบสำเร็จ' });
+  } catch (error) {
+    if (error.code === 'P2025') {
+       return NextResponse.json({ error: 'ไม่พบวัตถุดิบที่ต้องการลบ' }, { status: 404 });
+    }
+    if (error.code === 'P2003') {
+        return NextResponse.json({ error: 'ไม่สามารถลบได้ เนื่องจากวัตถุดิบนี้ถูกใช้งานอยู่' }, { status: 409 });
+    }
+    console.error("INGREDIENTS_DELETE_ERROR", error);
+    return NextResponse.json(
+      { error: 'ไม่สามารถลบวัตถุดิบได้' },
+      { status: 500 }
+    );
+  }
+}
