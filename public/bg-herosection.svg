@@ -1,7 +1,7 @@
 <svg width="1440" height="444" viewBox="0 0 1440 444" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g filter="url(#filter0_n_39_226)">
-<rect width="1440" height="444" fill="url(#paint0_radial_39_226)"/>
-<rect width="1440" height="444"/>
+<rect width="1440" height="444" fill="url(#paint0_radial_39_226)" style=""/>
+<rect width="1440" height="444" style=""/>
 </g>
 <defs>
 <filter id="filter0_n_39_226" x="0" y="0" width="1440" height="444" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
@@ -24,8 +24,8 @@
 </feMerge>
 </filter>
 <radialGradient id="paint0_radial_39_226" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(692.5 260.5) rotate(13.5741) scale(781.839 241.067)">
-<stop stop-color="#BCBCBC"/>
-<stop offset="1" stop-color="#CACDCB" stop-opacity="0.46"/>
+<stop stop-color="#BCBCBC" style="stop-color:#BCBCBC;stop-color:color(display-p3 0.7385 0.7385 0.7385);stop-opacity:1;"/>
+<stop offset="1" stop-color="#CACDCB" stop-opacity="0.46" style="stop-color:#CACDCB;stop-color:color(display-p3 0.7938 0.8038 0.7960);stop-opacity:0.46;"/>
 </radialGradient>
 </defs>
 </svg>
