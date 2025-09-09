@@ -6,29 +6,27 @@ import { Icon } from '@iconify/react';
 export default function Home() {
   return (
     <main className="min-h-screen bg-white text-[#0F2B46]">
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-none shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 h-14 flex items-center justify-between">
-
-          <div className="flex items-center gap-3">
-            <div>
-              <Image src="../logo.svg" alt="IngreCare Logo" width={24} height={24} />
+        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-none shadow-sm">
+          <div className="mx-auto max-w-7xl px-4 h-14 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div>
+                <Image src="../logo.svg" alt="IngreCare Logo" width={24} height={24} />
+              </div>
+              <span className="font-semibold">IngreCare</span>
             </div>
-            <span className="font-semibold">IngreCare</span>
+            <nav className="hidden md:flex items-center gap-8 text-sm">
+              <a href="../homepage" className="hover:text-[#2AA77A]">หน้าแรก</a>
+              <a href="../features" className="hover:text-[#2AA77A]">ฟีเจอร์ระบบ</a>
+              <a href="../contact" className="hover:text-[#2AA77A]">ติดต่อฝ่ายขาย</a>
+            </nav>
+            <a
+              href="../login"
+              className="bg-[#3FA170] text-white w-[160px] h-[24px] rounded-[3px] border-none cursor-pointer font-kanit text-[16px] flex items-center justify-center hover:bg-[#2C714E] transition-colors duration-300"
+            >
+              เข้าสู่ระบบ
+            </a>
           </div>
-
-          <nav className="hidden md:flex items-center gap-8 text-sm">
-            <a href="#home" className="hover:text-[#2AA77A]">หน้าแรก</a>
-            <a href="#features" className="hover:text-[#2AA77A]">ฟีเจอร์ระบบ</a>
-            <a href="#contact" className="hover:text-[#2AA77A]">ติดต่อฝ่ายขาย</a>
-          </nav>
-          <a
-            href="../(auth)/login"
-            className="bg-[#3FA170] text-white w-[160px] h-[24px] rounded-[3px] border-none cursor-pointer font-kanit text-[16px] flex items-center justify-center hover:bg-[#2C714E] transition-colors duration-300"
-          >
-            เข้าสู่ระบบ
-          </a>
-        </div>
-      </header>
+        </header>
 
       {/* Hero Section */}
       <section id="hero-section" className="relative border-none">
@@ -43,7 +41,7 @@ export default function Home() {
               เป็นผู้ช่วยที่ใช้งานง่าย พร้อมด้วยบริการแสดงสถิติการใช้
             </p>
             <a
-              href="../(frontoffice)/contact"
+              href="../contact"
               className="inline-block mt-6 rounded-md bg-[#2AA77A] px-6 py-2 text-white font-medium hover:brightness-110 transition"
             >
               เริ่มเลย!
