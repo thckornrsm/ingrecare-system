@@ -1,35 +1,14 @@
 import React from "react";
 import Image from "next/image";
 import { Icon } from '@iconify/react';
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-white text-[#0F2B46]">
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-none shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 h-14 flex items-center justify-between">
-
-          <div className="flex items-center gap-3">
-            <div>
-              <Image src="../logo.svg" alt="IngreCare Logo" width={24} height={24} />
-            </div>
-            <span className="font-semibold">IngreCare</span>
-          </div>
-
-          <nav className="hidden md:flex items-center gap-8 text-sm">
-            <a href="../homepage" className="hover:text-[#2AA77A]">หน้าแรก</a>
-            <a href="../features" className="hover:text-[#2AA77A]">ฟีเจอร์ระบบ</a>
-            <a href="../contact" className="hover:text-[#2AA77A]">ติดต่อฝ่ายขาย</a>
-          </nav>
-          <a
-            href="../login"
-            className="bg-[#3FA170] text-white w-[160px] h-[24px] rounded-[3px] border-none cursor-pointer font-kanit text-[16px] flex items-center justify-center hover:bg-[#2C714E] transition-colors duration-300"
-          >
-            เข้าสู่ระบบ
-          </a>
-        </div>
-      </header>
-
+      <Navbar />
       {/* Tell the Features */}
       <section id="features" className="py-32">
         <div className="mx-auto max-w-7xl px-4">
@@ -56,44 +35,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer id="contact" className="border-n shadow-md bg-[#F7FAFC]">
-        <div className="mx-auto max-w-7xl px-4 py-10 grid md:grid-cols-2 gap-6">
-          <div className="flex items-center gap-3">
-            <Image src="../logo.svg" alt="Logo" width={58} height={58} />
-            <div>
-              <div className="text-4xl font-semibold">IngreCare</div>
-              <div className="text-m text-[#6B8AA3]">ระบบจัดการวัตถุดิบ</div>
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row md:justify-between w-full max-w-sm mx-auto p-4 md:p-6">
-            <div className="flex flex-col mb-4 md:mb-0">
-            <ul className="list-none p-0 m-0 text-gray-700">
-              <li>ทัชชกร รษามณีโชค</li>
-              <li>กุลธิดา กิจจาดำรงสุข</li>
-              <li>ณัฐมน เหล่าพราหมณ์</li>
-            </ul>
-          </div>
-          <div className="flex flex-col md:items-end">
-            <h3 className="text-xl font-bold mb-2 md:hidden">อีเมล</h3>
-            <ul className="list-none p-0 m-0 text-blue-600">
-              <li>
-                <a href="mailto:thatchakorn.r@ku.th">thatchakorn.r@ku.th</a>
-              </li>
-              <li>
-                <a href="mailto:sornchanok.v@ku.th">sornchanok.v@ku.th</a>
-              </li>
-              <li>
-                <a href="mailto:nattamon.la@ku.th">nattamon.la@ku.th</a>
-              </li>
-            </ul>
-            </div>
-          </div>
-        </div>
-        <div className="bg-[#3FA170] text-center text-sm text-[#6B8AA3] py-4"></div>
-      </footer>
+      <Footer />
     </main>
   );
 }

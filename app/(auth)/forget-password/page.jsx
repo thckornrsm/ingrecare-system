@@ -1,74 +1,15 @@
-// app/(auth)/forgot-password/page.jsx
 'use client';
 
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
-// ========= Header Component (ใช้ร่วมกับหน้า Login) =========
-const Header = () => {
-  return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b">
-      <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3">
-          <Image src="/logo.svg" alt="IngreCare Logo" width={24} height={24} />
-          <span className="font-semibold text-gray-800">IngreCare</span>
-        </Link>
-        <nav className="hidden md:flex items-center gap-8 text-sm text-gray-600">
-          <Link href="/" className="hover:text-[#2AA77A]">หน้าแรก</Link>
-          <Link href="/#features" className="hover:text-[#2AA77A]">ฟีเจอร์ระบบ</Link>
-          <Link href="/#contact" className="hover:text-[#2AA77A]">ติดต่อฝ่ายขาย</Link>
-        </nav>
-        <Link
-          href="/login"
-          className="bg-[#3FA170] text-white px-6 py-2 rounded-md border-none cursor-pointer font-semibold text-sm flex items-center justify-center hover:bg-[#2C714E] transition-colors duration-300"
-        >
-          เข้าสู่ระบบ
-        </Link>
-      </div>
-    </header>
-  );
-};
-
-// ========= Footer Component (ใช้ร่วมกับหน้า Login) =========
-const Footer = () => {
-  return (
-    <footer className="bg-white border-t">
-      <div className="mx-auto max-w-6xl px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm text-gray-600">
-        <div className="flex flex-col items-center md:items-start">
-          <div className="flex items-center gap-3 mb-2">
-            <Image src="/logo.svg" alt="IngreCare Logo" width={32} height={32} />
-            <span className="font-bold text-lg text-gray-800">IngreCare</span>
-          </div>
-          <p>ระบบบริการวัตถุดิบ</p>
-        </div>
-        <div className="text-center md:text-left">
-          <h3 className="font-semibold text-gray-800 mb-2">ผู้ดูแลระบบ</h3>
-          <ul>
-            <li>คุณกร วิชานันท์</li>
-            <li>คุณโสภณัฐ กิจดำรงค์ธรรม</li>
-            <li>คุณปุญญ์ เพชรพลอย</li>
-          </ul>
-        </div>
-        <div className="text-center md:text-left">
-            <h3 className="font-semibold text-gray-800 mb-2 invisible">Contact</h3>
-            <ul>
-                <li>thatchakorn.r@ku.th</li>
-                <li>somchanok.v@ku.th</li>
-                <li>nattamon.a@ku.th</li>
-            </ul>
-        </div>
-      </div>
-    </footer>
-  );
-};
-
-
-// ========= Main Forgot Password Page Component =========
 export default function ForgotPasswordPage() {
   return (
     <div className="flex flex-col min-h-screen bg-white md:bg-gray-800 font-sans">
-      <Header />
-
+      <Navbar />
       <main className="w-full flex-grow flex flex-col md:flex-row">
         
         {/* Background Image: จะแสดงเฉพาะบนจอขนาดกลางขึ้นไป (md:) */}
@@ -121,7 +62,6 @@ export default function ForgotPasswordPage() {
         </div>
 
       </main>
-      
       <Footer />
     </div>
   );

@@ -1,9 +1,9 @@
-// app/(backoffice)/dashboard/page.jsx
 'use client';
 
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import Sidebar from '@/components/Sidebar';
 import { 
     LayoutDashboard, BarChart2, Inbox, Package, 
     History, Wrench, LogOut, Bell, Plus, 
@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 
 
-// ========= Mock Data (เพิ่ม category) =========
+// Mock data for inventory items
+// (ในโปรเจกต์จริง ต้องดึงข้อมูล)
 const inventoryItems = [
     { name: 'เนื้อวัวเทนเดอร์ลอย', daysLeft: 1, lot: 10001, importDate: '10/01/2569', expiryDate: '17/01/2569', status: 'critical', category: 'เนื้อสัตว์' },
     { name: 'ผักกาดขาว', daysLeft: 1, lot: 10001, importDate: '10/01/2569', expiryDate: '17/01/2569', status: 'critical', category: 'ผัก' },
@@ -29,56 +30,6 @@ const statusStyles = {
     critical: { bg: 'bg-[#E15050]', text: 'text-red-600', border: 'border-red-500' },
     good: { bg: 'bg-[#3FA170]', text: 'text-green-600', border: 'border-green-500' },
 };
-
-// ========= Sidebar Component =========
-const Sidebar = () => (
-    <aside className="w-64 bg-white flex flex-col border-r">
-        <div className="p-4 border-b">
-            <div className="flex items-center gap-3">
-                <Image src="/logo.svg" alt="IngreCare Logo" width={40} height={40} />
-                <div>
-                    <h2 className="font-bold text-lg">Suki Teeyai</h2>
-                    <p className="text-sm text-gray-500">ผู้จัดการร้าน</p>
-                </div>
-            </div>
-            <button className="text-sm text-gray-500 hover:text-red-500 mt-2 flex items-center gap-1">
-                <LogOut size={14} />
-                ออกจากระบบ
-            </button>
-        </div>
-        <nav className="flex-grow p-4 space-y-2">
-            <p className="text-xs text-gray-400 uppercase font-semibold">เมนูหลัก</p>
-            <Link href="/dashboard" className="flex items-center gap-3 p-2 rounded-lg bg-[#3FA170] text-white">
-                <LayoutDashboard size={20} /> หน้าหลัก
-            </Link>
-            <Link href="/stat" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <BarChart2 size={20} /> สถิติการใช้งาน
-            </Link>
-            <p className="text-xs text-gray-400 uppercase font-semibold pt-4">การจัดการข้อมูล</p>
-            <Link href="/stockin" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <Package size={20} /> นำเข้าวัตถุดิบ
-            </Link>
-            <Link href="/stockout" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <Package size={20} /> เบิกจ่ายวัตถุดิบ
-            </Link>
-
-            <p className="text-xs text-gray-400 uppercase font-semibold pt-4">รายการข้อมูล</p>
-            <Link href="#" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <Inbox size={20} /> วัตถุดิบคงเหลือทั้งหมด
-            </Link>
-            <Link href="#" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <Package size={20} /> วัตถุดิบหมดอายุ
-            </Link>
-            <Link href="#" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <History size={20} /> ประวัติการนำเข้า
-            </Link>
-            <Link href="#" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <Wrench size={20} /> ประวัติการเบิกจ่าย
-            </Link>
-        </nav>
-    </aside>
-);
-
 
 // ========= FilterTabs Component (ปรับปรุงให้รับ props) =========
 const FilterTabs = ({ activeFilter, setActiveFilter }) => {
@@ -137,23 +88,20 @@ const ItemCard = ({ item }) => {
     );
 };
 
-
-// ========= Main Dashboard Page (เพิ่ม State และ Logic การกรอง) =========
 export default function DashboardPage() {
     const [activeFilter, setActiveFilter] = useState('ทั้งหมด');
 
     const filteredItems = inventoryItems.filter(item => 
         activeFilter === 'ทั้งหมด' || item.category === activeFilter
     );
-
     return (
-        <div className="flex h-screen bg-gray-100 font-sans">
+        <div className="flex h-screen bg-white">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
                 <main className="flex-1 overflow-y-auto p-6">
                     <div className="flex justify-between items-center mb-6">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-800">หน้าหลัก</h1>
+                            <h1 className="text-3xl font-bold text-gray-800">หน้าหลัก</h1>
                             <p className="text-gray-500">แสดงรายการวัตถุดิบคงเหลือในตู้ตามวันหมดอายุของคุณ</p>
                         </div>
                         <div className="flex items-center gap-4">

@@ -2,64 +2,10 @@
 'use client';
 
 import React, { useState, forwardRef } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import { 
-    LayoutDashboard, BarChart2, Inbox, Package, 
-    History, Wrench, LogOut, Plus, Calendar,
-    Trash2, Info, CheckCircle2, AlertCircle, X
-} from 'lucide-react';
-
-// ========= Sidebar Component (ไม่มีการเปลี่ยนแปลง) =========
-const Sidebar = () => (
-    <aside className="w-64 bg-white flex flex-col border-r">
-         <div className="p-4 border-b">
-            <div className="flex items-center gap-3">
-                <Image src="/logo.svg" alt="IngreCare Logo" width={40} height={40} />
-                <div>
-                    <h2 className="font-bold text-lg">Suki Teeyai</h2>
-                    <p className="text-sm text-gray-500">ผู้จัดการร้าน</p>
-                </div>
-            </div>
-            <button className="text-sm text-gray-500 hover:text-red-500 mt-2 flex items-center gap-1">
-                <LogOut size={14} />
-                ออกจากระบบ
-            </button>
-        </div>
-        <nav className="flex-grow p-4 space-y-2">
-            <p className="text-xs text-gray-400 uppercase font-semibold">เมนูหลัก</p>
-            <Link href="/dashboard" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <LayoutDashboard size={20} /> หน้าหลัก
-            </Link>
-            <Link href="/stat" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <BarChart2 size={20} /> สถิติการใช้งาน
-            </Link>
-            <p className="text-xs text-gray-400 uppercase font-semibold pt-4">การจัดการข้อมูล</p>
-            <Link href="/stockin" className="flex items-center gap-3 p-2 rounded-lg bg-[#3FA170] text-white">
-                <Package size={20} /> นำเข้าวัตถุดิบ
-            </Link>
-            <Link href="/stockout" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <Package size={20} /> เบิกจ่ายวัตถุดิบ
-            </Link>
-
-            <p className="text-xs text-gray-400 uppercase font-semibold pt-4">รายการข้อมูล</p>
-            <Link href="#" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <Inbox size={20} /> วัตถุดิบคงเหลือทั้งหมด
-            </Link>
-            <Link href="#" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <Package size={20} /> วัตถุดิบหมดอายุ
-            </Link>
-            <Link href="#" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <History size={20} /> ประวัติการนำเข้า
-            </Link>
-            <Link href="#" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <Wrench size={20} /> ประวัติการเบิกจ่าย
-            </Link>
-        </nav>
-    </aside>
-);
+import { Plus, Calendar,Trash2, Info, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import Sidebar from '@/components/Sidebar';
 
 // ========= CustomDateInput Component (ไม่มีการเปลี่ยนแปลง) =========
 const CustomDateInput = forwardRef(({ value, onClick, placeholder }, ref) => (
@@ -270,7 +216,7 @@ export default function ImportPage() {
     };
 
     return (
-        <div className="flex h-screen bg-gray-100 font-sans">
+        <div className="flex h-screen bg-gray-100">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
                 <main className="flex-1 overflow-y-auto p-6">

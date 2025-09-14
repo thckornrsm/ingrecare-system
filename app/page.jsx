@@ -3,8 +3,8 @@
 import React from "react";
 import { Icon } from '@iconify/react';
 import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
+import Hero from "@/components/Hero";
 
 // FeatureCard component
 function FeatureCard({ title, lines, icon }) {
