@@ -30,42 +30,12 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section id="hero-section" className="relative border-none">
-        <Image src="../bg-herosection.svg" alt="Background" layout="fill" objectFit="cover" quality={100} className="z-0" />
-        <div className="relative z-10 mx-auto max-w-7xl px-4 py-top-30 grid md:grid-cols-2 items-center">
-          <div>
-            <h1 className="text-black md:text-5xl font-bold leading-tight">
-              IngreCare  ระบบจัดการวัตถุดิบ
-            </h1>
-            <p className="mt-3 text-black md:text-2xl">
-              ช่วยให้ร้านค้าของคุณจัดการรับวัตถุดิบหลังบ้านได้สะดวกมากขึ้น
-              เป็นผู้ช่วยที่ใช้งานง่าย พร้อมด้วยบริการแสดงสถิติการใช้
-            </p>
-            <a
-              href="../contact"
-              className="inline-block mt-6 rounded-md bg-[#2AA77A] px-6 py-2 text-white font-medium hover:brightness-110 transition"
-            >
-              เริ่มเลย!
-            </a>
-          </div>
-
-          {/* Right */}
-          <div className="relative md:top-35 md:-mt-10 md:-ml-10">
-            <Image src="../mockup01.svg" alt="Laptop Mockup" width={706} height={400} />
-            {/* เงาโน้ตบุ๊ก */}
-            <div className="mx-auto mt-6 h-3 w-3/4 rounded-full bg-black/10 blur-md" />
-          </div>
-        </div>
-      </section>
-
-      {/* Why IngreCare? */}
+      {/* Tell the Features */}
       <section id="features" className="py-32">
         <div className="mx-auto max-w-7xl px-4">
-          <h2 className="text-2xl md:text-4xl font-extrabold">
-            <span className="text-black font-normal">ทำไมต้องใช้ </span>
-            <span className="text-black font-semibold">IngreCare ?</span>
-          </h2>
+          <h2 className="text-black text-2xl md:text-4xl font-semibold">ฟีเจอร์ระบบ</h2>
+          <p className="mt-2 text-gray-600">เราเป็นตัวช่วยธุรกิจร้านอาหารที่มีการนำเข้าวัตถุดิบหลากหลายประเภท ช่วยจัดการหลังบ้านได้อย่างสะดวกและง่ายดาย</p>
+          <p className="mt-1 text-gray-600">แสดงข้อมูลของวัตถุดิบที่ใกล้หมดอายุ และคำนวณสถิติการใช้วัตถุดิบให้คุณเพื่อการตัดสินใจได้</p>
 
           <div className="mt-8 grid md:grid-cols-2 gap-6">
             <FeatureCard
@@ -83,48 +53,6 @@ export default function Home() {
               </svg>
             </FeatureCard>
 
-            <FeatureCard
-              icon="el:idea"
-              title="จัดการวัตถุดิบอย่างแม่นยำ"
-              lines={[
-                "พร้อมเครื่องมือบันทึก/ปรับยอดแบบละเอียด",
-                "ช่วยป้องกันของขาด/ของเสีย ด้วยการเตือนอัตโนมัติ",
-              ]}
-            >
-              {/* bulb */}
-              <svg viewBox="0 0 24 24" className="w-10 h-10">
-                <path d="M9 18h6M8 14a6 6 0 1 1 8 0c-1 1-1 2-1 3H9c0-1 0-2-1-3z" fill="none" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-            </FeatureCard>
-
-            <FeatureCard
-              icon="tdesign:file-add-filled"
-              title="นับวัตถุดิบแบบ Realtime"
-              lines={[
-                "สต๊อกอัปเดตทันทีที่รับเข้า/เบิกออก",
-                "รองรับบาร์โค้ด/QR เพื่อความรวดเร็ว",
-              ]}
-            >
-              {/* document */}
-              <svg viewBox="0 0 24 24" className="w-10 h-10">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" strokeWidth="2"/>
-                <path d="M14 2v6h6" fill="none" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-            </FeatureCard>
-
-            <FeatureCard
-              icon="icomoon-free:stats-bars"
-              title="ดูสถิติการใช้วัตถุดิบได้"
-              lines={[
-                "ดูแนวโน้มการใช้/การสั่งซื้อเพื่อวางแผน",
-                "ควบคุมต้นทุนและลดของเสียได้ดีขึ้น",
-              ]}
-            >
-              {/* chart */}
-              <svg viewBox="0 0 24 24" className="w-10 h-10">
-                <path d="M4 19V5M4 19h16M8 16v-5M12 19v-9M16 13V7" fill="none" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-            </FeatureCard>
           </div>
         </div>
       </section>

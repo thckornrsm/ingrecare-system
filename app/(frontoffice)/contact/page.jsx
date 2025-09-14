@@ -31,7 +31,7 @@ export default function Home() {
                   <a href="../contact" className="hover:text-[#2AA77A]">ติดต่อฝ่ายขาย</a>
                 </nav>
                 <a
-                  href="../(auth)/login"
+                  href="../login"
                   className="bg-[#3FA170] text-white w-[160px] h-[24px] rounded-[3px] border-none cursor-pointer font-kanit text-[16px] flex items-center justify-center hover:bg-[#2C714E] transition-colors duration-300"
                 >
                   เข้าสู่ระบบ
