@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import FilterTabs from '@/components/FilterTabs';
 import { Plus, FileText } from 'lucide-react';
@@ -54,6 +55,7 @@ const ItemCard = ({ item }) => {
 
 // ** Main Dashboard Page **
 export default function DashboardPage() {
+    const router = useRouter();
     const [activeFilter, setActiveFilter] = useState('ทั้งหมด');
     const filteredItems = inventoryItems.filter(item => 
         activeFilter === 'ทั้งหมด' || item.category === activeFilter
@@ -69,18 +71,29 @@ export default function DashboardPage() {
                             <p className="text-[#979999]">แสดงรายการวัตถุดิบใกล้หมดอายุ ที่อยู่ภายในร้านของคุณ</p>
                         </div>
                         <div className="flex items-center gap-4">
-                            <button className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] text-[#3FA170] font-medium flex items-center gap-2 hover:bg-green-50 transition-colors">
-                                <FileText size={16}/> เบิกจ่ายวัตถุดิบ
+                            <button
+                              onClick={() => router.push("/stockout")}
+                              className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] 
+                                         text-[#3FA170] font-medium flex items-center gap-2 
+                                         hover:bg-green-50 transition-colors"
+                            >
+                              <FileText size={16} /> เบิกจ่ายวัตถุดิบ
                             </button>
-                            <button className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors">
-                                <Plus size={16}/> เพิ่มวัตถุดิบ
+
+                            <button
+                              onClick={() => router.push("/stockin")}
+                              className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] 
+                                         bg-[#3FA170] text-white font-medium flex items-center gap-2 
+                                         hover:bg-[#1E7957] transition-colors"
+                            >
+                              <Plus size={16} /> เพิ่มวัตถุดิบ
                             </button>
+                          </div>
                         </div>
-                    </div>
 
                     <FilterTabs activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
 
-                    <div className="bg-[#F6F8FA] p-9 rounded-lg border-1 border-[#E5E5E5]">
+                    <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] relative">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {filteredItems.map((item, index) => (
                                 <ItemCard key={index} item={item} />

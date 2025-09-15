@@ -1,44 +1,53 @@
-// app/(backoffice)/import/page.jsx
+/* รายงานการนำเข้าวัตถุดิบ */
 'use client';
 
 import React, { useState, forwardRef } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import { Plus, Calendar,Trash2, Info, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Plus, Calendar,Trash2, Info } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
+import ToastNotification from '@/components/ToastNotification';
 
-// ========= CustomDateInput Component (ไม่มีการเปลี่ยนแปลง) =========
-const CustomDateInput = forwardRef(({ value, onClick, placeholder }, ref) => (
+// CustomDateInput Component
+const CustomDateInput = forwardRef(({ value, onClick}, ref) => (
     <div className="relative w-full cursor-pointer" onClick={onClick} ref={ref}>
         <input
             type="text"
             value={value}
-            placeholder={placeholder}
+            placeholder="วว/ดด/ปปปป"
             readOnly
-            className="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-black cursor-pointer"
+            className="bg-white w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] text-black cursor-pointer"
         />
         <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
     </div>
 ));
 CustomDateInput.displayName = 'CustomDateInput';
 
-// ========= IngredientFormRow Component (ไม่มีการเปลี่ยนแปลง) =========
+// IngredientFormRow Component
 const IngredientFormRow = ({ item, onUpdate, onRemove }) => {
     const handleInputChange = (field, value) => {
-        if ((field === 'quantity' || field === 'shelfLife') && value < 0) {
-            return;
+        if (field === 'quantity' || field === 'shelfLife') {
+            // อนุญาตให้ว่างไว้เพื่อโชว์ placeholder
+            if (value === '') return onUpdate(item.id, { [field]: '' });
+            
+            const n = parseInt(value, 10);
+            if (Number.isNaN(n)) return;             // ข้ามถ้าไม่ใช่ตัวเลข
+            if (n < 1) return;                       // ไม่รับ 0 หรือค่าติดลบ
+            return onUpdate(item.id, { [field]: n }); // เก็บเป็นเลขบวกตั้งแต่ 1
         }
         onUpdate(item.id, { [field]: value });
     };
 
     return (
-        <div className="bg-white p-8 rounded-lg shadow-sm border relative">
+        <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] relative">
+            {/* Remove Button */}
             <button 
                 onClick={() => onRemove(item.id)} 
                 className="absolute top-4 right-4 text-gray-400 hover:text-red-500"
             >
                 <Trash2 size={18} />
             </button>
+            {/* Form Fields */}
             <form className="space-y-6">
                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">วันที่รับวัตถุดิบ <span className="text-red-500">*</span></label>
@@ -52,49 +61,59 @@ const IngredientFormRow = ({ item, onUpdate, onRemove }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อวัตถุดิบ (Name) <span className="text-red-500">*</span></label>
-                        <input type="text" placeholder="กรอกชื่อวัตถุดิบ" value={item.itemName} onChange={(e) => handleInputChange('itemName', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-black"/>
+                        <input type="text" placeholder="กรอกชื่อวัตถุดิบ" value={item.itemName} onChange={(e) => handleInputChange('itemName', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"/>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">ประเภทของวัตถุดิบ (Type) <span className="text-red-500">*</span></label>
-                        <select value={item.itemType} onChange={(e) => handleInputChange('itemType', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 bg-white text-black">
-                            <option value="">เลือกประเภทของวัตถุดิบ</option>
-                            <option value="ผัก">ผัก</option>
-                            <option value="ผลไม้">ผลไม้</option>
-                            <option value="เนื้อสัตว์">เนื้อสัตว์</option>
-                            <option value="ทะเล">ทะเล</option>
-                            <option value="เครื่องปรุง">เครื่องปรุง</option>
-                            <option value="อื่นๆ">อื่นๆ</option>
+                        <select value={item.itemType} onChange={(e) => handleInputChange('itemType', e.target.value)} 
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white 
+                                  ${!item.itemType ? 'text-gray-400' : 'text-black'}`}>
+                            <option value="" disabled hidden className="text-gray-400">เลือกประเภทของวัตถุดิบ</option>
+                            <option value="ผัก" className="text-black">ผัก</option>
+                            <option value="ผลไม้" className="text-black">ผลไม้</option>
+                            <option value="เนื้อสัตว์" className="text-black">เนื้อสัตว์</option>
+                            <option value="ทะเล" className="text-black">ทะเล</option>
+                            <option value="เครื่องปรุง" className="text-black">เครื่องปรุง</option>
+                            <option value="อื่นๆ" className="text-black">อื่นๆ</option>
                         </select>
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">จำนวนวัตถุดิบที่นำเข้า <span className="text-red-500">*</span></label>
-                        <input type="number" min="0" value={item.quantity} onChange={(e) => handleInputChange('quantity', parseInt(e.target.value, 10) || 0)} placeholder="กรอกตัวเลข" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-black"/>
+                        <label className="block text-sm font-medium text-black mb-1">จำนวนวัตถุดิบที่นำเข้า <span className="text-red-500">*</span></label>
+                        <input type="number" min="1" value={item.quantity} onChange={(e) => handleInputChange('quantity', parseInt(e.target.value))} 
+                        placeholder="กรอกตัวเลข" 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"/>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">หน่วย <span className="text-red-500">*</span></label>
-                        <select value={item.quantityUnit} onChange={(e) => handleInputChange('quantityUnit', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 bg-white text-black">
-                            <option value="">-</option>
-                            <option value="กิโลกรัม">กิโลกรัม</option>
-                            <option value="แพ็ค">แพ็ค</option>
-                            <option value="ขวด">ขวด</option>
+                        <label className="block text-sm font-medium text-black mb-1">หน่วย <span className="text-red-500">*</span></label>
+                        <select value={item.quantityUnit} onChange={(e) => handleInputChange('quantityUnit', e.target.value)} 
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white
+                                  ${!item.quantityUnit ? 'text-gray-400' : 'text-black'}`}>
+                            <option value="" disabled hidden className="text-gray-400">เลือกหน่วยของวัตถุดิบ</option>
+                            <option value="กิโลกรัม" className="text-black">กิโลกรัม</option>
+                            <option value="แพ็ค" className="text-black">แพ็ค</option>
+                            <option value="ขวด" className="text-black">ขวด</option>
                         </select>
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">ระยะเวลาในการรักษา <span className="text-red-500">*</span></label>
-                        <input type="number" min="0" value={item.shelfLife} onChange={(e) => handleInputChange('shelfLife', parseInt(e.target.value, 10) || 0)} placeholder="กรอกระยะเวลาในการรักษา" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-black"/>
+                        <label className="block text-sm font-medium text-black mb-1">ระยะเวลาในการรักษา <span className="text-red-500">*</span></label>
+                        <input type="number" min="1" value={item.shelfLife} onChange={(e) => handleInputChange('shelfLife', parseInt(e.target.value))} 
+                        placeholder="กรอกระยะเวลาในการรักษา" 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"/>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">หน่วย <span className="text-red-500">*</span></label>
-                        <select value={item.shelfLifeUnit} onChange={(e) => handleInputChange('shelfLifeUnit', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 bg-white text-black">
-                            <option value="">-</option>
-                            <option value="วัน">วัน</option>
-                            <option value="สัปดาห์">สัปดาห์</option>
-                            <option value="เดือน">เดือน</option>
-                            <option value="ปี">ปี</option>
+                        <label className="block text-sm font-medium text-black mb-1">หน่วย <span className="text-red-500">*</span></label>
+                        <select value={item.shelfLifeUnit} onChange={(e) => handleInputChange('shelfLifeUnit', e.target.value)} 
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white
+                                  ${!item.shelfLifeUnit ? 'text-gray-400' : 'text-black'}`}>
+                            <option value="" disabled hidden className="text-gray-400">ระยะเวลาในการรักษา</option>
+                            <option value="วัน" className="text-black">วัน</option>
+                            <option value="สัปดาห์" className="text-black">สัปดาห์</option>
+                            <option value="เดือน" className="text-black">เดือน</option>
+                            <option value="ปี" className="text-black">ปี</option>
                         </select>
                     </div>
                 </div>
@@ -103,28 +122,7 @@ const IngredientFormRow = ({ item, onUpdate, onRemove }) => {
     );
 };
 
-// ========= ToastNotification Component (ไม่มีการเปลี่ยนแปลง) =========
-const ToastNotification = ({ message, type, onClose }) => {
-    const isSuccess = type === 'success';
-    const bgColor = isSuccess ? 'bg-green-100' : 'bg-red-100';
-    const borderColor = isSuccess ? 'border-green-400' : 'border-red-400';
-    const textColor = isSuccess ? 'text-green-700' : 'text-red-700';
-    const Icon = isSuccess ? CheckCircle2 : AlertCircle;
-
-    return (
-        <div className={`fixed top-6 right-6 z-50 flex items-center p-4 rounded-lg border-l-4 shadow-lg ${bgColor} ${borderColor} animate-fade-in-right`}>
-            <Icon className={textColor} />
-            <div className={`ml-3 text-sm font-medium ${textColor}`}>
-                {message}
-            </div>
-            <button onClick={onClose} className={`ml-auto -mx-1.5 -my-1.5 p-1.5 rounded-full inline-flex h-8 w-8 ${textColor} hover:bg-opacity-20`}>
-                <X size={20} />
-            </button>
-        </div>
-    );
-};
-
-// ========= ConfirmationModal Component (แก้ไข) =========
+// ConfirmationModal Component
 const ConfirmationModal = ({ onClose, onConfirm }) => (
     <div className="fixed inset-0 flex items-center justify-center z-50">
         <div className="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm w-full mx-4 border">
@@ -150,17 +148,16 @@ const ConfirmationModal = ({ onClose, onConfirm }) => (
     </div>
 );
 
-
-// ========= Main Import Page (ปรับปรุง State และ Logic) =========
+/* Main Stock In Page (Import) */
 export default function ImportPage() {
     const createNewItem = () => ({
         id: Date.now() + Math.random(),
         importDate: null,
         itemName: '',
         itemType: '',
-        quantity: 0,
+        quantity: '',
         quantityUnit: '',
-        shelfLife: 0,
+        shelfLife: '',
         shelfLifeUnit: '',
     });
 
@@ -195,11 +192,12 @@ export default function ImportPage() {
     };
 
     const handleSubmit = () => {
-        const isInvalid = items.some(item => 
-            !item.importDate || !item.itemName || !item.itemType || 
-            item.quantity <= 0 || !item.quantityUnit ||
-            item.shelfLife <= 0 || !item.shelfLifeUnit
+        const isInvalid = items.some(item =>
+            !item.importDate || !item.itemName || !item.itemType ||
+            item.quantity === '' || Number(item.quantity) <= 0 || !item.quantityUnit ||
+            item.shelfLife === '' || Number(item.shelfLife) <= 0 || !item.shelfLifeUnit
         );
+
 
         if (isInvalid) {
             showToast('การนำเข้าวัตถุดิบไม่สำเร็จ กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
@@ -216,16 +214,16 @@ export default function ImportPage() {
     };
 
     return (
-        <div className="flex h-screen bg-gray-100">
+        <div className="flex h-screen bg-white">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto p-6">
-                    <div className="flex justify-between items-center mb-6">
+                <main className="flex-1 overflow-y-auto py-9 px-25">
+                    <div className="flex justify-between items-center mb-8">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-800">นำเข้าวัตถุดิบ</h1>
-                            <p className="text-gray-500">เพิ่มข้อมูลการนำเข้าวัตถุดิบ</p>
+                            <h1 className="text-black text-3xl font-bold">นำเข้าวัตถุดิบ</h1>
+                            <p className="text-[#979999]">เพิ่มข้อมูลการนำเข้าของวัตถุดิบในแต่ละล็อต</p>
                         </div>
-                        <button onClick={handleAddItem} className="px-4 py-2 text-sm rounded-lg bg-gray-800 text-white flex items-center gap-2 hover:bg-gray-700">
+                        <button onClick={handleAddItem} className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors">
                             <Plus size={16}/> เพิ่มรายการวัตถุดิบ
                         </button>
                     </div>
