@@ -157,7 +157,8 @@ export default function StatisticsPage() {
                     <FilterTabs activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
 
                     <div className="bg-[#F6F8FA] p-9 rounded-lg border-1 border-[#E5E5E5]">
-                        {activeFilter === 'ทั้งหมด' ? (
+                        <div className="bg-white p-6 rounded-lg">
+                            {activeFilter === 'ทั้งหมด' ? (
                             <>
                                 <h2 className="text-lg font-semibold text-black mb-2 text-center">
                                     แผนภูมิวงกลมสัดส่วนการใช้วัตถุดิบตามประเภท
@@ -170,6 +171,7 @@ export default function StatisticsPage() {
                                 categoryName={activeFilter}
                             />
                         )}
+                        </div>
                     </div>  
                 </main>
             </div>
