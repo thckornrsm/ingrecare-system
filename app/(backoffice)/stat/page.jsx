@@ -1,11 +1,10 @@
-// app/(backoffice)/statistics/page.jsx
 'use client';
 
 import { useState } from 'react';
-import { Beef, Carrot, Apple, Fish, CookingPot } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
+import FilterTabs from '@/components/FilterTabs';
 
-// ========= Mock Data for Donut Chart =========
+// Example Mock Data for Donut Chart
 const donutChartData = [
     { name: 'ทะเล', value: 30, color: 'bg-sky-300', strokeColor: 'text-sky-300' },
     { name: 'ผัก', value: 15, color: 'bg-green-300', strokeColor: 'text-green-300' },
@@ -15,7 +14,7 @@ const donutChartData = [
     { name: 'อื่นๆ', value: 6, color: 'bg-gray-300', strokeColor: 'text-gray-300' },
 ];
 
-// ========= Mock Data for Bar Chart =========
+// Example Mock Data for Bar Chart
 const barChartData = {
     'ผัก': [
         { name: 'ผักกาด', value: 35 }, { name: 'ผักกวางตุ้ง', value: 70 },
@@ -45,71 +44,72 @@ const barChartData = {
     ],
 };
 
-// ========= FilterTabs Component (ไม่มีการเปลี่ยนแปลง) =========
-const FilterTabs = ({ activeFilter, setActiveFilter }) => {
-    const categories = [
-        { name: 'ทั้งหมด', icon: null }, { name: 'ผัก', icon: <Carrot size={16}/> },
-        { name: 'ผลไม้', icon: <Apple size={16}/> }, { name: 'เนื้อสัตว์', icon: <Beef size={16}/> },
-        { name: 'ทะเล', icon: <Fish size={16}/> }, { name: 'เครื่องปรุง', icon: <CookingPot size={16}/> },
-        { name: 'อื่นๆ', icon: null },
-    ];
-    return (
-        <div className="flex items-center gap-2 mb-6 flex-wrap">
-            {categories.map(category => (
-                <button 
-                    key={category.name}
-                    onClick={() => setActiveFilter(category.name)}
-                    className={`px-4 py-2 text-sm rounded-full flex items-center gap-2 transition-colors ${
-                        activeFilter === category.name 
-                        ? 'bg-gray-200 text-gray-800 font-semibold' 
-                        : 'hover:bg-gray-100 text-gray-600'
-                    }`}
-                >
-                    {category.icon}
-                    {category.name === 'อื่นๆ' ? '... อื่นๆ' : category.name}
-                </button>
-            ))}
-        </div>
-    );
-};
-
-// ========= DonutChart Component (ไม่มีการเปลี่ยนแปลง) =========
+// DonutChart Component *In Main Page*
 const DonutChart = () => {
-    const totalValue = donutChartData.reduce((sum, item) => sum + item.value, 0);
-    let cumulativePercentage = 0;
-    return (
-        <div className="flex flex-col md:flex-row items-center justify-center gap-12 p-4">
-            <div className="relative w-72 h-72">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                    {donutChartData.map((item, index) => {
-                        const percentage = (item.value / totalValue) * 100;
-                        const dashArray = `${percentage} ${100 - percentage}`;
-                        const dashOffset = -cumulativePercentage;
-                        cumulativePercentage += percentage;
-                        return (
-                            <circle key={index} cx="18" cy="18" r="14"
-                                className={`stroke-current ${item.strokeColor}`}
-                                strokeWidth="8" fill="none"
-                                strokeDasharray={dashArray} strokeDashoffset={dashOffset}
-                            />
-                        );
-                    })}
-                </svg>
-            </div>
-            <div className="flex flex-col gap-4">
-                {donutChartData.map(item => (
-                    <div key={item.name} className="flex items-center gap-3">
-                        <div className={`w-4 h-4 rounded-sm ${item.color}`}></div>
-                        <span className="text-gray-700">{item.name}</span>
-                        <span className="font-semibold text-gray-800 ml-auto">{item.value}%</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+  const [hovered, setHovered] = useState(null);
+  const totalValue = donutChartData.reduce((sum, item) => sum + item.value, 0);
+  let cumulativePercentage = 0;
+  return (
+    <div className="flex flex-col md:flex-row items-center justify-center gap-15 p-4 relative">
+      <div className="relative w-78 h-78">
+        <svg className="w-full h-full transform rotate-90" viewBox="0 0 36 36">
+          {donutChartData.map((item, index) => {
+            const percentage = (item.value / totalValue) * 100;
+            const dashArray = `${percentage} ${100 - percentage}`;
+            const dashOffset = -cumulativePercentage;
+            cumulativePercentage += percentage;
+            return (
+              <circle
+                key={index}
+                cx="18" cy="18" r="14"
+                className={`stroke-current ${item.strokeColor} cursor-pointer transition-opacity duration-200`}
+                strokeWidth="8"
+                fill="none"
+                pathLength="100"
+                strokeDasharray={dashArray}
+                strokeDashoffset={dashOffset}
+                strokeLinecap="butt"
+                // Hover Effects
+                onMouseEnter={() => setHovered(item.name)}
+                onMouseLeave={() => setHovered(null)}
+                style={{
+                  opacity: hovered && hovered !== item.name ? 0.4 : 1,
+                }}
+              />
+            );
+          })}
+        </svg>
+
+        {/* Tooltip */}
+        {hovered && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                          bg-white shadow-lg rounded-md px-3 py-2 text-sm font-medium text-center">
+            <span className="block">{hovered}</span>
+            <span className="block text-gray-600">
+              {donutChartData.find(d => d.name === hovered)?.value}%
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-col gap-4">
+        {donutChartData.map(item => (
+          <div key={item.name} className="flex items-center gap-3">
+            <div className={`w-7 h-7 rounded-sm ${item.color}`}></div>
+            <span className="text-gray-700">{item.name}</span>
+            <span className="font-semibold text-gray-800 ml-auto">
+              {item.value}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
-// ========= BarChart Component (แก้ไข) =========
+
+// BarChart Component
 const BarChart = ({ data, categoryName }) => {
     const barColors = [
         'bg-sky-300', 
@@ -126,7 +126,7 @@ const BarChart = ({ data, categoryName }) => {
             <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center">
                 แผนภูมิแท่งแสดงสัดส่วนการใช้วัตถุดิบประเภท "{categoryName}"
             </h2>
-            <div className="w-full h-72 flex gap-4 items-end border-l border-b border-gray-300 px-4 pt-4">
+            <div className="w-full h-78 flex gap-4 items-end border-l border-b border-gray-300 px-4 pt-4">
                 {data.map((item, index) => (
                     <div key={index} className="flex-1 h-full flex flex-col justify-end items-center gap-1">
                         <div 
@@ -141,27 +141,25 @@ const BarChart = ({ data, categoryName }) => {
     );
 };
 
-
-// ========= Main Statistics Page (ปรับปรุง Logic การแสดงผล) =========
+/* Main Statistics Page */
 export default function StatisticsPage() {
     const [activeFilter, setActiveFilter] = useState('ทั้งหมด');
-
     return (
-        <div className="flex h-screen bg-gray-100">
+        <div className="flex h-screen bg-white">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto p-6">
-                    <div className="mb-6">
-                        <h1 className="text-2xl font-bold text-gray-800">สถิติการใช้งาน</h1>
-                        <p className="text-gray-500">สถิติการใช้งานเพื่อใช้ในการตัดสินใจ</p>
+                <main className="flex-1 overflow-y-auto py-9 px-25">
+                    <div className="mb-8">
+                        <h1 className="text-black text-3xl font-bold">สถิติการใช้งาน</h1>
+                        <p className="text-[#979999]">สถิติการใช้งานเพื่อใช้ประกอบการตัดสินใจ</p>
                     </div>
 
                     <FilterTabs activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
 
-                    <div className="bg-white p-10 rounded-lg shadow-sm">
+                    <div className="bg-[#F6F8FA] p-9 rounded-lg border-1 border-[#E5E5E5]">
                         {activeFilter === 'ทั้งหมด' ? (
                             <>
-                                <h2 className="text-lg font-semibold text-gray-800 mb-2 text-center">
+                                <h2 className="text-lg font-semibold text-black mb-2 text-center">
                                     แผนภูมิวงกลมสัดส่วนการใช้วัตถุดิบตามประเภท
                                 </h2>
                                 <DonutChart />

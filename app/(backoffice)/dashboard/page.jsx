@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
-import { Utensils, Plus, Beef, Carrot, Apple, Fish, CookingPot, FileText } from 'lucide-react';
+import FilterTabs from '@/components/FilterTabs';
+import { Plus, FileText } from 'lucide-react';
 
 // Mock data for inventory items
 // (ในโปรเจกต์จริง ต้องดึงข้อมูล)
@@ -19,38 +20,6 @@ const inventoryItems = [
     { name: 'แตงโม', daysLeft: 12, lot: 10002, importDate: '26/01/2569', expiryDate: '02/02/2569', status: 'good', category: 'ผลไม้' },
     { name: 'พริกไทยดำป่น', daysLeft: 12, lot: 10002, importDate: '26/01/2569', expiryDate: '02/02/2569', status: 'good', category: 'เครื่องปรุง' },
 ];
-
-// FilterTabs Component
-const FilterTabs = ({ activeFilter, setActiveFilter }) => {
-    const categories = [
-        { name: 'ทั้งหมด', icon: <Utensils size={16}/> },
-        { name: 'ผัก', icon: <Carrot size={16}/> },
-        { name: 'ผลไม้', icon: <Apple size={16}/> },
-        { name: 'เนื้อสัตว์', icon: <Beef size={16}/> },
-        { name: 'ทะเล', icon: <Fish size={16}/> },
-        { name: 'เครื่องปรุง', icon: <CookingPot size={16}/> },
-        { name: 'อื่นๆ', icon: null },
-    ];
-
-    return (
-        <div className="flex items-center gap-2 mb-5 flex-wrap">
-            {categories.map(category => (
-                <button 
-                    key={category.name}
-                    onClick={() => setActiveFilter(category.name)}
-                    className={`px-4 py-2 text-sm rounded-full flex items-center gap-2 transition-colors ${
-                        activeFilter === category.name 
-                        ? 'bg-gray-200 text-gray-800 font-semibold' 
-                        : 'hover:bg-gray-100 text-gray-600'
-                    }`}
-                >
-                    {category.icon}
-                    {category.name === 'อื่นๆ' ? '... อื่นๆ' : category.name}
-                </button>
-            ))}
-        </div>
-    );
-};
 
 // Color Status Styles
 const statusStyles = {
