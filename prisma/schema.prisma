@@ -21,6 +21,7 @@ model Province {
   name_th   String
   name_en   String
   districts District[]
+  stores    store[]
 }
 
 model District {
@@ -30,6 +31,7 @@ model District {
   provinceId Int
   province   Province     @relation(fields: [provinceId], references: [id])
   subdistrict Subdistrict[]
+  stores      store[]
 }
 
 model Subdistrict {
@@ -37,24 +39,48 @@ model Subdistrict {
   name_th    String
   name_en    String
   districtId Int
+  zipcode   String? @db.VarChar(10)
   district   District   @relation(fields: [districtId], references: [id])
+  stores     store[]
 }
 
   model store {
-    store_id   Int      @id @default(autoincrement())
-    name       String   @db.VarChar(255)
-    address    String?
-    phone      String?
-    email      String?  @unique
-    created_at DateTime @default(now())
+  store_id   Int      @id @default(autoincrement())
+  name       String   @db.VarChar(255)
+  address    String?
+  phone      String?
+  email      String?  @unique
+  zipcode   String? @db.VarChar(10)
+  created_at DateTime @default(now())
 
-    users      user[]
-  }
+  // ✅ เพิ่ม FK สำหรับที่อยู่ (ผู้ใช้เลือกจากดรอปดาวน์)
+  provinceId    Int?
+  districtId    Int?
+  subdistrictId Int?
+
+  // (ตัวเลือก) snapshot ชื่อไว้เพื่ออ่าน/ออกรายงานง่าย ไม่ต้อง join
+  province_name_th    String? @db.VarChar(100)
+  district_name_th    String? @db.VarChar(100)
+  subdistrict_name_th String? @db.VarChar(100)
+
+  // ✅ relations ไปยังตารางที่อยู่
+  province    Province?   @relation(fields: [provinceId], references: [id])
+  district    District?   @relation(fields: [districtId], references: [id])
+  subdistrict Subdistrict? @relation(fields: [subdistrictId], references: [id])
+
+  users      user[]
+
+  // ✅ ช่วยให้ query เร็วขึ้น
+  @@index([provinceId])
+  @@index([districtId])
+  @@index([subdistrictId])
+}
+
 
   model user {
     user_id   Int     @id @default(autoincrement())
-    email     String  @db.VarChar(100)
-    name      String  @db.VarChar(255)
+    email     String  @db.VarChar(100) @unique
+    name      String  @db.VarChar(255) 
     password  String  @db.VarChar(100)
     role      Role
 
