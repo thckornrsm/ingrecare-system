@@ -27,13 +27,11 @@ CustomDateInput.displayName = 'CustomDateInput';
 const IngredientFormRow = ({ item, onUpdate, onRemove }) => {
     const handleInputChange = (field, value) => {
         if (field === 'quantity' || field === 'shelfLife') {
-            // อนุญาตให้ว่างไว้เพื่อโชว์ placeholder
             if (value === '') return onUpdate(item.id, { [field]: '' });
-            
             const n = parseInt(value, 10);
-            if (Number.isNaN(n)) return;             // ข้ามถ้าไม่ใช่ตัวเลข
-            if (n < 1) return;                       // ไม่รับ 0 หรือค่าติดลบ
-            return onUpdate(item.id, { [field]: n }); // เก็บเป็นเลขบวกตั้งแต่ 1
+            if (Number.isNaN(n)) return;                // ข้ามถ้าไม่ใช่ตัวเลข
+            if (n < 1) return;                          // ไม่รับ 0 หรือค่าติดลบ
+            return onUpdate(item.id, { [field]: n });   // เก็บเป็นเลขบวกตั้งแต่ 1
         }
         onUpdate(item.id, { [field]: value });
     };
@@ -49,16 +47,17 @@ const IngredientFormRow = ({ item, onUpdate, onRemove }) => {
             </button>
             {/* Form Fields */}
             <form className="space-y-6">
-                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">วันที่รับวัตถุดิบ <span className="text-red-500">*</span></label>
-                    <DatePicker
-                        selected={item.importDate}
-                        onChange={(date) => handleInputChange('importDate', date)}
-                        dateFormat="dd/MM/yyyy"
-                        customInput={<CustomDateInput placeholder="วว/ดด/ปปปป (ปี พ.ศ.)" />}
-                    />
-                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">วันที่รับวัตถุดิบ <span className="text-red-500">*</span></label>
+                        <DatePicker
+                            selected={item.importDate}
+                            onChange={(date) => handleInputChange('importDate', date)}
+                            dateFormat="dd/MM/yyyy"
+                            wrapperClassName="w-full"
+                            customInput={<CustomDateInput placeholder="วว/ดด/ปปปป (ปี พ.ศ.)" />}
+                        />
+                    </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อวัตถุดิบ (Name) <span className="text-red-500">*</span></label>
                         <input type="text" placeholder="กรอกชื่อวัตถุดิบ" value={item.itemName} onChange={(e) => handleInputChange('itemName', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"/>
@@ -77,8 +76,6 @@ const IngredientFormRow = ({ item, onUpdate, onRemove }) => {
                             <option value="อื่นๆ" className="text-black">อื่นๆ</option>
                         </select>
                     </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm font-medium text-black mb-1">จำนวนวัตถุดิบที่นำเข้า <span className="text-red-500">*</span></label>
                         <input type="number" min="1" value={item.quantity} onChange={(e) => handleInputChange('quantity', parseInt(e.target.value))} 
@@ -96,8 +93,6 @@ const IngredientFormRow = ({ item, onUpdate, onRemove }) => {
                             <option value="ขวด" className="text-black">ขวด</option>
                         </select>
                     </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm font-medium text-black mb-1">ระยะเวลาในการรักษา <span className="text-red-500">*</span></label>
                         <input type="number" min="1" value={item.shelfLife} onChange={(e) => handleInputChange('shelfLife', parseInt(e.target.value))} 
