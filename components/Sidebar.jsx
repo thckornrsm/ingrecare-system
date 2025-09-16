@@ -3,15 +3,16 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Icon } from '@iconify/react';
 import { usePathname } from "next/navigation";
-import { LayoutDashboard,BarChart2,Inbox,Package,History,Wrench,LogOut } from "lucide-react";
 
 // รวม class
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-function NavItem({ href, label, Icon, active }) {
+// Rename the prop for clarity from Icon to iconString
+function NavItem({ href, label, iconString, active }) {
   return (
     <Link
       href={href}
@@ -24,7 +25,13 @@ function NavItem({ href, label, Icon, active }) {
         active && "text-white bg-[#3FA170] shadow-sm"
       )}
     >
-      <Icon size={20} />
+      <Icon
+        icon={iconString}
+        width={16}
+        className={cn(
+          !active && "text-[#3FA170]", active && "text-white"
+        )}
+      />
       <span>{label}</span>
     </Link>
   );
@@ -39,20 +46,20 @@ export default function Sidebar() {
       : pathname === href || pathname.startsWith(href + "/");
 
   const mainMenu = [
-    { href: "/dashboard", label: "หน้าหลัก", Icon: LayoutDashboard },
-    { href: "/stat", label: "สถิติการใช้งาน", Icon: BarChart2 },
+    { href: "/dashboard", label: "หน้าหลัก", iconString: "material-symbols-light:dashboard-outline" },
+    { href: "/statistics", label: "สถิติการใช้งาน", iconString: "gridicons:stats-alt" },
   ];
 
   const manageMenu = [
-    { href: "/stockin", label: "นำเข้าวัตถุดิบ", Icon: Package },
-    { href: "/stockout", label: "เบิกจ่ายวัตถุดิบ", Icon: Package },
+    { href: "/stockin", label: "นำเข้าวัตถุดิบ", iconString: "icon-park-twotone:inbox-in" },
+    { href: "/stockout", label: "เบิกจ่ายวัตถุดิบ", iconString: "icon-park-solid:inbox-out" },
   ];
 
   const listMenu = [
-    { href: "/inventory", label: "วัตถุดิบคงเหลือทั้งหมด", Icon: Inbox },
-    { href: "/expired", label: "วัตถุดิบหมดอายุ", Icon: Package },
-    { href: "/history/in", label: "ประวัติการนำเข้า", Icon: History },
-    { href: "/history/out", label: "ประวัติการเบิกจ่าย", Icon: Wrench },
+    { href: "/allingredient", label: "วัตถุดิบทั้งหมด", iconString: "icon-park-outline:data-all" },
+    { href: "/allexpired", label: "วัตถุดิบหมดอายุ", iconString: "pajamas:time-out" },
+    { href: "/allstockin", label: "ประวัติการนำเข้า", iconString: "lucide:folder-input" },
+    { href: "/allstockout", label: "ประวัติการเบิกจ่าย", iconString: "lucide:folder-output" },
   ];
 
   return (
@@ -64,26 +71,25 @@ export default function Sidebar() {
             <div>
               <h2 className="font-semibold text-xl">Suki Teeyai</h2>
               <p className="text-sm text-gray-500">ผู้จัดการร้าน</p>
+            </div>
           </div>
-        </div>
-        <button
-          className={cn(
-            "text-sm mt-2 flex items-center gap-1 rounded-md px-2 py-1 transition",
-            "text-[#E15050] hover:bg-red-50 active:translate-y-[1px]",
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
-          )}
-          type="button"
-        >
-          <LogOut size={14} />
-          ออกจากระบบ
-        </button>
+          <button
+            className={cn(
+              "text-sm mt-2 flex items-center gap-1 rounded-md px-2 py-1 transition",
+              "text-[#E15050] hover:bg-red-50 active:translate-y-[1px]",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+            )}
+            type="button"
+          >
+            ออกจากระบบ
+          </button>
         </div>
       </div>
 
       <nav className="flex-grow p-4 space-y-4">
         <section>
-          <p className="text-s text-gray-400 uppercase font-light mb-2">
-            เมนูหลัก
+          <p className="text-s text-gray-400 font-light mb-2">
+            Dashboard
           </p>
           <div className="space-y-2">
             {mainMenu.map((m) => (
@@ -91,7 +97,7 @@ export default function Sidebar() {
                 key={m.href}
                 href={m.href}
                 label={m.label}
-                Icon={m.Icon}
+                iconString={m.iconString}
                 active={isActive(m.href)}
               />
             ))}
@@ -99,7 +105,7 @@ export default function Sidebar() {
         </section>
 
         <section>
-          <p className="text-s text-gray-400 uppercase font-light mb-2">
+          <p className="text-s text-gray-400 font-light mb-2">
             การจัดการข้อมูล
           </p>
           <div className="space-y-2">
@@ -108,7 +114,7 @@ export default function Sidebar() {
                 key={m.href}
                 href={m.href}
                 label={m.label}
-                Icon={m.Icon}
+                iconString={m.iconString}
                 active={isActive(m.href)}
               />
             ))}
@@ -116,7 +122,7 @@ export default function Sidebar() {
         </section>
 
         <section>
-          <p className="text-s text-gray-400 uppercase font-light mb-2">
+          <p className="text-s text-gray-400 font-light mb-2">
             รายการข้อมูล
           </p>
           <div className="space-y-2">
@@ -125,7 +131,7 @@ export default function Sidebar() {
                 key={m.href}
                 href={m.href}
                 label={m.label}
-                Icon={m.Icon}
+                iconString={m.iconString}
                 active={isActive(m.href)}
               />
             ))}
