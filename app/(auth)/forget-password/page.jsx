@@ -8,7 +8,7 @@ import Footer from '@/components/Footer';
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-white md:bg-gray-800 font-sans">
+    <div className="flex flex-col min-h-screen bg-white md:bg-gray-800">
       <Navbar />
       <main className="w-full flex-grow flex flex-col md:flex-row">
         

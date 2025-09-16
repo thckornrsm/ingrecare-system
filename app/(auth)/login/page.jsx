@@ -69,6 +69,11 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
+              <div className="text-right mb-6">
+                <Link href="/forget-password" className="text-sm text-[#2AA77A] hover:underline">
+                  ลืมรหัสผ่าน?
+                </Link>
+              </div>
               <button
                 type="submit"
                 className="w-full bg-[#3FA170] text-white rounded-md py-2 text-base md:text-lg font-semibold hover:bg-[#2C714E] transition-colors duration-300"

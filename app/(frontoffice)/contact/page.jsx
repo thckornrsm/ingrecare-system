@@ -124,10 +124,10 @@ export default function Home() {
                   <input
                     type="checkbox"
                     id="terms"
-                    className="form-checkbox h-4 w-4 text-green-600 rounded"
+                    className="form-checkbox h-4 w-4 text-[#3FA170] border-[#3FA170] focus:ring-[#3FA170] rounded"
                   />
                   <label htmlFor="terms" className="text-sm text-gray-600">
-                    ฉันยอมรับข้อตกลงในการใช้งานและ <a href="#" className="text-green-600 hover:underline">นโยบายความเป็นส่วนตัว</a>
+                    ฉันยอมรับข้อตกลงในการใช้งานและ <a href="#" className="text-[#3FA170] hover:underline">นโยบายความเป็นส่วนตัว</a>
                   </label>
                 </div>
                 <button
