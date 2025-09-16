@@ -6,8 +6,6 @@ import Sidebar from '@/components/Sidebar';
 import FilterTabs from '@/components/FilterTabs';
 import { Plus, FileText } from 'lucide-react';
 
-// Mock data for inventory items
-// (ในโปรเจกต์จริง ต้องดึงข้อมูล)
 // setup 1 day left = critical, 2-3 days = warning, +3 days = good
 const inventoryItems = [
     { name: 'เนื้อวัวเทนเดอร์ลอย', daysLeft: 1, lot: 10001, importDate: '10/01/2569', expiryDate: '17/01/2569', status: 'critical', category: 'เนื้อสัตว์' },
