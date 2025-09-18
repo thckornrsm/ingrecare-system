@@ -2,14 +2,28 @@ import { prisma } from '@/lib/prisma';
 import { verifySession } from '@/utils/auth';
 import { NextResponse } from 'next/server';
 
+// GET function ไม่มีการเปลี่ยนแปลง
 export async function GET(req) {
   try {
+    const token = req.cookies.get('token');
+    if (!token || !token.value) {
+        return NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 });
+    }
+    const session = await verifySession(token.value);
+    if (!session) {
+        return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
+    }
+    const { sid: storeId } = session;
+
     const { searchParams } = new URL(req.url);
     const categoryId = searchParams.get('categoryId');
 
-    const whereClause = {};
+    const whereClause = {
+        user: {
+            store_id: storeId,
+        }
+    };
 
-    // ถ้ามีการระบุ categoryId, ให้สร้างเงื่อนไขการค้นหาที่ซับซ้อนขึ้น
     if (categoryId) {
       whereClause.stockins = {
         some: {
@@ -24,10 +38,7 @@ export async function GET(req) {
       where: whereClause,
       include: {
         user: {
-          select: {
-            name: true,
-            email: true,
-          }
+          select: { name: true, email: true }
         },
         stockins: {
           include: {
@@ -35,22 +46,18 @@ export async function GET(req) {
               select: {
                 name: true,
                 category: {
-                  select: {
-                    category_name: true,
-                  }
+                  select: { category_name: true }
                 }
               }
             },
             unit: {
-              select: {
-                unit_name: true,
-              }
+              select: { unit_name: true }
             }
           }
         }
       },
       orderBy: {
-        created_at: 'asc',
+        created_at: 'desc',
       },
     });
 
@@ -65,43 +72,22 @@ export async function GET(req) {
   }
 }
 
+
+// --- POST function แก้ไขใหม่ทั้งหมด ---
 export async function POST(req) {
   try {
-    // ดึง token จากคุกกี้
     const token = req.cookies.get('token');
-
     if (!token || !token.value) {
-      console.error("No token provided or token value is empty");
       return NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 });
     }
 
-    console.log('✅ RAW TOKEN COOKIE VALUE:', token.value);
-
-    // ตรวจสอบว่า token เป็น JWT ที่มี 3 ส่วนหรือไม่
-    if (token.value.split('.').length !== 3) {
-      console.error("Invalid JWT format");
-      return NextResponse.json({ error: 'token ไม่ถูกต้อง' }, { status: 401 });
-    }
-
-    // ตรวจสอบ session โดยใช้ token ที่รับมา
-    let session;
-    try {
-      session = await verifySession(token.value);
-      console.log('✅ SESSION DATA:', session);
-    } catch (error) {
-      console.error("JWT verification failed:", error);
-      return NextResponse.json({ error: 'invalid token' }, { status: 401 });
-    }
-
+    const session = await verifySession(token.value);
     if (!session) {
       return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
     }
 
     const { uid: userId } = session;
-    console.log('✅ USER ID:', userId);
-
     const body = await req.json();
-    console.log('✅ RECEIVED BODY:', JSON.stringify(body, null, 2));
     const { description, items } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -111,73 +97,118 @@ export async function POST(req) {
       );
     }
 
-    const receivedTime = new Date();
-
     const newBatch = await prisma.$transaction(async (tx) => {
-      console.log('--- Starting Transaction ---');
+      console.log('--- Starting Stock-in Transaction ---');
       const batch = await tx.batch.create({
         data: {
           user_id: userId,
-          description: description || `Stock-in at ${receivedTime.toLocaleString()}`,
+          description: description || `Stock-in at ${new Date().toLocaleString()}`,
         },
       });
       console.log('✅ Batch Created, ID:', batch.batch_id);
 
       for (const item of items) {
-        const expiryDateObject = new Date(item.expiry_date);
-        if (isNaN(expiryDateObject.getTime())) {
-          throw new Error(`Invalid expiry_date format for ingredient ${item.ingredient_id}: ${item.expiry_date}`);
+        // --- ส่วนที่แก้ไข ---
+        // 1. ค้นหา ID จากชื่อที่ส่งมาจาก Frontend
+        const category = await tx.categories.findFirst({ where: { category_name: item.category_name } });
+        if (!category) throw new Error(`ไม่พบหมวดหมู่: ${item.category_name}`);
+        
+        const unit = await tx.units.findFirst({ where: { unit_name: item.unit_name } });
+        if (!unit) throw new Error(`ไม่พบหน่วยนับ: ${item.unit_name}`);
+
+        const shelflifeUnit = await tx.time_units.findFirst({ where: { unit_name: item.shelflife_unit_name } });
+        if (!shelflifeUnit) throw new Error(`ไม่พบหน่วยเวลา: ${item.shelflife_unit_name}`);
+
+        const categoryId = category.category_id;
+        const unitId = unit.unit_id;
+        const shelflifeUnitId = shelflifeUnit.unit_id;
+
+        // 2. ค้นหา หรือ สร้าง วัตถุดิบใหม่ โดยใช้ ID ที่ได้มา
+        let ingredient = await tx.ingredients.findFirst({
+            where: {
+                name: item.name,
+                category_id: categoryId,
+            }
+        });
+
+        if (!ingredient) {
+            ingredient = await tx.ingredients.create({
+                data: {
+                    name: item.name,
+                    shelflife_value: item.shelflife_value,
+                    category: { connect: { category_id: categoryId } },
+                    unit: { connect: { unit_id: unitId } },
+                    shelflife_unit: { connect: { unit_id: shelflifeUnitId } }
+                }
+            });
+            console.log(`  ✅ Ingredient CREATED: ${ingredient.name} (ID: ${ingredient.ingredient_id})`);
+        } else {
+            console.log(`  ✅ Ingredient FOUND: ${ingredient.name} (ID: ${ingredient.ingredient_id})`);
+        }
+        
+        const ingredientId = ingredient.ingredient_id;
+        const receivedDate = new Date(item.received_date);
+        
+        const expiryDateObject = new Date(receivedDate);
+        switch (shelflifeUnit.unit_name.toLowerCase()) {
+          case 'วัน': expiryDateObject.setDate(expiryDateObject.getDate() + item.shelflife_value); break;
+          case 'สัปดาห์': expiryDateObject.setDate(expiryDateObject.getDate() + item.shelflife_value * 7); break;
+          case 'เดือน': expiryDateObject.setMonth(expiryDateObject.getMonth() + item.shelflife_value); break;
+          case 'ปี': expiryDateObject.setFullYear(expiryDateObject.getFullYear() + item.shelflife_value); break;
+          default: throw new Error(`Unsupported time unit: ${shelflifeUnit.unit_name}`);
         }
 
         const newStockin = await tx.stockin.create({
           data: {
             batch_id: batch.batch_id,
-            ingredient_id: item.ingredient_id,
+            ingredient_id: ingredientId,
             quantity: item.quantity,
-            unit_id: item.unit_id,
-            received_date: receivedTime,
+            unit_id: unitId, // <-- ใช้ ID ที่ได้มา
+            received_date: receivedDate,
             expiry_date: expiryDateObject,
             user_id: userId,
           },
         });
-        console.log(`  ✅ Stockin record created for item ${item.ingredient_id}`);
+        console.log(`  ✅ Stockin record created for item ${ingredient.name}`);
 
         await tx.history.create({
           data: { action_type: 'stockin', stockin_id: newStockin.stockin_id, user_id: userId },
         });
-        console.log(`  ✅ History record created for item ${item.ingredient_id}`);
+        console.log(`  ✅ History record created for item ${ingredient.name}`);
 
         const existingInventory = await tx.ingredient_now.findFirst({
-          where: { ingredient_id: item.ingredient_id },
+          where: { ingredient_id: ingredientId },
         });
 
         if (existingInventory) {
           await tx.ingredient_now.update({
             where: { inventory_id: existingInventory.inventory_id },
-            data: { quantity: { increment: item.quantity }, last_update: receivedTime },
+            data: { quantity: { increment: item.quantity }, last_update: new Date() },
           });
-          console.log(`  ✅ Inventory UPDATED for item ${item.ingredient_id}`);
+          console.log(`  ✅ Inventory UPDATED for item ${ingredient.name}`);
         } else {
           await tx.ingredient_now.create({
             data: {
               batch_id: batch.batch_id,
-              ingredient_id: item.ingredient_id,
+              ingredient_id: ingredientId,
               quantity: item.quantity,
-              unit_id: item.unit_id,
-              last_update: receivedTime,
+              unit_id: unitId,
+              last_update: new Date(),
             },
           });
-          console.log(`  ✅ Inventory CREATED for item ${item.ingredient_id}`);
+          console.log(`  ✅ Inventory CREATED for item ${ingredient.name}`);
         }
 
-        await tx.expiry_tack.create({
-          data: {
+        await tx.expiry_tack.upsert({
+          where: { batch_id_ingredient_id: { batch_id: batch.batch_id, ingredient_id: ingredientId } },
+          update: { expiry_date: expiryDateObject },
+          create: {
             batch_id: batch.batch_id,
-            ingredient_id: item.ingredient_id,
+            ingredient_id: ingredientId,
             expiry_date: expiryDateObject
           }
         });
-        console.log(`  ✅ Expiry Tack record created for item ${item.ingredient_id}`);
+        console.log(`  ✅ Expiry Tack record created/updated for item ${ingredient.name}`);
       }
 
       return batch;
@@ -188,9 +219,8 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (e) {
-    console.error('--- FULL STOCKIN ERROR OBJECT ---');
-    console.error(e);
-    console.error('--- END OF ERROR OBJECT ---');
-    return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' }, { status: 500 });
+    console.error('--- FULL STOCKIN ERROR OBJECT ---', e);
+    return NextResponse.json({ error: e.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' }, { status: 500 });
   }
 }
+

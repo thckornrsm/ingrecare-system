@@ -44,10 +44,8 @@ export async function GET(req) {
         last_update: 'desc', // แสดงรายการที่อัปเดตล่าสุดก่อน
       },
     });
-    
 
     return NextResponse.json(inventory);
-
   } catch (error) {
     console.error('--- GET INVENTORY ERROR ---', error);
     return NextResponse.json(

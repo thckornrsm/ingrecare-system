@@ -3,38 +3,75 @@ import { verifySession } from '@/utils/auth';
 import { NextResponse } from 'next/server';
 
 /**
+ * @description ดึงข้อมูลประวัติการเบิกของทั้งหมด (สำหรับร้านค้าที่ล็อกอินอยู่)
+ * @param {Request} req
+ * @returns {NextResponse}
+ */
+export async function GET(req) {
+  try {
+    // 1. ตรวจสอบสิทธิ์ผู้ใช้
+    const token = req.cookies.get('token');
+    if (!token || !token.value) {
+        return NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 });
+    }
+    const session = await verifySession(token.value);
+    if (!session) {
+        return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
+    }
+    const { sid: storeId } = session;
+
+    // 2. ดึงข้อมูล stockouts เฉพาะของร้านค้านี้
+    const stockouts = await prisma.stockout.findMany({
+      where: {
+        user: {
+            store_id: storeId,
+        }
+      },
+      orderBy: {
+        out_date: 'desc', // เรียงตามวันที่เบิก ล่าสุดขึ้นก่อน
+      },
+      include: {
+        ingredient: {
+          include: {
+            category: true, // ดึงข้อมูลหมวดหมู่
+          },
+        },
+        unit: true, // ดึงข้อมูลหน่วยนับ
+        user: {
+            select: {
+                name: true // <-- แก้ไขจาก username เป็น name
+            }
+        }
+      },
+    });
+    return NextResponse.json(stockouts, { status: 200 });
+  } catch (e) {
+    console.error('--- GET ALL STOCKOUTS ERROR ---', e);
+    return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการดึงข้อมูล' }, { status: 500 });
+  }
+}
+
+/**
  * @description สร้างรายการเบิกของออกจากสต็อก (Stock-out)
  * @param {Request} req
  * @returns {NextResponse}
  */
 export async function POST(req) {
   try {
-    // 1. ตรวจสอบสิทธิ์ผู้ใช้
     const token = req.cookies.get('token');
     if (!token || !token.value) {
       return NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 });
     }
-
-    // ทำความสะอาด token (จากโค้ด stockin)
-    let cleanToken = token.value;
-    if (cleanToken.startsWith('"') && cleanToken.endsWith('"')) {
-      cleanToken = cleanToken.slice(1, -1);
-    }
-    if (cleanToken.startsWith('auth=')) {
-      cleanToken = cleanToken.substring(5);
-    }
-
-    const session = await verifySession(cleanToken);
+    
+    const session = await verifySession(token.value);
     if (!session) {
       return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
     }
     const { uid: userId } = session;
 
-    // 2. แยกข้อมูลจาก body
     const body = await req.json();
     const { description, items } = body;
 
-    // 3. ตรวจสอบข้อมูลเบื้องต้น
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { error: 'ข้อมูลไม่ถูกต้อง, กรุณาระบุรายการสินค้า (items)' },
@@ -44,15 +81,12 @@ export async function POST(req) {
     
     const outTime = new Date();
 
-    // 4. ทำงานกับฐานข้อมูลใน Transaction เดียว
     const newBatch = await prisma.$transaction(async (tx) => {
-      // ขั้นตอนสำคัญ: ตรวจสอบสต็อกของทุกรายการ "ก่อน" เริ่มทำธุรกรรม
       for (const item of items) {
         const currentInventory = await tx.ingredient_now.findFirst({
           where: { ingredient_id: item.ingredient_id },
         });
 
-        // ถ้าไม่มีของในสต็อก หรือมีไม่พอ ให้โยน Error ทันที
         if (!currentInventory || currentInventory.quantity < item.quantity) {
           const ingredient = await tx.ingredients.findUnique({
             where: { ingredient_id: item.ingredient_id },
@@ -63,7 +97,6 @@ export async function POST(req) {
         }
       }
 
-      // ถ้าของมีพอสำหรับทุกรายการ ให้เริ่มทำธุรกรรม
       const batch = await tx.batch.create({
         data: {
           user_id: userId,
@@ -72,7 +105,6 @@ export async function POST(req) {
       });
 
       for (const item of items) {
-        // สร้าง record การเบิกของ
         const newStockout = await tx.stockout.create({
           data: {
             batch_id: batch.batch_id,
@@ -84,7 +116,6 @@ export async function POST(req) {
           },
         });
 
-        // สร้าง record ประวัติ
         await tx.history.create({
           data: {
             action_type: 'stockout',
@@ -93,7 +124,6 @@ export async function POST(req) {
           },
         });
 
-        // อัปเดต (หักลบ) ยอดสต็อกคงเหลือ
         const inventoryItem = await tx.ingredient_now.findFirst({
           where: { ingredient_id: item.ingredient_id }
         });
@@ -121,7 +151,6 @@ export async function POST(req) {
 
   } catch (e) {
     console.error('--- STOCKOUT ERROR ---', e);
-    // ดักจับ Error ที่เราสร้างขึ้นเองเพื่อส่งข้อความที่เข้าใจง่ายให้ผู้ใช้
     if (e.message.startsWith('สินค้าไม่พอ:')) {
       return NextResponse.json({ error: e.message }, { status: 400 });
     }

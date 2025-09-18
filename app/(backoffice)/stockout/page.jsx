@@ -1,91 +1,12 @@
-// app/(backoffice)/disburse/page.jsx
+/* รายงานการเบิกจ่ายวัตถุดิบ */
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { 
-    LayoutDashboard, BarChart2, Inbox, Package, 
-    History, Wrench, LogOut, Info, CheckCircle2,
-    AlertCircle, X
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Sidebar from '@/components/Sidebar';
+import { Plus, Trash2, Info, CheckCircle2, AlertCircle, X } from 'lucide-react';
 
-// ========= Sidebar Component (ไม่มีการเปลี่ยนแปลง) =========
-const Sidebar = () => (
-    <aside className="w-64 bg-white flex flex-col border-r">
-         <div className="p-4 border-b">
-            <div className="flex items-center gap-3">
-                <Image src="/logo.svg" alt="IngreCare Logo" width={40} height={40} />
-                <div>
-                    <h2 className="font-bold text-lg">Suki Teeyai</h2>
-                    <p className="text-sm text-gray-500">ผู้จัดการร้าน</p>
-                </div>
-            </div>
-            <button className="text-sm text-gray-500 hover:text-red-500 mt-2 flex items-center gap-1">
-                <LogOut size={14} />
-                ออกจากระบบ
-            </button>
-        </div>
-        <nav className="flex-grow p-4 space-y-2">
-            <p className="text-xs text-gray-400 uppercase font-semibold">เมนูหลัก</p>
-            <Link href="/dashboard" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <LayoutDashboard size={20} /> หน้าหลัก
-            </Link>
-            <Link href="/stat" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <BarChart2 size={20} /> สถิติการใช้งาน
-            </Link>
-            <p className="text-xs text-gray-400 uppercase font-semibold pt-4">การจัดการข้อมูล</p>
-            <Link href="/stockin" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <Package size={20} /> นำเข้าวัตถุดิบ
-            </Link>
-            <Link href="/stockout" className="flex items-center gap-3 p-2 rounded-lg bg-[#3FA170] text-white">
-                <Package size={20} /> เบิกจ่ายวัตถุดิบ
-            </Link>
-
-            <p className="text-xs text-gray-400 uppercase font-semibold pt-4">รายการข้อมูล</p>
-            <Link href="#" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <Inbox size={20} /> วัตถุดิบคงเหลือทั้งหมด
-            </Link>
-            <Link href="#" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <Package size={20} /> วัตถุดิบหมดอายุ
-            </Link>
-            <Link href="#" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <History size={20} /> ประวัติการนำเข้า
-            </Link>
-            <Link href="#" className="flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-100">
-                <Wrench size={20} /> ประวัติการเบิกจ่าย
-            </Link>
-        </nav>
-    </aside>
-);
-
-// ========= ConfirmationModal Component (แก้ไข) =========
-const ConfirmationModal = ({ onClose, onConfirm }) => (
-    <div className="fixed inset-0 flex items-center justify-center z-50">
-        <div className="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm w-full mx-4 border">
-            <div className="mx-auto w-16 h-16 border-2 border-green-500 rounded-full flex items-center justify-center mb-4">
-                <Info size={40} className="text-green-500" />
-            </div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">คุณต้องการยืนยันการเบิกจ่ายวัตถุดิบ</h2>
-            <div className="flex justify-center gap-4">
-                <button 
-                    onClick={onClose} 
-                    className="px-8 py-2 text-sm font-semibold text-red-600 bg-white border border-red-500 rounded-md hover:bg-red-50"
-                >
-                    ยกเลิก
-                </button>
-                <button 
-                    onClick={onConfirm} 
-                    className="px-8 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700"
-                >
-                    ยืนยัน
-                </button>
-            </div>
-        </div>
-    </div>
-);
-
-// ========= ToastNotification Component (ไม่มีการเปลี่ยนแปลง) =========
+// ========= ToastNotification Component =========
 const ToastNotification = ({ message, type, onClose }) => {
     const isSuccess = type === 'success';
     const bgColor = isSuccess ? 'bg-green-100' : 'bg-red-100';
@@ -96,9 +17,7 @@ const ToastNotification = ({ message, type, onClose }) => {
     return (
         <div className={`fixed top-6 right-6 z-50 flex items-center p-4 rounded-lg border-l-4 shadow-lg ${bgColor} ${borderColor} animate-fade-in-right`}>
             <Icon className={textColor} />
-            <div className={`ml-3 text-sm font-medium ${textColor}`}>
-                {message}
-            </div>
+            <div className={`ml-3 text-sm font-medium ${textColor}`}>{message}</div>
             <button onClick={onClose} className={`ml-auto -mx-1.5 -my-1.5 p-1.5 rounded-full inline-flex h-8 w-8 ${textColor} hover:bg-opacity-20`}>
                 <X size={20} />
             </button>
@@ -106,121 +25,308 @@ const ToastNotification = ({ message, type, onClose }) => {
     );
 };
 
-// ========= Main Disburse Page =========
-export default function DisbursePage() {
-    const [itemName, setItemName] = useState('');
-    const [quantity, setQuantity] = useState('');
-    const [unit, setUnit] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [toast, setToast] = useState({ show: false, message: '', type: '' });
+// ========= ConfirmationModal Component =========
+const ConfirmationModal = ({ onClose, onConfirm }) => (
+    <div className="fixed inset-0 flex items-center justify-center z-50">
+        <div className="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm w-full mx-4 border">
+            <div className="mx-auto w-16 h-16 border-2 border-green-500 rounded-full flex items-center justify-center mb-4">
+                <Info size={40} className="text-green-500" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-6">คุณต้องการยืนยันการเบิกจ่ายวัตถุดิบ</h2>
+            <div className="flex justify-center gap-4">
+                <button
+                    onClick={onClose}
+                    className="px-8 py-2 text-sm font-semibold text-red-600 bg-white border border-red-500 rounded-md hover:bg-red-50"
+                >
+                    ยกเลิก
+                </button>
+                <button
+                    onClick={onConfirm}
+                    className="px-8 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700"
+                >
+                    ยืนยัน
+                </button>
+            </div>
+        </div>
+    </div>
+);
 
-    const showToast = (message, type) => {
-        setToast({ show: true, message, type });
-        setTimeout(() => {
-            setToast({ show: false, message: '', type: '' });
-        }, 3000);
-    };
-    
-    const handleClear = () => {
-        setItemName('');
-        setQuantity('');
-        setUnit('');
-    };
+// ========= DisburseFormRow Component (อัปเดต) =========
+const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units }) => {
+    const [searchTerm, setSearchTerm] = useState(item.itemName || '');
+    const [suggestions, setSuggestions] = useState([]);
+    const [isFocused, setIsFocused] = useState(false);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (!itemName || !quantity || quantity <= 0 || !unit) {
-            showToast('การเบิกจ่ายวัตถุดิบไม่สำเร็จ กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
-            return;
+    const handleSearchChange = (e) => {
+        const value = e.target.value;
+        setSearchTerm(value);
+        // Clear previous selection when user types
+        onUpdate(item.id, { itemName: value, ingredient_id: null, unit: '', unit_id: null }); 
+
+        if (value.length > 0) {
+            const filtered = availableIngredients.filter(ing => 
+                ing.name.toLowerCase().includes(value.toLowerCase())
+            );
+            setSuggestions(filtered);
+        } else {
+            setSuggestions([]);
         }
-        setIsModalOpen(true);
     };
 
-    const handleConfirmDisburse = () => {
-        console.log("Disbursing:", { itemName, quantity, unit });
-        setIsModalOpen(false);
-        showToast('การเบิกจ่ายวัตถุดิบสำเร็จ', 'success');
-        handleClear();
+    const handleSelectSuggestion = (ingredient) => {
+        setSearchTerm(ingredient.name);
+        // Automatically set the unit based on the selected ingredient
+        const selectedUnit = units.find(u => u.unit_id === ingredient.unit_id);
+        onUpdate(item.id, {
+            itemName: ingredient.name,
+            ingredient_id: ingredient.ingredient_id,
+            unit: selectedUnit?.unit_name || '',
+            unit_id: ingredient.unit_id
+        });
+        setSuggestions([]);
+    };
+
+    const handleQuantityChange = (value) => {
+        if (value === '' || parseFloat(value) >= 0) {
+            onUpdate(item.id, { quantity: value });
+        }
+    };
+
+    const handleUnitChange = (e) => {
+        const selectedUnitId = parseInt(e.target.value, 10);
+        const selectedUnit = units.find(u => u.unit_id === selectedUnitId);
+        onUpdate(item.id, {
+            unit_id: selectedUnitId,
+            unit: selectedUnit?.unit_name || ''
+        });
     };
 
     return (
-        <div className="flex h-screen bg-gray-100 font-sans">
+        <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] relative">
+            <button onClick={() => onRemove(item.id)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500">
+                <Trash2 size={18} />
+            </button>
+            <form className="space-y-6">
+                <div className="relative">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อวัตถุดิบ (Name) <span className="text-red-500">*</span></label>
+                    <input
+                        type="text"
+                        placeholder="ค้นหาชื่อวัตถุดิบในสต็อก..."
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setTimeout(() => setIsFocused(false), 200)} // Delay to allow click on suggestion
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"
+                    />
+                    {isFocused && suggestions.length > 0 && (
+                        <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
+                            {suggestions.map(ing => (
+                                <li 
+                                    key={ing.ingredient_id} 
+                                    onMouseDown={() => handleSelectSuggestion(ing)}
+                                    className="px-3 py-2 cursor-pointer hover:bg-gray-100"
+                                >
+                                    {ing.name}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            จำนวนที่เบิกจ่าย <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="number"
+                            min="0.1"
+                            step="any"
+                            value={item.quantity}
+                            onChange={(e) => handleQuantityChange(e.target.value)}
+                            placeholder="กรอกตัวเลข"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            หน่วย <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            value={item.unit_id || ''}
+                            onChange={handleUnitChange}
+                            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white ${!item.unit_id ? 'text-gray-400' : 'text-black'}`}
+                            disabled={!item.ingredient_id}
+                        >
+                            <option value="" disabled>-</option>
+                            {units.map(unit => (
+                                <option key={unit.unit_id} value={unit.unit_id}>{unit.unit_name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+/* Main DisbursePage Page */
+export default function DisbursePage() {
+    const router = useRouter();
+    const createNewItem = () => ({
+        id: Date.now() + Math.random(),
+        itemName: '',
+        ingredient_id: null,
+        quantity: '',
+        unit: '',
+        unit_id: null,
+    });
+
+    const [items, setItems] = useState([createNewItem()]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [toast, setToast] = useState({ show: false, message: '', type: '' });
+    
+    const [availableIngredients, setAvailableIngredients] = useState([]);
+    const [units, setUnits] = useState([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Fetch all ingredients that could be in stock and all possible units
+                const [ingRes, unitRes] = await Promise.all([
+                    fetch('/api/ingredients'), // Fetches from the main ingredient catalog
+                    fetch('/api/units')
+                ]);
+                if (!ingRes.ok || !unitRes.ok) throw new Error('Failed to fetch initial data');
+                
+                setAvailableIngredients(await ingRes.json());
+                setUnits(await unitRes.json());
+
+            } catch (error) {
+                console.error("FETCH_ERROR", error);
+                showToast('ไม่สามารถโหลดข้อมูลวัตถุดิบได้', 'error');
+            }
+        };
+        fetchData();
+    }, []);
+
+
+    const showToast = (message, type) => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
+    };
+
+    const handleAddItem = () => setItems((prev) => [...prev, createNewItem()]);
+    const handleRemoveItem = (id) =>
+        setItems((prev) => (prev.length > 1 ? prev.filter((i) => i.id !== id) : prev));
+    const handleUpdateItem = (id, updated) =>
+        setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...updated } : i)));
+    const handleClearAll = () =>
+        setItems((prev) => prev.map((i) => ({ ...createNewItem(), id: i.id })));
+
+    const handleSubmit = () => {
+        const isInvalid = items.some((i) => !i.ingredient_id || !i.quantity || Number(i.quantity) <= 0 || !i.unit_id);
+        if (isInvalid) return showToast('การเบิกจ่ายวัตถุดิบไม่สำเร็จ กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+        setIsModalOpen(true);
+    };
+
+    const handleConfirmSubmit = async () => {
+        setIsModalOpen(false);
+        
+        const payload = {
+            description: `Stock-out on ${new Date().toLocaleDateString()}`,
+            items: items.map(item => ({
+                ingredient_id: item.ingredient_id,
+                quantity: parseFloat(item.quantity),
+                unit_id: item.unit_id,
+            }))
+        };
+
+        try {
+            const res = await fetch('/api/stockout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            
+            const result = await res.json();
+
+            if (!res.ok) {
+                throw new Error(result.error || 'Something went wrong');
+            }
+
+            showToast('การเบิกจ่ายวัตถุดิบสำเร็จ', 'success');
+            setTimeout(() => {
+                router.push('/dashboard');
+            }, 1500);
+
+        } catch (error) {
+            console.error("DISBURSE_ERROR", error);
+            showToast(`เกิดข้อผิดพลาด: ${error.message}`, 'error');
+        }
+    };
+
+    return (
+        <div className="flex h-screen bg-white">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto p-6">
-                    <div className="mb-6">
-                        <h1 className="text-2xl font-bold text-gray-800">เบิกจ่ายวัตถุดิบ</h1>
-                        <p className="text-gray-500">เพิ่มข้อมูลการเบิกจ่ายวัตถุดิบ</p>
+                <main className="flex-1 overflow-y-auto py-9 px-10 md:px-24">
+                    <div className="flex justify-between items-center mb-8">
+                        <div>
+                            <h1 className="text-black text-3xl font-bold">เบิกจ่ายวัตถุดิบ</h1>
+                            <p className="text-[#979999]">เพิ่มข้อมูลการเบิกจ่ายวัตถุดิบในแต่ละล็อต</p>
+                        </div>
+                        <button
+                            onClick={handleAddItem}
+                            className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors"
+                        >
+                            <Plus size={16} /> เพิ่มรายการวัตถุดิบ
+                        </button>
                     </div>
-                    
-                    <div className="bg-white p-8 rounded-lg shadow-sm">
-                        <form onSubmit={handleSubmit} className="space-y-6 max-w-lg">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    ชื่อวัตถุดิบ (Name) <span className="text-red-500">*</span>
-                                </label>
-                                <input 
-                                    type="text" 
-                                    placeholder="กรอกชื่อวัตถุดิบ" 
-                                    value={itemName}
-                                    onChange={(e) => setItemName(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-black"
-                                />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        จำนวนที่เบิกจ่าย <span className="text-red-500">*</span>
-                                    </label>
-                                    <input 
-                                        type="number" 
-                                        min="0"
-                                        value={quantity}
-                                        onChange={(e) => setQuantity(e.target.value)}
-                                        placeholder="กรอกตัวเลข" 
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-black"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        หน่วย <span className="text-red-500">*</span>
-                                    </label>
-                                    <select 
-                                        value={unit}
-                                        onChange={(e) => setUnit(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 bg-white text-black"
-                                    >
-                                        <option value="">-</option>
-                                        <option value="กิโลกรัม">กิโลกรัม</option>
-                                        <option value="กรัม">กรัม</option>
-                                        <option value="ลิตร">ลิตร</option>
-                                        <option value="มิลลิลิตร">มิลลิลิตร</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="flex justify-end gap-4 pt-4">
-                                <button type="button" onClick={handleClear} className="px-6 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
-                                    ล้างข้อมูล
-                                </button>
-                                <button type="submit" className="px-6 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">
-                                    ยืนยันข้อมูล
-                                </button>
-                            </div>
-                        </form>
+
+                    <div className="space-y-6">
+                        {items.map((item) => (
+                            <DisburseFormRow
+                                key={item.id}
+                                item={item}
+                                onUpdate={handleUpdateItem}
+                                onRemove={handleRemoveItem}
+                                availableIngredients={availableIngredients}
+                                units={units}
+                            />
+                        ))}
+                    </div>
+                
+                    <div className="flex justify-end gap-4 pt-6">
+                        <button
+                            type="button"
+                            onClick={handleClearAll}
+                            className="px-6 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                        >
+                            ล้างข้อมูลทั้งหมด
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSubmit}
+                            className="px-6 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700"
+                        >
+                            ยืนยันข้อมูลทั้งหมด
+                        </button>
                     </div>
                 </main>
             </div>
+            
             {isModalOpen && (
-                <ConfirmationModal 
+                <ConfirmationModal
                     onClose={() => setIsModalOpen(false)}
-                    onConfirm={handleConfirmDisburse}
+                    onConfirm={handleConfirmSubmit}
                 />
             )}
+
             {toast.show && (
-                <ToastNotification 
-                    message={toast.message} 
-                    type={toast.type} 
-                    onClose={() => setToast({ show: false, message: '', type: '' })} 
+                <ToastNotification
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast({ show: false, message: '', type: '' })}
                 />
             )}
         </div>

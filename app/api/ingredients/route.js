@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-// GET: ดึงข้อมูลวัตถุดิบทั้งหมด (สามารถกรองตาม category_id ได้)
+// GET: ดึงข้อมูลวัตถุดิบทั้งหมด (ปรับปรุงให้ดึงหน่วยเวลามาด้วย)
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
@@ -13,11 +13,15 @@ export async function GET(req) {
       where: whereClause,
       include: {
         category: {
-          select: { category_name: true }, // ดึงชื่อหมวดหมู่มาด้วย
+          select: { category_name: true },
         },
         unit: {
-          select: { unit_name: true }, // ดึงชื่อหน่วยนับมาด้วย
+          select: { unit_name: true },
         },
+        // --- เพิ่มส่วนนี้เข้ามา ---
+        shelflife_unit: {
+            select: { unit_name: true }, // ดึงชื่อหน่วยเวลามาด้วย
+        }
       },
       orderBy: {
         ingredient_id: 'asc',
@@ -34,14 +38,15 @@ export async function GET(req) {
   }
 }
 
-// POST: สร้างวัตถุดิบใหม่
+// POST: สร้างวัตถุดิบใหม่ (ปรับปรุงให้รับข้อมูล shelflife แบบใหม่)
 export async function POST(req) {
   try {
-    const { name, category_id, unit_id, shelflife_day } = await req.json();
+    // --- แก้ไข: รับ shelflife_value และ shelflife_unit_id แทน shelflife_day ---
+    const { name, category_id, unit_id, shelflife_value, shelflife_unit_id } = await req.json();
 
-    if (!name || !category_id || !unit_id || !shelflife_day) {
+    if (!name || !category_id || !unit_id || shelflife_value === undefined || !shelflife_unit_id) {
       return NextResponse.json(
-        { error: 'กรุณากรอกข้อมูลให้ครบ: name, category_id, unit_id, shelflife_day' },
+        { error: 'กรุณากรอกข้อมูลให้ครบ: name, category_id, unit_id, shelflife_value, shelflife_unit_id' },
         { status: 400 }
       );
     }
@@ -51,7 +56,9 @@ export async function POST(req) {
         name,
         category_id: parseInt(category_id, 10),
         unit_id: parseInt(unit_id, 10),
-        shelflife_day,
+        // --- แก้ไข: บันทึกข้อมูล shelflife แบบใหม่ ---
+        shelflife_value: parseInt(shelflife_value, 10),
+        shelflife_unit_id: parseInt(shelflife_unit_id, 10),
       },
     });
 
@@ -65,10 +72,11 @@ export async function POST(req) {
   }
 }
 
-// PUT: อัปเดตข้อมูลวัตถุดิบ
+// PUT: อัปเดตข้อมูลวัตถุดิบ (ปรับปรุงให้รับข้อมูล shelflife แบบใหม่)
 export async function PUT(req) {
   try {
-    const { ingredient_id, name, category_id, unit_id, shelflife_day } = await req.json();
+    // --- แก้ไข: รับ shelflife_value และ shelflife_unit_id แทน shelflife_day ---
+    const { ingredient_id, name, category_id, unit_id, shelflife_value, shelflife_unit_id } = await req.json();
 
     if (!ingredient_id) {
         return NextResponse.json({ error: 'กรุณาระบุ ingredient_id' }, { status: 400 });
@@ -82,7 +90,9 @@ export async function PUT(req) {
         name,
         category_id: category_id ? parseInt(category_id, 10) : undefined,
         unit_id: unit_id ? parseInt(unit_id, 10) : undefined,
-        shelflife_day,
+        // --- แก้ไข: อัปเดตข้อมูล shelflife แบบใหม่ ---
+        shelflife_value: shelflife_value !== undefined ? parseInt(shelflife_value, 10) : undefined,
+        shelflife_unit_id: shelflife_unit_id ? parseInt(shelflife_unit_id, 10) : undefined,
       },
     });
 
@@ -99,7 +109,7 @@ export async function PUT(req) {
   }
 }
 
-// DELETE: ลบวัตถุดิบ
+// DELETE: ลบวัตถุดิบ (ไม่มีการเปลี่ยนแปลง)
 export async function DELETE(req) {
   try {
     const { searchParams } = new URL(req.url);
