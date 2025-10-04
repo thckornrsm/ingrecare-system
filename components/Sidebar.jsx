@@ -63,7 +63,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-75 bg-[#F8FAFB] flex flex-col border-none shadow-md h-full">
+    <aside className="max-w-[300px] w-full h-full bg-[#F8FAFB] flex flex-col border-none shadow-md max-50:w-[52px]">
       <div className="p-4">
         <div className="bg-white p-4 px-3 py-2 border-n shadow-sm flex flex-col rounded-lg">
           <div className="flex items-center gap-3">
