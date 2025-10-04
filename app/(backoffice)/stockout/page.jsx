@@ -5,10 +5,11 @@ import React, { useState } from 'react';
 import { Plus, Trash2, Info } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import ToastNotification from '@/components/ToastNotification';
+import CustomDropdown from '@/components/CustomDropdown';
 
 // ConfirmationModal Component
 const ConfirmationModal = ({ onClose, onConfirm }) => (
-    <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
         <div className="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm w-full mx-4 border">
             <div className="mx-auto w-16 h-16 border-2 border-green-500 rounded-full flex items-center justify-center mb-4">
                 <Info size={40} className="text-green-500" />
@@ -32,35 +33,36 @@ const ConfirmationModal = ({ onClose, onConfirm }) => (
     </div>
 );
 
-// DisburseFormRow Component
-const DisburseFormRow = ({ item, onUpdate, onRemove }) => {
+// DisburseFormRow Component (แก้ไข)
+const DisburseFormRow = ({ item, onUpdate, onRemove }) => { // <-- 1. เอา prop ที่ไม่ใช้ออก
     const handleInputChange = (field, value) => {
         if (field === 'quantity') {
             if (value === '') return onUpdate(item.id, { quantity: '' });
             const n = parseInt(value, 10);
-            if (Number.isNaN(n)) return;
-            if (n < 1) return;
+            if (Number.isNaN(n) || n < 1) return;
             return onUpdate(item.id, { quantity: n });
         }
         onUpdate(item.id, { [field]: value });
     };
 
+    // ▼▼▼ 2. นำ Array ของหน่วยกลับมาไว้ที่นี่เหมือนเดิม ▼▼▼
+    const units = ["กิโลกรัม", "แพ็ค", "ขวด"];
+
     return (
         <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] relative">
-            {/* Remove Button */}
             <button
+                type="button"
                 onClick={() => onRemove(item.id)}
                 className="absolute top-4 right-4 text-gray-400 hover:text-red-500"
             >
                 <Trash2 size={18} />
             </button>
-            {/* Form Fields */}
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={e => e.preventDefault()}>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อวัตถุดิบ (Name) <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อวัตถุดิบ <span className="text-red-500">*</span></label>
                     <input
                         type="text"
-                        placeholder="กรอกชื่อวัตถุดิบ"
+                        placeholder="เช่น เนื้อหมูสันนอก, ผักกาดขาว, ไข่ไก่"
                         value={item.itemName}
                         onChange={(e) => handleInputChange('itemName', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"
@@ -76,26 +78,20 @@ const DisburseFormRow = ({ item, onUpdate, onRemove }) => {
                             min="1"
                             value={item.quantity}
                             onChange={(e) => handleInputChange('quantity', e.target.value)}
-                            placeholder="กรอกตัวเลข"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"
+                            placeholder="ระบุค่าตัวเลข เช่น 2.5, 10, 27"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black"
                         />
                     </div>
-
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             หน่วย <span className="text-red-500">*</span>
                         </label>
-                        <select
-                            value={item.unit}
-                            onChange={(e) => handleInputChange('unit', e.target.value)}
-                            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white
-                                     ${!item.unit ? 'text-gray-400' : 'text-black'}`}
-                        >
-                            <option value="" disabled hidden className="text-gray-400">-</option>
-                            <option value="กิโลกรัม" className="text-black">กิโลกรัม</option>
-                            <option value="แพ็ค" className="text-black">แพ็ค</option>
-                            <option value="ขวด" className="text-black">ขวด</option>
-                        </select>
+                        <CustomDropdown
+                           categories={units}
+                           selectedCategory={item.unit}
+                           onSelectCategory={(unit) => handleInputChange('unit', unit)}
+                           placeholder="เช่น กิโลกรัม, แพ็ค, ขวด"
+                        />
                     </div>
                 </div>
             </form>
@@ -115,7 +111,7 @@ export default function DisbursePage() {
     const [items, setItems] = useState([createNewItem()]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: '' });
-
+    
     const showToast = (message, type) => {
         setToast({ show: true, message, type });
         setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
@@ -139,7 +135,6 @@ export default function DisbursePage() {
         setIsModalOpen(false);
         showToast('การเบิกจ่ายวัตถุดิบสำเร็จ', 'success');
         console.log('Disbursing items:', items);
-        // handleClearAll();
     };
 
     return (
@@ -167,24 +162,25 @@ export default function DisbursePage() {
                                 item={item}
                                 onUpdate={handleUpdateItem}
                                 onRemove={handleRemoveItem}
+                                // <-- 6. ไม่ต้องส่ง props เกี่ยวกับ "หน่วย" ลงไปแล้ว
                             />
                         ))}
                     </div>
-                  
+                
                     <div className="flex justify-end gap-4 pt-6">
                         <button
                             type="button"
                             onClick={handleClearAll}
                             className="px-6 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
                         >
-                            ล้างข้อมูลทั้งหมด
+                            ล้างข้อมูล
                         </button>
                         <button
                             type="button"
                             onClick={handleSubmit}
-                            className="px-6 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700"
+                            className="px-6 py-2 text-sm font-semibold text-white bg-[#3FA170] rounded-md hover:bg-[#2F7A5E]"
                         >
-                            ยืนยันข้อมูลทั้งหมด
+                            ยืนยันข้อมูล
                         </button>
                     </div>
                 </main>

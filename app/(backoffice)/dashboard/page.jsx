@@ -141,18 +141,20 @@ export default function DashboardPage() {
 
                         {/* Filter and Search Controls */}
                         <div className="flex justify-between items-center mb-6">
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-4 w-full max-w-2xl">
                                 <CustomDropdown categories={categories} selectedCategory={category} onSelectCategory={handleSelectCategory} />
-                                <div className="relative">
+                                <div className="relative w-full">
                                     <input type="text" placeholder="ค้นหาจากชื่อวัตถุดิบ..." value={searchTerm}
                                         onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                                         className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]" />
                                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 </div>
                             </div>
+                            {/*
                             <button onClick={() => setAddCategoryModalOpen(true)} className="text-sm font-medium text-[#3FA170] flex items-center gap-2 hover:underline">
                                 <Plus size={16} /> เพิ่มหมวดหมู่
                             </button>
+                            */}
                         </div>
 
                         {/* Item Grid */}

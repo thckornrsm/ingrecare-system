@@ -1,12 +1,13 @@
-/* รายงานการนำเข้าวัตถุดิบ */
 'use client';
 
 import React, { useState, forwardRef } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import { Plus, Calendar,Trash2, Info } from 'lucide-react';
+import { Plus, Calendar, Trash2, Info } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import ToastNotification from '@/components/ToastNotification';
+import CustomDropdown from '@/components/CustomDropdown';
+import AddCategoryModal from '@/components/AddCategoryModal';
 
 // CustomDateInput Component
 const CustomDateInput = forwardRef(({ value, onClick}, ref) => (
@@ -24,92 +25,89 @@ const CustomDateInput = forwardRef(({ value, onClick}, ref) => (
 CustomDateInput.displayName = 'CustomDateInput';
 
 // IngredientFormRow Component
-const IngredientFormRow = ({ item, onUpdate, onRemove }) => {
+const IngredientFormRow = ({ 
+    item, onUpdate, onRemove, 
+    availableCategories, onAddNewCategoryClick,
+    quantityUnits, onAddNewQuantityUnitClick,
+    shelfLifeUnits
+}) => { 
     const handleInputChange = (field, value) => {
-        if (field === 'quantity' || field === 'shelfLife') {
-            if (value === '') return onUpdate(item.id, { [field]: '' });
-            const n = parseInt(value, 10);
-            if (Number.isNaN(n)) return;                // ข้ามถ้าไม่ใช่ตัวเลข
-            if (n < 1) return;                          // ไม่รับ 0 หรือค่าติดลบ
-            return onUpdate(item.id, { [field]: n });   // เก็บเป็นเลขบวกตั้งแต่ 1
-        }
         onUpdate(item.id, { [field]: value });
     };
-
+    
     return (
         <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] relative">
-            {/* Remove Button */}
             <button 
+                type="button"
                 onClick={() => onRemove(item.id)} 
                 className="absolute top-4 right-4 text-gray-400 hover:text-red-500"
             >
                 <Trash2 size={18} />
             </button>
-            {/* Form Fields */}
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2">
+                    {/* ... Date, Item Name, Item Type fields ... */}
+                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">วันที่รับวัตถุดิบ <span className="text-red-500">*</span></label>
                         <DatePicker
                             selected={item.importDate}
                             onChange={(date) => handleInputChange('importDate', date)}
                             dateFormat="dd/MM/yyyy"
                             wrapperClassName="w-full"
-                            customInput={<CustomDateInput placeholder="วว/ดด/ปปปป (ปี พ.ศ.)" />}
+                            customInput={<CustomDateInput />}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อวัตถุดิบ (Name) <span className="text-red-500">*</span></label>
-                        <input type="text" placeholder="กรอกชื่อวัตถุดิบ" value={item.itemName} onChange={(e) => handleInputChange('itemName', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"/>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อวัตถุดิบ <span className="text-red-500">*</span></label>
+                        <input 
+                            type="text" 
+                            placeholder="เช่น เนื้อหมูสันนอก, ผักกาดขาว, ไข่ไก่" 
+                            value={item.itemName} 
+                            onChange={(e) => handleInputChange('itemName', e.target.value)} 
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"
+                        />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">ประเภทของวัตถุดิบ (Type) <span className="text-red-500">*</span></label>
-                        <select value={item.itemType} onChange={(e) => handleInputChange('itemType', e.target.value)} 
-                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white 
-                                  ${!item.itemType ? 'text-gray-400' : 'text-black'}`}>
-                            <option value="" disabled hidden className="text-gray-400">เลือกประเภทของวัตถุดิบ</option>
-                            <option value="ผัก" className="text-black">ผัก</option>
-                            <option value="ผลไม้" className="text-black">ผลไม้</option>
-                            <option value="เนื้อสัตว์" className="text-black">เนื้อสัตว์</option>
-                            <option value="ทะเล" className="text-black">ทะเล</option>
-                            <option value="เครื่องปรุง" className="text-black">เครื่องปรุง</option>
-                            <option value="อื่นๆ" className="text-black">อื่นๆ</option>
-                        </select>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">ประเภทของวัตถุดิบ <span className="text-red-500">*</span></label>
+                        <CustomDropdown 
+                            categories={availableCategories}
+                            selectedCategory={item.itemType} 
+                            onSelectCategory={(selectedType) => handleInputChange('itemType', selectedType)}
+                            placeholder="เลือกประเภทของวัตถุดิบ"
+                            onAddNewCategoryClick={onAddNewCategoryClick}
+                        />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-black mb-1">จำนวนวัตถุดิบที่นำเข้า <span className="text-red-500">*</span></label>
-                        <input type="number" min="1" value={item.quantity} onChange={(e) => handleInputChange('quantity', parseInt(e.target.value))} 
-                        placeholder="กรอกตัวเลข" 
+                        <input type="number" min="1" value={item.quantity} onChange={(e) => handleInputChange('quantity', e.target.value)} 
+                        placeholder="ระบุค่าตัวเลข เช่น 2.5, 10, 27" 
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"/>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-black mb-1">หน่วย <span className="text-red-500">*</span></label>
-                        <select value={item.quantityUnit} onChange={(e) => handleInputChange('quantityUnit', e.target.value)} 
-                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white
-                                  ${!item.quantityUnit ? 'text-gray-400' : 'text-black'}`}>
-                            <option value="" disabled hidden className="text-gray-400">เลือกหน่วยของวัตถุดิบ</option>
-                            <option value="กิโลกรัม" className="text-black">กิโลกรัม</option>
-                            <option value="แพ็ค" className="text-black">แพ็ค</option>
-                            <option value="ขวด" className="text-black">ขวด</option>
-                        </select>
+                        <CustomDropdown
+                            categories={quantityUnits}
+                            selectedCategory={item.quantityUnit}
+                            onSelectCategory={(unit) => handleInputChange('quantityUnit', unit)}
+                            placeholder="เช่น กิโลกรัม, แพ็ค, ขวด"
+                            onAddNewCategoryClick={onAddNewQuantityUnitClick} // <-- เพิ่ม prop นี้
+                        />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-black mb-1">ระยะเวลาในการรักษา <span className="text-red-500">*</span></label>
-                        <input type="number" min="1" value={item.shelfLife} onChange={(e) => handleInputChange('shelfLife', parseInt(e.target.value))} 
-                        placeholder="กรอกระยะเวลาในการรักษา" 
+                        <input type="number" min="1" value={item.shelfLife} onChange={(e) => handleInputChange('shelfLife', e.target.value)} 
+                        placeholder="ระบุค่าตัวเลข เช่น 1, 7, 30, ..." 
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"/>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-black mb-1">หน่วย <span className="text-red-500">*</span></label>
-                        <select value={item.shelfLifeUnit} onChange={(e) => handleInputChange('shelfLifeUnit', e.target.value)} 
-                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white
-                                  ${!item.shelfLifeUnit ? 'text-gray-400' : 'text-black'}`}>
-                            <option value="" disabled hidden className="text-gray-400">ระยะเวลาในการรักษา</option>
-                            <option value="วัน" className="text-black">วัน</option>
-                            <option value="สัปดาห์" className="text-black">สัปดาห์</option>
-                            <option value="เดือน" className="text-black">เดือน</option>
-                            <option value="ปี" className="text-black">ปี</option>
-                        </select>
+                         <CustomDropdown
+                            categories={shelfLifeUnits}
+                            selectedCategory={item.shelfLifeUnit}
+                            onSelectCategory={(unit) => handleInputChange('shelfLifeUnit', unit)}
+                            placeholder="เช่น วัน, สัปดาห์, เดือน, ปี"
+                            
+                        />
                     </div>
                 </div>
             </form>
@@ -119,7 +117,7 @@ const IngredientFormRow = ({ item, onUpdate, onRemove }) => {
 
 // ConfirmationModal Component
 const ConfirmationModal = ({ onClose, onConfirm }) => (
-    <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
         <div className="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm w-full mx-4 border">
             <div className="mx-auto w-16 h-16 border-2 border-green-500 rounded-full flex items-center justify-center mb-4">
                 <Info size={40} className="text-green-500" />
@@ -143,22 +141,31 @@ const ConfirmationModal = ({ onClose, onConfirm }) => (
     </div>
 );
 
+
 /* Main Stock In Page (Import) */
 export default function ImportPage() {
+    const [categoryNames, setCategoryNames] = useState(["เนื้อสัตว์", "ผัก", "ทะเล", "ผลไม้", "เครื่องปรุง", "อื่นๆ"]); //หาวิธีดึงจาก database
+    const [quantityUnits, setQuantityUnits] = useState(["กิโลกรัม", "แพ็ค", "ขวด"]); //หาวิธีดึงจาก database
+    const [shelfLifeUnits] = useState(["วัน", "สัปดาห์", "เดือน", "ปี"]);
+
     const createNewItem = () => ({
         id: Date.now() + Math.random(),
-        importDate: null,
-        itemName: '',
-        itemType: '',
-        quantity: '',
-        quantityUnit: '',
-        shelfLife: '',
-        shelfLifeUnit: '',
+        importDate: null, itemName: '', itemType: '',
+        quantity: '', quantityUnit: '',
+        shelfLife: '', shelfLifeUnit: '',
     });
 
     const [items, setItems] = useState([createNewItem()]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isConfirmModalOpen, setConfirmModalOpen] = useState(false);
+    const [isAddCategoryModalOpen, setAddCategoryModalOpen] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: '' });
+
+    const handleAddNewQuantityUnit = () => {
+        const newUnit = prompt("เพิ่มหน่วยสำหรับจำนวน (เช่น: ชิ้น, ถุง):");
+        if (newUnit && !quantityUnits.includes(newUnit.trim())) {
+            setQuantityUnits(prev => [...prev, newUnit.trim()]);
+        }
+    };
 
     const showToast = (message, type) => {
         setToast({ show: true, message, type });
@@ -167,45 +174,32 @@ export default function ImportPage() {
         }, 3000);
     };
 
-    const handleAddItem = () => {
-        setItems([...items, createNewItem()]);
-    };
-
-    const handleRemoveItem = (id) => {
-        if (items.length > 1) {
-            setItems(items.filter(item => item.id !== id));
+    const handleAddCategory = ({ name }) => {
+        if (!categoryNames.includes(name)) {
+            setCategoryNames(prevCategories => [...prevCategories, name]);
         }
+        setAddCategoryModalOpen(false);
     };
 
     const handleUpdateItem = (id, updatedValues) => {
         setItems(items.map(item => item.id === id ? { ...item, ...updatedValues } : item));
     };
     
-    const handleClearAll = () => {
-        const clearedItems = items.map(item => ({ ...createNewItem(), id: item.id }));
-        setItems(clearedItems);
-    };
-
+    const handleAddItem = () => setItems([...items, createNewItem()]);
+    const handleRemoveItem = (id) => { if (items.length > 1) setItems(items.filter(item => item.id !== id)); };
+    const handleClearAll = () => { setItems(items.map(item => ({ ...createNewItem(), id: item.id }))); };
     const handleSubmit = () => {
-        const isInvalid = items.some(item =>
-            !item.importDate || !item.itemName || !item.itemType ||
-            item.quantity === '' || Number(item.quantity) <= 0 || !item.quantityUnit ||
-            item.shelfLife === '' || Number(item.shelfLife) <= 0 || !item.shelfLifeUnit
-        );
-
-
+        const isInvalid = items.some(item => !item.importDate || !item.itemName || !item.itemType || !item.quantity || !item.quantityUnit || !item.shelfLife || !item.shelfLifeUnit);
         if (isInvalid) {
             showToast('การนำเข้าวัตถุดิบไม่สำเร็จ กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
         } else {
-            setIsModalOpen(true);
+            setConfirmModalOpen(true);
         }
     };
-
     const handleConfirmSubmit = () => {
-        setIsModalOpen(false);
+        setConfirmModalOpen(false);
         showToast('การนำเข้าวัตถุดิบสำเร็จ', 'success');
         console.log("Submitting data:", items);
-        // handleClearAll(); 
     };
 
     return (
@@ -230,30 +224,46 @@ export default function ImportPage() {
                                 item={item}
                                 onUpdate={handleUpdateItem}
                                 onRemove={handleRemoveItem}
+                                availableCategories={categoryNames}
+                                onAddNewCategoryClick={() => setAddCategoryModalOpen(true)}
+                                quantityUnits={quantityUnits}
+                                onAddNewQuantityUnitClick={handleAddNewQuantityUnit}
+                                shelfLifeUnits={shelfLifeUnits}
                             />
                         ))}
                     </div>
 
                     <div className="flex justify-end gap-4 pt-6">
                         <button type="button" onClick={handleClearAll} className="px-6 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
-                            ล้างข้อมูลทั้งหมด
+                            ล้างข้อมูล
                         </button>
                         <button 
                             type="button" 
                             onClick={handleSubmit}
-                            className="px-6 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700"
+                            className="px-6 py-2 text-sm font-semibold text-white bg-[#3FA170] rounded-md hover:bg-[#2F7A5E]"
                         >
-                            ยืนยันข้อมูลทั้งหมด
+                            ยืนยันข้อมูล
                         </button>
                     </div>
                 </main>
             </div>
-            {isModalOpen && (
+            
+            {isConfirmModalOpen && (
                 <ConfirmationModal 
-                    onClose={() => setIsModalOpen(false)}
+                    onClose={() => setConfirmModalOpen(false)}
                     onConfirm={handleConfirmSubmit}
                 />
             )}
+            
+            {isAddCategoryModalOpen && (
+                 <AddCategoryModal 
+                    isOpen={isAddCategoryModalOpen}
+                    onClose={() => setAddCategoryModalOpen(false)}
+                    onAddCategory={handleAddCategory}
+                    existingCategories={categoryNames.map(name => ({ name }))} 
+                />
+            )}
+
             {toast.show && (
                 <ToastNotification 
                     message={toast.message} 
@@ -264,4 +274,3 @@ export default function ImportPage() {
         </div>
     );
 }
-

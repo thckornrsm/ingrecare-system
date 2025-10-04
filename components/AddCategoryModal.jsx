@@ -9,19 +9,16 @@ import {
 } from 'lucide-react';
 
 function AddCategoryModal({ isOpen, onClose, onAddCategory, existingCategories = [] }) {
-    // Icon Options for Categories
     const iconOptions = [
         { name: 'Utensils', icon: Utensils }, { name: 'ChefHat', icon: ChefHat }, { name: 'Refrigerator', icon: Refrigerator }, { name: 'CookingPot', icon: CookingPot }, { name: 'Soup', icon: Soup },
         { name: 'Fish', icon: Fish }, { name: 'Shrimp', icon: Shrimp },
         { name: 'Egg', icon: Egg }, { name: 'Beef', icon: Beef }, { name: 'Ham', icon: Ham }, { name: 'Drumstick', icon: Drumstick }, { name: 'Pizza', icon: Pizza }, { name: 'Hamburger', icon: Hamburger },
         { name: 'Salad', icon: Salad }, { name: 'Apple', icon: Apple }, { name: 'Bean', icon: Bean }, { name: 'Carrot', icon: Carrot }, { name: 'Cherry', icon: Cherry }, { name: 'Wheat', icon: Wheat }, { name: 'LeafyGreen', icon: LeafyGreen }, { name: 'Vegan', icon: Vegan },
-        { name: 'Dessert', icon: Dessert }, { name: 'CakeSlice', icon: CakeSlice }, { name: 'Candy', icon: Candy }, { name: 'Lollipop', icon: Lollipop }, { name: 'IceCreamCone', icon: IceCreamCone },
+        { name: 'Dessert', icon: Dessert }, { name: 'CakeSlice', icon: CakeSlice }, { name: 'Candy', icon: Lollipop }, { name: 'IceCreamCone', icon: IceCreamCone },
         { name: 'Coffee', icon: Coffee }, { name: 'Beer', icon: Beer }, { name: 'Martini', icon: Martini }, { name: 'Wine', icon: Wine }, { name: 'CupSoda', icon: CupSoda },
         { name: 'Ellipsis', icon: Ellipsis }
     ];
     
-    const iconMap = Object.fromEntries(iconOptions.map(opt => [opt.name, opt.icon]));
-
     const [categoryName, setCategoryName] = useState('');
     const [selectedIconName, setSelectedIconName] = useState(iconOptions[0].name);
     const [isIconDropdownOpen, setIsIconDropdownOpen] = useState(false);
@@ -76,24 +73,18 @@ function AddCategoryModal({ isOpen, onClose, onAddCategory, existingCategories =
     return (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-                <div className="flex justify-between items-center p-4 border-b">
+                <div className="flex justify-between items-center p-4 border-b border-gray-200">
                     <h3 className="text-lg font-bold">เพิ่มหมวดหมู่</h3>
-                    {/* เปลี่ยน onClick ให้เรียก handleClose เพื่อ reset state */}
                     <button onClick={handleClose} className="text-gray-400 hover:text-gray-600"> <X size={20} /> </button>
                 </div>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    {/* Icon Selection */}
                     <div className="flex items-center gap-4">
                         <label className="w-24 text-sm font-medium text-gray-700">เลือกไอคอน</label>
                         <div className="relative" ref={iconDropdownRef}>
                             <button type="button" onClick={() => setIsIconDropdownOpen(!isIconDropdownOpen)} 
                                 className="flex items-center justify-between w-28 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm">
                                 <SelectedIcon size={16} className="text-gray-600" />
-                                {isIconDropdownOpen ? (
-                                    <ChevronUp size={16} className="text-gray-500" />
-                                ) : (
-                                    <ChevronDown size={16} className="text-gray-500" />
-                                )}
+                                {isIconDropdownOpen ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
                             </button>
                             {isIconDropdownOpen && (
                                 <div className="absolute z-10 mt-1 w-50 bg-white border border-gray-300 rounded-md shadow-lg">
@@ -106,7 +97,6 @@ function AddCategoryModal({ isOpen, onClose, onAddCategory, existingCategories =
                             )}
                         </div>
                     </div>
-                    {/** Category Name */}
                     <div>
                         <div className="flex items-center gap-4">
                             <label htmlFor="categoryName" className="w-24 text-sm font-medium text-gray-700">ชื่อหมวดหมู่</label>
@@ -115,12 +105,10 @@ function AddCategoryModal({ isOpen, onClose, onAddCategory, existingCategories =
                                 id="categoryName" 
                                 value={categoryName} 
                                 onChange={(e) => setCategoryName(e.target.value)} 
-                                // เพิ่ม class `border-red-500` เมื่อมี error
                                 className={`flex-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-green-500 focus:border-green-500'}`} 
                                 required 
                             />
                         </div>
-                        {/* 4. แสดงข้อความ Error ถ้ามี */}
                         {error && (
                             <p className="text-sm text-red-500 mt-1 ml-[calc(6rem+1rem)]">
                                 {error}
@@ -128,7 +116,6 @@ function AddCategoryModal({ isOpen, onClose, onAddCategory, existingCategories =
                         )}
                     </div>
                     <div className="flex justify-end pt-4">
-                        {/* 4. เพิ่ม `disabled` และ style ตอน disable ให้กับปุ่ม */}
                         <button 
                             type="submit" 
                             disabled={!categoryName.trim() || !!error}
