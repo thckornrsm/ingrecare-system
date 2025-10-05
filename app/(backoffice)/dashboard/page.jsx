@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Pagination from '@/components/Pagination';
 import CustomDropdown from '@/components/CustomDropdown';
-import AddCategoryModal from '@/components/AddCategoryModal';
 import { 
     LayoutDashboard, BarChart2, Archive, ClipboardList, FileText, 
     ChevronDown, ChevronUp, Search, Plus,
@@ -76,8 +75,7 @@ export default function DashboardPage() {
     const [category, setCategory] = useState('ทั้งหมด');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [isAddCategoryModalOpen, setAddCategoryModalOpen] = useState(false);
-    const itemsPerPage = 12;
+    const itemsPerPage = 12; //หน้าละ 12 รายการ
 
     const initialCategories = [
         { name: 'ทั้งหมด', icon: <Utensils size={16} className="text-gray-500"/> }, { name: 'เนื้อสัตว์', icon: <Beef size={16} className="text-gray-500"/> },
@@ -97,12 +95,6 @@ export default function DashboardPage() {
     const handleSelectCategory = (selected) => {
         setCategory(selected);
         setCurrentPage(1);
-    };
-
-    const handleAddCategory = ({ name, iconName }) => {
-        const Icon = iconMap[iconName];
-        const newCategory = { name, icon: <Icon size={16} className="text-gray-500" /> };
-        setCategories([...categories, newCategory]);
     };
 
     return (
@@ -140,8 +132,8 @@ export default function DashboardPage() {
                         {/* Filter and Search Controls */}
                         <div className="flex mb-6">
                             <div className="flex items-center gap-4 w-full">
-                                <div className="relative w-64">
-                                     <CustomDropdown categories={categories} selectedCategory={category} onSelectCategory={handleSelectCategory} />
+                                <div className="relative">
+                                    <CustomDropdown label="หมวดหมู่ " categories={categories} selectedCategory={category} onSelectCategory={handleSelectCategory} />
                                 </div>
                                 <div className="relative w-full">
                                     <input type="text" placeholder="ค้นหาจากชื่อวัตถุดิบ..." value={searchTerm}
@@ -176,12 +168,6 @@ export default function DashboardPage() {
                     </main>
                 </div>
             </div>
-            <AddCategoryModal 
-                isOpen={isAddCategoryModalOpen}
-                onClose={() => setAddCategoryModalOpen(false)}
-                onAddCategory={handleAddCategory}
-                iconOptions={iconOptions}
-            />
         </>
     );
 }

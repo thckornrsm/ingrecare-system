@@ -15,7 +15,7 @@ function FeatureCard({ title, lines, icon }) {
     >
       {/* Dark overlay that is NOT on top of the text */}
       <div className="absolute inset-0 bg-black opacity-0 hover:opacity-12 transition-opacity duration-300"></div>
-
+    
       {/* This new div holds ALL the content and must be above the overlay */}
       <div className="relative z-10 flex flex-col items-center">
         <div className="mb-4">

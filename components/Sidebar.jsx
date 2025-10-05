@@ -74,6 +74,7 @@ export default function Sidebar() {
             </div>
           </div>
           <button
+            // trash icon
             className={cn(
               "text-sm mt-2 flex items-center gap-1 rounded-md px-2 py-1 transition",
               "text-[#E15050] hover:bg-red-50 active:translate-y-[1px]",

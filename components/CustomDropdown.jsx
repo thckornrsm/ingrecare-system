@@ -2,9 +2,15 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronUp, Search, Plus } from 'lucide-react';
-import AddCategoryModal from '@/components/AddCategoryModal';
 
-function CustomDropdown({ categories = [], selectedCategory, onSelectCategory, placeholder, onAddNewCategoryClick }) {
+function CustomDropdown({ 
+    categories = [], 
+    selectedCategory, 
+    onSelectCategory,
+    placeholder, 
+    onAddNewCategoryClick,
+    label 
+}) {
     const [isOpen, setIsOpen] = useState(false);
     const [dropdownSearch, setDropdownSearch] = useState('');
     const dropdownRef = useRef(null);
@@ -49,9 +55,13 @@ function CustomDropdown({ categories = [], selectedCategory, onSelectCategory, p
             <button 
                 type="button" 
                 onClick={() => setIsOpen(!isOpen)} 
-                className="w-full bg-white border border-gray-300 rounded-md py-2 px-3 flex items-center justify-between focus:ring-2 focus:ring-[#3FA170] focus:ring-2"
+                className="w-full bg-white border border-gray-300 rounded-lg py-2 px-3 gap-4 flex items-center justify-between focus:ring-2 focus:ring-[#3FA170]"
             >
-                {getSelectedDisplay()}
+                <div className="flex items-center gap-2 truncate">
+                    {label && <span className="text-gray-500">{label}</span>}
+                    {getSelectedDisplay()}
+                </div>
+
                 {isOpen ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
             </button>
 
@@ -60,7 +70,7 @@ function CustomDropdown({ categories = [], selectedCategory, onSelectCategory, p
                     <div className="p-2">
                         <div className="relative">
                             <input type="text" placeholder="ค้นหา..." value={dropdownSearch} onChange={(e) => setDropdownSearch(e.target.value)} 
-                            className="w-full border border-gray-200 rounded-md py-1.5 pl-8 pr-2 text-sm focus:outline-none focus:ring-[#3FA170] focus:ring-2" />
+                            className="w-full border border-gray-200 rounded-md py-1.5 pl-8 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3FA170]" />
                             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
                         </div>
                     </div>
@@ -71,7 +81,7 @@ function CustomDropdown({ categories = [], selectedCategory, onSelectCategory, p
                             
                             return (
                                 <li key={`${name}-${index}`} onClick={() => { onSelectCategory(name); setIsOpen(false); setDropdownSearch(''); }} className="px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-100 cursor-pointer">
-                                    {icon} {name}
+                                    {icon} <span>{name}</span>
                                 </li>
                             );
                         })}
@@ -84,7 +94,7 @@ function CustomDropdown({ categories = [], selectedCategory, onSelectCategory, p
                                         setIsOpen(false);
                                         onAddNewCategoryClick();
                                     }} 
-                                    className="px-3 py-2 text-sm flex items-center gap-2 text-[#3FA170] hover:bg-gray-100 cursor-pointer"
+                                    className="px-3 py-2 text-sm flex items-center gap-4 text-[#3FA170] hover:bg-gray-100 cursor-pointer"
                                 >
                                     <Plus size={16} /> เพิ่มหมวดหมู่
                                 </li>
