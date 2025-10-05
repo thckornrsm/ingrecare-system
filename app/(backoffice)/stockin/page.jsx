@@ -17,7 +17,7 @@ const CustomDateInput = forwardRef(({ value, onClick}, ref) => (
             value={value}
             placeholder="วว/ดด/ปปปป"
             readOnly
-            className="bg-white w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] text-black cursor-pointer"
+            className="bg-white w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 text-black"
         />
         <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
     </div>
@@ -64,7 +64,7 @@ const IngredientFormRow = ({
                             placeholder="เช่น เนื้อหมูสันนอก, ผักกาดขาว, ไข่ไก่" 
                             value={item.itemName} 
                             onChange={(e) => handleInputChange('itemName', e.target.value)} 
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 bg-white text-black"
                         />
                     </div>
                     <div>
@@ -81,7 +81,7 @@ const IngredientFormRow = ({
                         <label className="block text-sm font-medium text-black mb-1">จำนวนวัตถุดิบที่นำเข้า <span className="text-red-500">*</span></label>
                         <input type="number" min="1" value={item.quantity} onChange={(e) => handleInputChange('quantity', e.target.value)} 
                         placeholder="ระบุค่าตัวเลข เช่น 2.5, 10, 27" 
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"/>
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 bg-white text-black"/>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-black mb-1">หน่วย <span className="text-red-500">*</span></label>
@@ -97,7 +97,7 @@ const IngredientFormRow = ({
                         <label className="block text-sm font-medium text-black mb-1">ระยะเวลาในการรักษา <span className="text-red-500">*</span></label>
                         <input type="number" min="1" value={item.shelfLife} onChange={(e) => handleInputChange('shelfLife', e.target.value)} 
                         placeholder="ระบุค่าตัวเลข เช่น 1, 7, 30, ..." 
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"/>
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 bg-white text-black"/>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-black mb-1">หน่วย <span className="text-red-500">*</span></label>
@@ -115,7 +115,7 @@ const IngredientFormRow = ({
     );
 };
 
-// ConfirmationModal Component
+// ConfirmationModal Component **แก้
 const ConfirmationModal = ({ onClose, onConfirm }) => (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
         <div className="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm w-full mx-4 border">
@@ -140,7 +140,6 @@ const ConfirmationModal = ({ onClose, onConfirm }) => (
         </div>
     </div>
 );
-
 
 /* Main Stock In Page (Import) */
 export default function ImportPage() {

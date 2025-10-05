@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Pagination from '@/components/Pagination';
 import CustomDropdown from '@/components/CustomDropdown';
@@ -140,13 +138,15 @@ export default function DashboardPage() {
                             </div>
 
                         {/* Filter and Search Controls */}
-                        <div className="flex justify-between items-center mb-6">
-                            <div className="flex items-center gap-4 w-full max-w-2xl">
-                                <CustomDropdown categories={categories} selectedCategory={category} onSelectCategory={handleSelectCategory} />
+                        <div className="flex mb-6">
+                            <div className="flex items-center gap-4 w-full">
+                                <div className="relative w-64">
+                                     <CustomDropdown categories={categories} selectedCategory={category} onSelectCategory={handleSelectCategory} />
+                                </div>
                                 <div className="relative w-full">
                                     <input type="text" placeholder="ค้นหาจากชื่อวัตถุดิบ..." value={searchTerm}
                                         onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                                        className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]" />
+                                        className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]" />
                                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 </div>
                             </div>

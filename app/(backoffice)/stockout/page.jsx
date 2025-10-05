@@ -65,7 +65,7 @@ const DisburseFormRow = ({ item, onUpdate, onRemove }) => { // <-- 1. เอา 
                         placeholder="เช่น เนื้อหมูสันนอก, ผักกาดขาว, ไข่ไก่"
                         value={item.itemName}
                         onChange={(e) => handleInputChange('itemName', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3FA170] bg-white text-black"
                     />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -79,7 +79,7 @@ const DisburseFormRow = ({ item, onUpdate, onRemove }) => { // <-- 1. เอา 
                             value={item.quantity}
                             onChange={(e) => handleInputChange('quantity', e.target.value)}
                             placeholder="ระบุค่าตัวเลข เช่น 2.5, 10, 27"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3FA170] bg-white text-black"
                         />
                     </div>
                     <div>

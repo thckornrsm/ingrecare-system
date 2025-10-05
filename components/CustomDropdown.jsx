@@ -49,7 +49,7 @@ function CustomDropdown({ categories = [], selectedCategory, onSelectCategory, p
             <button 
                 type="button" 
                 onClick={() => setIsOpen(!isOpen)} 
-                className="w-full bg-white border border-gray-300 rounded-md py-2 px-3 flex items-center justify-between focus:ring-[#3FA170] focus:border-[#3FA170]"
+                className="w-full bg-white border border-gray-300 rounded-md py-2 px-3 flex items-center justify-between focus:ring-2 focus:ring-[#3FA170] focus:ring-2"
             >
                 {getSelectedDisplay()}
                 {isOpen ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
@@ -59,7 +59,8 @@ function CustomDropdown({ categories = [], selectedCategory, onSelectCategory, p
                 <div className="absolute z-10 top-full mt-2 w-full bg-white border border-gray-300 rounded-lg shadow-lg">
                     <div className="p-2">
                         <div className="relative">
-                            <input type="text" placeholder="ค้นหา..." value={dropdownSearch} onChange={(e) => setDropdownSearch(e.target.value)} className="w-full border border-gray-200 rounded-md py-1.5 pl-8 pr-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3FA170]" />
+                            <input type="text" placeholder="ค้นหา..." value={dropdownSearch} onChange={(e) => setDropdownSearch(e.target.value)} 
+                            className="w-full border border-gray-200 rounded-md py-1.5 pl-8 pr-2 text-sm focus:outline-none focus:ring-[#3FA170] focus:ring-2" />
                             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
                         </div>
                     </div>
