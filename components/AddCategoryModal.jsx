@@ -78,6 +78,7 @@ function AddCategoryModal({ isOpen, onClose, onAddCategory, existingCategories =
                     <button onClick={handleClose} className="text-gray-400 hover:text-gray-600"> <X size={20} /> </button>
                 </div>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    {/*
                     <div className="flex items-center gap-4">
                         <label className="w-24 text-sm font-medium text-gray-700">เลือกไอคอน</label>
                         <div className="relative" ref={iconDropdownRef}>
@@ -97,6 +98,7 @@ function AddCategoryModal({ isOpen, onClose, onAddCategory, existingCategories =
                             )}
                         </div>
                     </div>
+                    */}
                     <div>
                         <div className="flex items-center gap-4">
                             <label htmlFor="categoryName" className="w-24 text-sm font-medium text-gray-700">ชื่อหมวดหมู่</label>
