@@ -168,14 +168,14 @@ export default function AllStockin() {
                   <tbody>
                     {sortedAndPaginatedIngredients.length > 0 ? (sortedAndPaginatedIngredients.map((ingredient) => (
                       <tr key={ingredient.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
-                        <td className="py-3 px-2">{ingredient.id}</td>
-                        <td className="py-3 px-2">{ingredient.name}</td>
-                        <td className="py-3 px-2">{ingredient.received_date}</td>
-                        <td className="py-3 px-2">{ingredient.expiry_date}</td>
-                        <td className="py-3 px-2">{ingredient.category_id}</td>
-                        <td className="py-3 px-2">{ingredient.quantity.toFixed(2)}</td>
-                        <td className="py-3 px-2">{ingredient.unit_type}</td>
-                        <td className="py-3 px-2">
+                        <td className="py-3 px-4">{ingredient.id}</td>
+                        <td className="py-3 px-4">{ingredient.name}</td>
+                        <td className="py-3 px-4">{ingredient.received_date}</td>
+                        <td className="py-3 px-4">{ingredient.expiry_date}</td>
+                        <td className="py-3 px-4">{ingredient.category_id}</td>
+                        <td className="py-3 px-4">{ingredient.quantity.toFixed(2)}</td>
+                        <td className="py-3 px-4">{ingredient.unit_type}</td>
+                        <td className="py-3 px-4">
                           <div className="flex justify-start space-x-2">
                             <button className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors">
                               <Icon icon="mynaui:edit" className="w-4 h-4" />

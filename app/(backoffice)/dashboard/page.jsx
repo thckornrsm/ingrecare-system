@@ -9,7 +9,7 @@ import {
     ChevronDown, ChevronUp, Search, Plus,
     Utensils, Leaf, Beef, Fish, Apple, SprayCan, MoreHorizontal, Pizza, 
     ChefHat, Refrigerator, CookingPot, Soup, Shrimp, Egg, Ham, Drumstick, Hamburger, Salad, 
-    Bean, Carrot, Cherry, Wheat, LeafyGreen, Vegan, Dessert, CakeSlice, Candy, Lolipop, 
+    Bean, Carrot, Cherry, Wheat, LeafyGreen, Vegan, Dessert, CakeSlice, Candy, Lollipop, 
     IceCreamCone, Coffee, Beer, Martini, Wine, CupSoda, Ellipsis
 } from 'lucide-react';
 
@@ -64,7 +64,7 @@ const iconOptions = [
     { name: 'Fish', icon: Fish }, { name: 'Shrimp', icon: Shrimp },
     { name: 'Egg', icon: Egg }, { name: 'Beef', icon: Beef }, { name: 'Ham', icon: Ham }, { name: 'Drumstick', icon: Drumstick }, { name: 'Pizza', icon: Pizza }, { name: 'Hamburger', icon: Hamburger },
     { name: 'Salad', icon: Salad }, { name: 'Apple', icon: Apple }, { name: 'Bean', icon: Bean }, { name: 'Carrot', icon: Carrot }, { name: 'Cherry', icon: Cherry }, { name: 'Wheat', icon: Wheat }, { name: 'LeafyGreen', icon: LeafyGreen }, { name: 'Vegan', icon: Vegan },
-    { name: 'Dessert', icon: Dessert }, { name: 'CakeSlice', icon: CakeSlice }, { name: 'Candy', icon: Candy }, { name: 'Lolipop', icon: Lolipop }, { name: 'IceCreamCone', icon: IceCreamCone },
+    { name: 'Dessert', icon: Dessert }, { name: 'CakeSlice', icon: CakeSlice }, { name: 'Candy', icon: Candy }, { name: 'Lollipop', icon: Lollipop }, { name: 'IceCreamCone', icon: IceCreamCone },
     { name: 'Coffee', icon: Coffee }, { name: 'Beer', icon: Beer }, { name: 'Martini', icon: Martini }, { name: 'Wine', icon: Wine }, { name: 'CupSoda', icon: CupSoda },
     { name: 'Ellipsis', icon: Ellipsis }
 ];

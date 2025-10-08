@@ -3,12 +3,13 @@ import React, { useState, useMemo } from "react";
 import Sidebar from "@/components/Sidebar";
 import CustomDropdown from "@/components/CustomDropdown";
 import Pagination from "@/components/Pagination";
+import SweetAlertDelete from "@/components/SweetAlertDelete";
+import Swal from "sweetalert2";
 import { Icon } from '@iconify/react';
 import { 
     Search, ChevronsUpDown, ChevronUp, ChevronDown,
     Utensils, Leaf, Beef, Fish, Apple, SprayCan, MoreHorizontal
 } from 'lucide-react';
-import Swal from 'sweetalert2';
 
 // Sample data from the target code
 const ingredients = [
@@ -85,47 +86,12 @@ export default function AllExpired() {
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        // ในแอปจริง เราจะนำข้อมูล `result.value` ไปอัปเดต State หรือส่ง API
         console.log("Updated data:", result.value); 
         Swal.fire(
           'บันทึกแล้ว!',
           'ข้อมูลวัตถุดิบถูกอัปเดตแล้ว',
           'success'
         )
-      }
-    });
-  };
-
-  // SweetAlert2 delete handler
-  const handleDelete = (ingredient) => {
-    const swalWithTailwindButtons = Swal.mixin({
-      customClass: {
-        confirmButton: "bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg mx-2 transition-colors",
-        cancelButton: "bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg mx-2 transition-colors"
-      },
-      buttonsStyling: false
-    });
-    
-    swalWithTailwindButtons.fire({
-      text: `คุณต้องการลบ "${ingredient.name}" ใช่ไหม?`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "ใช่, ลบเลย!",
-      cancelButtonText: "ไม่, ยกเลิก",
-      reverseButtons: true
-    }).then((result) => {
-      if (result.isConfirmed) {
-        swalWithTailwindButtons.fire({
-          title: "ลบสำเร็จ!",
-          text: `วัตถุดิบ "${ingredient.name}" ถูกลบแล้ว`,
-          icon: "success"
-        });
-      } else if (result.dismiss === Swal.DismissReason.cancel) {
-        swalWithTailwindButtons.fire({
-          title: "ยกเลิก",
-          text: "ข้อมูลวัตถุดิบของคุณปลอดภัยดี",
-          icon: "error"
-        });
       }
     });
   };
@@ -243,13 +209,13 @@ export default function AllExpired() {
                   <tbody>
                     {sortedAndPaginatedIngredients.length > 0 ? (sortedAndPaginatedIngredients.map((ingredient) => (
                       <tr key={ingredient.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
-                        <td className="py-3 px-2">{ingredient.id}</td>
-                        <td className="py-3 px-2">{ingredient.name}</td>
-                        <td className="py-3 px-2">{ingredient.expiry_day}</td>
-                        <td className="py-3 px-2">{ingredient.category_id}</td>
-                        <td className="py-3 px-2">{ingredient.quantity.toFixed(2)}</td>
-                        <td className="py-3 px-2">{ingredient.unit_type}</td>
-                        <td className="py-3 px-2">
+                        <td className="py-3 px-4">{ingredient.id}</td>
+                        <td className="py-3 px-4">{ingredient.name}</td>
+                        <td className="py-3 px-4">{ingredient.expiry_day}</td>
+                        <td className="py-3 px-4">{ingredient.category_id}</td>
+                        <td className="py-3 px-4">{ingredient.quantity.toFixed(2)}</td>
+                        <td className="py-3 px-4">{ingredient.unit_type}</td>
+                        <td className="py-3 px-4">
                           <div className="flex justify-start space-x-2">
                             <button 
                               onClick={() => handleEdit(ingredient)}
@@ -257,7 +223,7 @@ export default function AllExpired() {
                               <Icon icon="mynaui:edit" className="w-4 h-4" />
                             </button>
                             <button 
-                              onClick={() => handleDelete(ingredient)}
+                              onClick={() => <SweetAlertDelete ingredient={ingredient} onConfirm={handleDelete} />}
                               className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition-colors">
                               <Icon icon="fluent:delete-20-regular" className="w-4 h-4" />
                             </button>
