@@ -44,6 +44,7 @@ export async function GET(req) {
           include: {
             ingredient: {
               select: {
+                ingredient_id: true,
                 name: true,
                 category: {
                   select: { category_name: true }

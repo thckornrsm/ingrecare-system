@@ -25,7 +25,9 @@ export async function GET(req) {
       include: {
         ingredient: {
           select: {
+            ingredient_id: true, // เพิ่ม: ส่ง ID ของวัตถุดิบไปด้วย
             name: true,
+            shelflife_value: true, // เพิ่ม: ส่งอายุของวัตถุดิบไปด้วย
             category: {
               select: {
                 category_id: true,
