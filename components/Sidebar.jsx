@@ -6,30 +6,36 @@ import Link from "next/link";
 import { Icon } from '@iconify/react';
 import { usePathname } from "next/navigation";
 
-// รวม class
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-// Rename the prop for clarity from Icon to iconString
-function NavItem({ href, label, iconString, active }) {
+function NavItem({ href, label, iconString, active, isLogout = false }) {
   return (
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
+        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition shadow-sm",
         "focus:outline-none focus-visible:ring-2 focus-visible:[#3FA170] focus-visible:ring-offset-2",
         "active:translate-y-[1px]",
-        !active && "text-black bg-white hover:bg-gray-100 shadow-sm",
-        active && "text-white bg-[#3FA170] shadow-sm"
+
+        isLogout
+          ? "bg-white text-black hover:bg-red-50" 
+          : active
+          ? "bg-[#3FA170] text-white"
+          : "bg-white text-black hover:bg-gray-100"
       )}
     >
       <Icon
         icon={iconString}
         width={16}
         className={cn(
-          !active && "text-[#3FA170]", active && "text-white"
+          isLogout
+            ? "text-[#E15050]"
+            : active
+            ? "text-white"
+            : "text-[#3FA170]"
         )}
       />
       <span>{label}</span>
@@ -62,28 +68,23 @@ export default function Sidebar() {
     { href: "/allstockout", label: "ประวัติการเบิกจ่าย", iconString: "lucide:folder-output" },
   ];
 
+  const generalMenu = [
+    { href: "/settings", label: "การตั้งค่า", iconString: "material-symbols:settings-outline" },
+    { href: "/logout", label: "ออกจากระบบ", iconString: "material-symbols:logout", isLogout: true },
+  ];
+
   return (
     <aside className="max-w-[300px] w-full h-full bg-[#F8FAFB] flex flex-col border-none shadow-md max-50:w-[52px]">
       <div className="p-4">
-        <div className="bg-white p-4 px-3 py-2 border-n shadow-sm flex flex-col rounded-lg">
+        <div className="bg-white p-4 px-3 py-4 border-n shadow-sm flex flex-col rounded-lg">
           <div className="flex items-center gap-3">
-            <Image src="/logo.svg" alt="IngreCare Logo" width={54} height={54} />
+            <Image src="/logo.svg" alt="IngreCare Logo" width={48} height={48} />
             <div>
               <h2 className="font-semibold text-xl">Suki Teeyai</h2>
-              <p className="text-sm text-gray-500">ผู้จัดการร้าน</p>
+              <p className="text-sm text-gray-400">manager@sukiteeyai.com</p>
             </div>
           </div>
-          <button
-            // trash icon
-            className={cn(
-              "text-sm mt-2 flex items-center gap-1 rounded-md px-2 py-1 transition",
-              "text-[#E15050] hover:bg-red-50 active:translate-y-[1px]",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
-            )}
-            type="button"
-          >
-            ออกจากระบบ
-          </button>
+          
         </div>
       </div>
 
@@ -138,6 +139,26 @@ export default function Sidebar() {
             ))}
           </div>
         </section>
+
+        <section>
+          <p className="text-s text-gray-400 font-light mb-2">
+            ทั่วไป
+          </p>
+          <div className="space-y-2">
+            {generalMenu.map((m) => (
+              <NavItem
+                key={m.href}
+                href={m.href}
+                label={m.label}
+                iconString={m.iconString}
+                // 👇 ตอนนี้ m จะมี isLogout: true ส่งไปด้วย
+                isLogout={m.isLogout} // หรือใช้ {...m} ก็ได้ผลเหมือนกัน
+                active={isActive(m.href)}
+              />
+            ))}
+          </div>
+        </section>
+
       </nav>
     </aside>
   );

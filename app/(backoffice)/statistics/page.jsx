@@ -223,12 +223,12 @@ const KeyInsightCard = ({ insight }) => {
         <div className="bg-white p-6 rounded-lg border border-gray-200 flex flex-col justify-between">
             {/* ส่วนบน: ไอคอนและหัวข้อ */}
             <div className="flex items-center gap-3 text-gray-600">
-                <Trophy size={20} className="text-amber-500" />
+                <Trophy size={20} className="text-gray-600" />
                 <span>{insight.title}</span>
             </div>
             {/* ส่วนล่าง: ข้อมูลไฮไลท์ */}
             <div>
-                <p className="text-3xl font-bold text-amber-600 mt-4 truncate" title={insight.name}>
+                <p className="text-3xl font-bold text-[#3FA170] mt-4 truncate" title={insight.name}>
                     {insight.name}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">{insight.value}</p>

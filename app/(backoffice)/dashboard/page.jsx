@@ -6,31 +6,26 @@ import Sidebar from '@/components/Sidebar';
 import Pagination from '@/components/Pagination';
 import CustomDropdown from '@/components/CustomDropdown';
 import { 
-    Plus, FileText, Search, 
-    // ไอคอนสำหรับ Mapping (ยังคงเก็บไว้เผื่อใช้งานในอนาคต)
+    Plus, FileText, Search,
     Utensils, ChefHat, Refrigerator, CookingPot, Soup, Fish, Shrimp, Egg, 
     Beef, Ham, Drumstick, Pizza, Hamburger, Salad, Apple, Bean, Carrot, 
-    Cherry, Wheat, LeafyGreen, Vegan, Dessert, CakeSlice, Candy, Lolipop, 
+    Cherry, Wheat, LeafyGreen, Vegan, Dessert, CakeSlice, Candy, Lollipop, 
     IceCreamCone, Coffee, Beer, Martini, Wine, CupSoda, Ellipsis, Leaf,
     SprayCan, MoreHorizontal
 } from 'lucide-react';
 
-
-// 1. เก็บรายการไอคอนทั้งหมดที่มีให้เลือก
 const iconOptions = [
     { name: 'Utensils', icon: Utensils }, { name: 'ChefHat', icon: ChefHat }, { name: 'Refrigerator', icon: Refrigerator }, { name: 'CookingPot', icon: CookingPot }, { name: 'Soup', icon: Soup },
     { name: 'Fish', icon: Fish }, { name: 'Shrimp', icon: Shrimp },
     { name: 'Egg', icon: Egg }, { name: 'Beef', icon: Beef }, { name: 'Ham', icon: Ham }, { name: 'Drumstick', icon: Drumstick }, { name: 'Pizza', icon: Pizza }, { name: 'Hamburger', icon: Hamburger },
     { name: 'Salad', icon: Salad }, { name: 'Apple', icon: Apple }, { name: 'Bean', icon: Bean }, { name: 'Carrot', icon: Carrot }, { name: 'Cherry', icon: Cherry }, { name: 'Wheat', icon: Wheat }, { name: 'LeafyGreen', icon: LeafyGreen }, { name: 'Vegan', icon: Vegan },
-    { name: 'Dessert', icon: Dessert }, { name: 'CakeSlice', icon: CakeSlice }, { name: 'Candy', icon: Lolipop }, { name: 'IceCreamCone', icon: IceCreamCone },
+    { name: 'Dessert', icon: Dessert }, { name: 'CakeSlice', icon: CakeSlice }, { name: 'Candy', icon: Lollipop }, { name: 'IceCreamCone', icon: IceCreamCone },
     { name: 'Coffee', icon: Coffee }, { name: 'Beer', icon: Beer }, { name: 'Martini', icon: Martini }, { name: 'Wine', icon: Wine }, { name: 'CupSoda', icon: CupSoda },
     { name: 'Leaf', icon: Leaf }, { name: 'SprayCan', icon: SprayCan }, { name: 'MoreHorizontal', icon: MoreHorizontal },
     { name: 'Ellipsis', icon: Ellipsis }
 ];
 const iconMap = Object.fromEntries(iconOptions.map(opt => [opt.name, opt.icon]));
 
-
-// 2. (สำคัญ) สร้างตัวกลางสำหรับจับคู่ "ชื่อหมวดหมู่ไทย" กับ "ชื่อไอคอนอังกฤษ"
 const categoryToIconNameMap = {
   'เนื้อสัตว์': 'Beef',
   'ผัก': 'Leaf',
@@ -38,8 +33,6 @@ const categoryToIconNameMap = {
   'ผลไม้': 'Apple',
   'เครื่องปรุง': 'SprayCan',
   'อื่นๆ': 'MoreHorizontal',
-  // *** หากมีหมวดหมู่ใหม่ ให้มาเพิ่มการจับคู่ที่นี่ ***
-  // 'เบเกอรี่': 'CakeSlice', 
 };
 
 
@@ -193,7 +186,7 @@ export default function DashboardPage() {
         <div className="flex h-screen bg-white"> 
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto py-9 px-10">
+                <main className="flex-1 overflow-y-auto py-9 px-25">
                     <div className="flex justify-between items-center mb-8">
                         <div>
                             <h1 className="text-black text-3xl font-bold">หน้าหลัก</h1>
