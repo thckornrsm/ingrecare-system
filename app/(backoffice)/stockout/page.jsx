@@ -1,4 +1,3 @@
-/* รายงานการเบิกจ่ายวัตถุดิบ */
 'use client';
 
 import React, { useState } from 'react';
@@ -33,8 +32,8 @@ const ConfirmationModal = ({ onClose, onConfirm }) => (
     </div>
 );
 
-// DisburseFormRow Component (แก้ไข)
-const DisburseFormRow = ({ item, onUpdate, onRemove }) => { // <-- 1. เอา prop ที่ไม่ใช้ออก
+// DisburseFormRow Component
+const DisburseFormRow = ({ item, onUpdate, onRemove }) => {
     const handleInputChange = (field, value) => {
         if (field === 'quantity') {
             if (value === '') return onUpdate(item.id, { quantity: '' });
@@ -45,7 +44,6 @@ const DisburseFormRow = ({ item, onUpdate, onRemove }) => { // <-- 1. เอา 
         onUpdate(item.id, { [field]: value });
     };
 
-    // ▼▼▼ 2. นำ Array ของหน่วยกลับมาไว้ที่นี่เหมือนเดิม ▼▼▼
     const units = ["กิโลกรัม", "แพ็ค", "ขวด"];
 
     return (
@@ -99,7 +97,7 @@ const DisburseFormRow = ({ item, onUpdate, onRemove }) => { // <-- 1. เอา 
     );
 };
 
-/* Main DisbursePage Page */
+/* Main Stock Out Page */
 export default function DisbursePage() {
     const createNewItem = () => ({
         id: Date.now() + Math.random(),
@@ -141,15 +139,15 @@ export default function DisbursePage() {
         <div className="flex h-screen bg-white">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto py-9 px-25">
-                    <div className="flex justify-between items-center mb-8">
+                <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
+                    <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
                         <div>
                             <h1 className="text-black text-3xl font-bold">เบิกจ่ายวัตถุดิบ</h1>
                             <p className="text-[#979999]">เพิ่มข้อมูลการเบิกจ่ายวัตถุดิบในแต่ละล็อต</p>
                         </div>
                         <button
                             onClick={handleAddItem}
-                            className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors"
+                            className="w-full sm:w-auto justify-center px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors"
                         >
                             <Plus size={16} /> เพิ่มรายการวัตถุดิบ
                         </button>
@@ -162,23 +160,22 @@ export default function DisbursePage() {
                                 item={item}
                                 onUpdate={handleUpdateItem}
                                 onRemove={handleRemoveItem}
-                                // <-- 6. ไม่ต้องส่ง props เกี่ยวกับ "หน่วย" ลงไปแล้ว
                             />
                         ))}
                     </div>
-                
-                    <div className="flex justify-end gap-4 pt-6">
+
+                    <div className="flex flex-wrap justify-end gap-4 pt-6">
                         <button
                             type="button"
                             onClick={handleClearAll}
-                            className="px-6 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
                         >
                             ล้างข้อมูล
                         </button>
                         <button
                             type="button"
                             onClick={handleSubmit}
-                            className="px-6 py-2 text-sm font-semibold text-white bg-[#3FA170] rounded-md hover:bg-[#2F7A5E]"
+                            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-white bg-[#3FA170] rounded-md hover:bg-[#2F7A5E]"
                         >
                             ยืนยันข้อมูล
                         </button>

@@ -44,7 +44,7 @@ function CustomDropdown({
 
         if (isObjectArray) {
             const selectedObj = categories.find(c => c.name === selectedCategory);
-            return selectedObj ? <div className="flex items-center gap-2">{selectedObj.icon} <span>{selectedObj.name}</span></div> : <span>{selectedCategory}</span>;
+            return <span>{selectedObj ? selectedObj.name : selectedCategory}</span>;
         }
         
         return <span>{selectedCategory}</span>;
@@ -55,7 +55,7 @@ function CustomDropdown({
             <button 
                 type="button" 
                 onClick={() => setIsOpen(!isOpen)} 
-                className="w-full bg-white border border-gray-300 rounded-lg py-2 px-3 gap-4 flex items-center justify-between focus:ring-2 focus:ring-[#3FA170]"
+                className="w-full bg-white border border-gray-300 rounded-lg py-2 px-3 gap-4 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#3FA170]"
             >
                 <div className="flex items-center gap-2 truncate">
                     {label && <span className="text-gray-500">{label}</span>}
@@ -77,11 +77,18 @@ function CustomDropdown({
                     <ul className="py-1 max-h-48 overflow-y-auto">
                         {filteredCategories.map((cat, index) => {
                             const name = isObjectArray ? cat.name : cat;
-                            const icon = isObjectArray ? cat.icon : null;
                             
                             return (
-                                <li key={`${name}-${index}`} onClick={() => { onSelectCategory(name); setIsOpen(false); setDropdownSearch(''); }} className="px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-100 cursor-pointer">
-                                    {icon} <span>{name}</span>
+                                <li 
+                                    key={`${name}-${index}`} 
+                                    onClick={() => { 
+                                        onSelectCategory(name); 
+                                        setIsOpen(false); 
+                                        setDropdownSearch(''); 
+                                    }} 
+                                    className="px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
+                                >
+                                    {name}
                                 </li>
                             );
                         })}

@@ -36,7 +36,7 @@ const IngredientFormRow = ({
     };
     
     return (
-        <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] relative">
+        <div className="bg-[#F6F8FA] p-6 md:p-9 rounded-lg border border-[#E5E5E5] relative">
             <button 
                 type="button"
                 onClick={() => onRemove(item.id)} 
@@ -45,9 +45,9 @@ const IngredientFormRow = ({
                 <Trash2 size={18} />
             </button>
             <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* ... Date, Item Name, Item Type fields ... */}
-                     <div className="md:col-span-2">
+                     <div className="lg:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">วันที่รับวัตถุดิบ <span className="text-red-500">*</span></label>
                         <DatePicker
                             selected={item.importDate}
@@ -90,7 +90,7 @@ const IngredientFormRow = ({
                             selectedCategory={item.quantityUnit}
                             onSelectCategory={(unit) => handleInputChange('quantityUnit', unit)}
                             placeholder="เช่น กิโลกรัม, แพ็ค, ขวด"
-                            onAddNewCategoryClick={onAddNewQuantityUnitClick} // <-- เพิ่ม prop นี้
+                            onAddNewCategoryClick={onAddNewQuantityUnitClick}
                         />
                     </div>
                     <div>
@@ -115,7 +115,7 @@ const IngredientFormRow = ({
     );
 };
 
-// ConfirmationModal Component **แก้
+// ConfirmationModal Component
 const ConfirmationModal = ({ onClose, onConfirm }) => (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
         <div className="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm w-full mx-4 border">
@@ -205,13 +205,16 @@ export default function ImportPage() {
         <div className="flex h-screen bg-white">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto py-9 px-25">
-                    <div className="flex justify-between items-center mb-8">
+                <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
+                    <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
                         <div>
                             <h1 className="text-black text-3xl font-bold">นำเข้าวัตถุดิบ</h1>
                             <p className="text-[#979999]">เพิ่มข้อมูลการนำเข้าของวัตถุดิบในแต่ละล็อต</p>
                         </div>
-                        <button onClick={handleAddItem} className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors">
+                        <button 
+                            onClick={handleAddItem} 
+                            className="w-full sm:w-auto justify-center px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors"
+                        >
                             <Plus size={16}/> เพิ่มรายการวัตถุดิบ
                         </button>
                     </div>
@@ -232,14 +235,19 @@ export default function ImportPage() {
                         ))}
                     </div>
 
-                    <div className="flex justify-end gap-4 pt-6">
-                        <button type="button" onClick={handleClearAll} className="px-6 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
+                    <div className="flex flex-wrap justify-end gap-4 pt-6">
+                        <button 
+                            type="button" 
+                            onClick={handleClearAll} 
+                            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                        >
                             ล้างข้อมูล
                         </button>
+
                         <button 
                             type="button" 
                             onClick={handleSubmit}
-                            className="px-6 py-2 text-sm font-semibold text-white bg-[#3FA170] rounded-md hover:bg-[#2F7A5E]"
+                            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-white bg-[#3FA170] rounded-md hover:bg-[#2F7A5E]"
                         >
                             ยืนยันข้อมูล
                         </button>
