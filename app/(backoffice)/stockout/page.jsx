@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { Plus, Trash2, Info, CheckCircle2, AlertCircle, X } from 'lucide-react';
 
-// ========= ToastNotification Component =========
+// Toast Notification Component
 const ToastNotification = ({ message, type, onClose }) => {
     const isSuccess = type === 'success';
     const bgColor = isSuccess ? 'bg-green-100' : 'bg-red-100';
@@ -25,7 +25,7 @@ const ToastNotification = ({ message, type, onClose }) => {
     );
 };
 
-// ========= ConfirmationModal Component =========
+// Confirmation Modal Component
 const ConfirmationModal = ({ onClose, onConfirm }) => (
     <div className="fixed inset-0 flex items-center justify-center z-50">
         <div className="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm w-full mx-4 border">
@@ -51,7 +51,7 @@ const ConfirmationModal = ({ onClose, onConfirm }) => (
     </div>
 );
 
-// ========= DisburseFormRow Component (อัปเดต) =========
+// Disburse Form Row Component
 const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units }) => {
     const [searchTerm, setSearchTerm] = useState(item.itemName || '');
     const [suggestions, setSuggestions] = useState([]);
@@ -149,9 +149,10 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            หน่วย <span className="text-red-500">*</span>
+                            หน่วยนับ <span className="text-red-500">*</span>
                         </label>
                         <select
+                            readOnly
                             value={item.unit_id || ''}
                             onChange={handleUnitChange}
                             className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white ${!item.unit_id ? 'text-gray-400' : 'text-black'}`}
@@ -269,15 +270,15 @@ export default function DisbursePage() {
         <div className="flex h-screen bg-white">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto py-9 px-10 md:px-24">
-                    <div className="flex justify-between items-center mb-8">
+                <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
+                    <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
                         <div>
                             <h1 className="text-black text-3xl font-bold">เบิกจ่ายวัตถุดิบ</h1>
                             <p className="text-[#979999]">เพิ่มข้อมูลการเบิกจ่ายวัตถุดิบในแต่ละล็อต</p>
                         </div>
                         <button
                             onClick={handleAddItem}
-                            className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors"
+                            className="w-full sm:w-auto justify-center px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors"
                         >
                             <Plus size={16} /> เพิ่มรายการวัตถุดิบ
                         </button>
@@ -296,18 +297,18 @@ export default function DisbursePage() {
                         ))}
                     </div>
                 
-                    <div className="flex justify-end gap-4 pt-6">
+                    <div className="flex flex-wrap justify-end gap-4 pt-6">
                         <button
                             type="button"
                             onClick={handleClearAll}
-                            className="px-6 py-2 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
                         >
                             ล้างข้อมูล
                         </button>
                         <button
                             type="button"
                             onClick={handleSubmit}
-                            className="px-6 py-2 text-sm text-white bg-[#3FA170] rounded-md hover:bg-[#1E7957]"
+                            className="w-full sm:w-auto px-6 py-2 text-sm text-white bg-[#3FA170] rounded-md hover:bg-[#1E7957]"
                         >
                             ยืนยันข้อมูล
                         </button>
