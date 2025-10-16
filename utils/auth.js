@@ -1,36 +1,39 @@
-import jwt from 'jsonwebtoken';
+// utils/auth.js
+import { SignJWT, jwtVerify } from 'jose';
 
-const secret = process.env.JWT_SECRET;
-const cookieName = process.env.COOKIE_NAME || 'auth';
+const JWT_SECRET = process.env.JWT_SECRET;
 
-export function signSession(payload, { expSeconds = 60 * 60 * 24 * 7 } = {}) {
-  return jwt.sign(payload, secret, { expiresIn: expSeconds });
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in your .env.local file');
 }
 
-export function verifySession(token) {
-  return jwt.verify(token, secret);
+const secretKey = new TextEncoder().encode(JWT_SECRET);
+
+// ฟังก์ชันสร้าง Token ตอน Login
+export async function createSession(uid) {
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const session = await new SignJWT({ uid })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime(expiresAt)
+    .setIssuedAt(new Date())
+    .sign(secretKey);
+  return session;
 }
 
-export function cookieHeader(token, { maxAge = 60 * 60 * 24 * 7 } = {}) {
-  const parts = [
-    `${cookieName}=${token}`,
-    'Path=/',
-    'HttpOnly',
-    'SameSite=Lax',
-    process.env.NODE_ENV === 'production' ? 'Secure' : '',
-    `Max-Age=${maxAge}`,
-  ].filter(Boolean);
-  return parts.join('; ');
+// ฟังก์ชันตรวจสอบ Token (ทำงานได้ใน Middleware)
+export async function verifySession(token) {
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, secretKey);
+    return payload; // คืนค่า { uid, iat, exp }
+  } catch (e) {
+    return null;
+  }
 }
 
-export function clearCookieHeader() {
-  return `${cookieName}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${
-    process.env.NODE_ENV === 'production' ? '; Secure' : ''
-  }`;
-}
-
-export function readCookie(req) {
-  const cookie = req.headers.get('cookie') || '';
-  const m = cookie.match(new RegExp(`${cookieName}=([^;]+)`));
-  return m?.[1] || null;
+export function readCookie() {
+    const cookieStore = cookies();
+    // ❗️ ตรวจสอบให้แน่ใจว่าชื่อ 'token' ตรงกับที่คุณตั้งไว้ตอน Login
+    const token = cookieStore.get('token')?.value; 
+    return token;
 }

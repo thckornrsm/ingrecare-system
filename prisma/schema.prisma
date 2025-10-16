@@ -85,6 +85,9 @@ model user {
   stockouts stockout[]
   histories history[]
   batches   batch[]
+
+  passwordResetToken       String?   @unique
+  passwordResetTokenExpiry DateTime?
 }
 
 model units {

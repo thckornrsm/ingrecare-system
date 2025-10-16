@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Icon } from '@iconify/react';
-import { usePathname, useRouter } from "next/navigation"; // 1. Import useRouter
+import { usePathname, useRouter } from "next/navigation";
 
 // Helper function to combine class names
 function cn(...classes) {
@@ -40,19 +40,21 @@ function NavItem({ href, label, iconString, active }) {
 // Main Sidebar Component
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter(); // 2. Initialize router
+  const router = useRouter();
 
   const isActive = (href) =>
     href === "/"
       ? pathname === "/"
       : pathname === href || pathname.startsWith(href + "/");
       
-  // 3. Create Logout Function
+  // ✅ ฟังก์ชัน Logout ที่ถูกต้อง
   const handleLogout = async () => {
     try {
       const res = await fetch('/api/auth/logout', { method: 'POST' });
       if (res.ok) {
-        router.push('/login'); // Redirect to login on success
+        // ใช้ window.location.href เพื่อทำการ Hard Refresh
+        // ซึ่งจะล้าง State และ Cache ทั้งหมดของหน้าเว็บ
+        window.location.href = '/login'; 
       } else {
         console.error('Logout failed');
       }
@@ -90,7 +92,7 @@ export default function Sidebar() {
             </div>
           </div>
           <button
-            onClick={handleLogout} // 4. Add onClick event
+            onClick={handleLogout} // ✅ ปุ่มเรียกใช้ฟังก์ชัน Logout
             className={cn(
               "text-sm mt-2 flex items-center gap-1 rounded-md px-2 py-1 transition",
               "text-[#E15050] hover:bg-red-50 active:translate-y-[1px]",
@@ -98,7 +100,6 @@ export default function Sidebar() {
             )}
             type="button"
           >
-            {/* 5. Add Icon */}
             <Icon icon="material-symbols-light:logout" width={16} /> 
             ออกจากระบบ
           </button>
@@ -160,4 +161,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-
