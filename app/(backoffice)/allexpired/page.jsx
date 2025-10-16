@@ -6,39 +6,37 @@ import Pagination from "@/components/Pagination";
 import SweetAlertDelete from "@/components/SweetAlertDelete";
 import Swal from "sweetalert2";
 import { Icon } from '@iconify/react';
-import { 
-    Search, ChevronsUpDown, ChevronUp, ChevronDown,
-    Utensils, Leaf, Beef, Fish, Apple, SprayCan, MoreHorizontal
-} from 'lucide-react';
+import { Search, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 
-// Sample data from the target code
+// Sample data
 const ingredients = [
-    { id: 100001, name: "เนื้อวากิวพรีเมียม", expiry_day: 7, category_id: "เนื้อสัตว์", quantity: 10.00, unit_type: "kg.", },
-    { id: 100002, name: "ผักกาดขาว", expiry_day: 10, category_id: "ผัก", quantity: 2.50, unit_type: "kg.", },
-    { id: 100003, name: "เนื้อหมูสับ", expiry_day: 7, category_id: "เนื้อสัตว์", quantity: 5.00, unit_type: "kg.", },
-    { id: 100004, name: "ปลาคอลลี่", expiry_day: 10, category_id: "ทะเล", quantity: 5, unit_type: "pack", },
-    { id: 100005, name: "ปลาหมึก", expiry_day: 10, category_id: "ทะเล", quantity: 3.00, unit_type: "kg.", },
-    { id: 100006, name: "ซีอิ๊วขาว", expiry_day: 30, category_id: "เครื่องปรุง", quantity: 7, unit_type: "bottle", },
-    { id: 100007, name: "พริกไทยดำป่น", expiry_day: 30, category_id: "เครื่องปรุง", quantity: 4, unit_type: "bottle", },
-    { id: 100008, name: "น้ำซุป", expiry_day: 15, category_id: "อื่นๆ", quantity: 12, unit_type: "kg.", },
-    { id: 100009, name: "แตงโม", expiry_day: 10, category_id: "ผลไม้", quantity: 8, unit_type: "kg.", },
+  { id: 100001, name: "เนื้อวากิวพรีเมียม", shelflife_day: 7, category_id: "เนื้อสัตว์", quantity: 10.00, unit_type: "kg.", },
+  { id: 100002, name: "ผักกาดขาว", shelflife_day: 10, category_id: "ผัก", quantity: 2.50, unit_type: "kg.", },
+  { id: 100003, name: "เนื้อหมูสับ", shelflife_day: 7, category_id: "เนื้อสัตว์", quantity: 5.00, unit_type: "kg.", },
+  { id: 100004, name: "ปลาคอลลี่", shelflife_day: 10, category_id: "ทะเล", quantity: 5, unit_type: "pack.", },
+  { id: 100005, name: "ปลาหมึก", shelflife_day: 10, category_id: "ทะเล", quantity: 3.00, unit_type: "kg.", },
+  { id: 100006, name: "ซีอิ๊วขาว", shelflife_day: 30, category_id: "เครื่องปรุง", quantity: 7, unit_type: "bottle.", },
+  { id: 100007, name: "พริกไทยดำป่น", shelflife_day: 30, category_id: "เครื่องปรุง", quantity: 4, unit_type: "bottle.", },
+  { id: 100008, name: "น้ำซุป", shelflife_day: 15, category_id: "อื่นๆ", quantity: 12, unit_type: "kg.", },
+  { id: 100009, name: "แตงโม", shelflife_day: 10, category_id: "ผลไม้", quantity: 8, unit_type: "kg.", },
+  { id: 100010, name: "สับปะรด", shelflife_day: 10, category_id: "ผลไม้", quantity: 6, unit_type: "kg.", },
+  { id: 100011, name: "น้ำมันมะกอก", shelflife_day: 60, category_id: "เครื่องปรุง", quantity: 5, unit_type: "bottle.", },
+  { id: 100012, name: "น้ำตาลทราย", shelflife_day: 90, category_id: "เครื่องปรุง", quantity: 20, unit_type: "kg.", },
+  { id: 100013, name: "เกลือป่น", shelflife_day: 90, category_id: "เครื่องปรุง", quantity: 15, unit_type: "kg.", },
+  { id: 100014, name: "พริกขี้หนูสวน", shelflife_day: 7, category_id: "ผัก", quantity: 1.00, unit_type: "kg.", },
+  { id: 100015, name: "กระเทียม", shelflife_day: 30, category_id: "ผัก", quantity: 3.00, unit_type: "kg.", },
+  { id: 100016, name: "หอมแดง", shelflife_day: 30, category_id: "ผัก", quantity: 4.00, unit_type: "kg.", },
+  { id: 100017, name: "ขิง", shelflife_day: 30, category_id: "ผัก", quantity: 2.00, unit_type: "kg.", },
+  { id: 100018, name: "ตะไคร้", shelflife_day: 15, category_id: "ผัก", quantity: 3.00, unit_type: "kg.", },
+  { id: 100019, name: "ใบมะกรูด", shelflife_day: 7, category_id: "ผัก", quantity: 0.50, unit_type: "kg.", },
+  { id: 100020, name: "น้ำปลา", shelflife_day: 60, category_id: "เครื่องปรุง", quantity: 10, unit_type: "bottle.", },
+  { id: 100021, name: "เต้าหู้ขาว", shelflife_day: 5, category_id: "อื่นๆ", quantity: 20, unit_type: "pack.", },
+  { id: 100022, name: "ไข่ไก่", shelflife_day: 14, category_id: "อื่นๆ", quantity: 30, unit_type: "pack.", },
+  { id: 100023, name: "แป้งสาลี", shelflife_day: 180, category_id: "เครื่องปรุง", quantity: 25, unit_type: "kg.", },
+  { id: 100024, name: "แป้งข้าวเจ้า", shelflife_day: 180, category_id: "เครื่องปรุง", quantity: 20, unit_type: "kg.", },
+  { id: 100025, name: "ข้าวสารหอมมะลิ", shelflife_day: 365, category_id: "เครื่องปรุง", quantity: 50, unit_type: "kg.", },
 ];
-
-// Dynamically generate category options with icons for the dropdown
-const categoryIconMap = {
-    'เนื้อสัตว์': <Beef size={16} className="text-gray-500"/>,
-    'ผัก': <Leaf size={16} className="text-gray-500"/>,
-    'ทะเล': <Fish size={16} className="text-gray-500"/>,
-    'ผลไม้': <Apple size={16} className="text-gray-500"/>,
-    'เครื่องปรุง': <SprayCan size={16} className="text-gray-500"/>,
-    'อื่นๆ': <MoreHorizontal size={16} className="text-gray-500"/>,
-    'ทั้งหมด': <Utensils size={16} className="text-gray-500"/>
-};
-const uniqueCategoryNames = ["ทั้งหมด", ...new Set(ingredients.map(item => item.category_id))];
-const categoryOptions = uniqueCategoryNames.map(name => ({
-    name: name,
-    icon: categoryIconMap[name] || <MoreHorizontal size={16} className="text-gray-500"/>
-}));
+const categories = ["ทั้งหมด", ...new Set(ingredients.map(item => item.category_id))];
 
 export default function AllExpired() {
   const [category, setCategory] = useState('ทั้งหมด');
@@ -168,30 +166,37 @@ export default function AllExpired() {
     <div className="flex h-screen bg-white">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto py-9 px-25">
+        <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
           <div className="max-w-7xl mx-auto">
             <div className="mb-8">
               <h1 className="text-black text-3xl font-bold">วัตถุดิบหมดอายุ</h1>
-              <p className="text-gray-500">ตารางข้อมูลเกี่ยวกับวัตถุดิบที่หมดอายุแล้ว</p>
+              <p className="text-[#979999]">ตารางข้อมูลเกี่ยวกับวัตถุดิบที่หมดอายุแล้ว</p>
             </div>
 
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
-                <div className="relative"> 
-                  <CustomDropdown label="หมวดหมู่ " categories={categoryOptions} selectedCategory={category}
+            {/* Filter and Search */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
+                  <CustomDropdown
+                    label="หมวดหมู่ "
+                    categories={categories}
+                    selectedCategory={category}
                     onSelectCategory={(selectedCat) => {
                       setCategory(selectedCat);
                       setCurrentPage(1);
                     }}
                   />
-                </div>
                 <div className="relative w-full">
-                  <input type="text" placeholder="ค้นหาจากชื่อวัตถุดิบ..." value={searchTerm}
+                  <input 
+                    type="text" 
+                    placeholder="ค้นหาจากชื่อวัตถุดิบ..." 
+                    value={searchTerm}
                     onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                    className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]" />
+                    className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]" 
+                  />
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 </div>
             </div>
 
+            {/* Table */}
             <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left text-gray-700">
@@ -199,7 +204,7 @@ export default function AllExpired() {
                     <tr>
                       <SortableHeader label="ID" columnKey="id" className="pr-4" />
                       <SortableHeader label="ชื่อ" columnKey="name" />
-                      <SortableHeader label="อายุ (วัน)" columnKey="expiry_day" />
+                      <SortableHeader label="อายุ (วัน)" columnKey="shelflife_day" />
                       <SortableHeader label="หมวดหมู่" columnKey="category_id" />
                       <SortableHeader label="จำนวน" columnKey="quantity" />
                       <SortableHeader label="หน่วย" columnKey="unit_type" />
@@ -211,7 +216,7 @@ export default function AllExpired() {
                       <tr key={ingredient.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
                         <td className="py-3 px-4">{ingredient.id}</td>
                         <td className="py-3 px-4">{ingredient.name}</td>
-                        <td className="py-3 px-4">{ingredient.expiry_day}</td>
+                        <td className="py-3 px-4">{ingredient.shelflife_day}</td>
                         <td className="py-3 px-4">{ingredient.category_id}</td>
                         <td className="py-3 px-4">{ingredient.quantity.toFixed(2)}</td>
                         <td className="py-3 px-4">{ingredient.unit_type}</td>
@@ -242,6 +247,8 @@ export default function AllExpired() {
                 </table>
               </div>
             </div>
+
+            {/* Pagination */}
             {totalPages > 0 && (
               <Pagination
                 currentPage={currentPage}

@@ -1,40 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Pagination from '@/components/Pagination';
 import CustomDropdown from '@/components/CustomDropdown';
-import { 
-    Plus, FileText, Search,
-    Utensils, ChefHat, Refrigerator, CookingPot, Soup, Fish, Shrimp, Egg, 
-    Beef, Ham, Drumstick, Pizza, Hamburger, Salad, Apple, Bean, Carrot, 
-    Cherry, Wheat, LeafyGreen, Vegan, Dessert, CakeSlice, Candy, Lollipop, 
-    IceCreamCone, Coffee, Beer, Martini, Wine, CupSoda, Ellipsis, Leaf,
-    SprayCan, MoreHorizontal
-} from 'lucide-react';
+import { Plus, FileText, Search } from 'lucide-react';
 
-const iconOptions = [
-    { name: 'Utensils', icon: Utensils }, { name: 'ChefHat', icon: ChefHat }, { name: 'Refrigerator', icon: Refrigerator }, { name: 'CookingPot', icon: CookingPot }, { name: 'Soup', icon: Soup },
-    { name: 'Fish', icon: Fish }, { name: 'Shrimp', icon: Shrimp },
-    { name: 'Egg', icon: Egg }, { name: 'Beef', icon: Beef }, { name: 'Ham', icon: Ham }, { name: 'Drumstick', icon: Drumstick }, { name: 'Pizza', icon: Pizza }, { name: 'Hamburger', icon: Hamburger },
-    { name: 'Salad', icon: Salad }, { name: 'Apple', icon: Apple }, { name: 'Bean', icon: Bean }, { name: 'Carrot', icon: Carrot }, { name: 'Cherry', icon: Cherry }, { name: 'Wheat', icon: Wheat }, { name: 'LeafyGreen', icon: LeafyGreen }, { name: 'Vegan', icon: Vegan },
-    { name: 'Dessert', icon: Dessert }, { name: 'CakeSlice', icon: CakeSlice }, { name: 'Candy', icon: Lollipop }, { name: 'IceCreamCone', icon: IceCreamCone },
-    { name: 'Coffee', icon: Coffee }, { name: 'Beer', icon: Beer }, { name: 'Martini', icon: Martini }, { name: 'Wine', icon: Wine }, { name: 'CupSoda', icon: CupSoda },
-    { name: 'Leaf', icon: Leaf }, { name: 'SprayCan', icon: SprayCan }, { name: 'MoreHorizontal', icon: MoreHorizontal },
-    { name: 'Ellipsis', icon: Ellipsis }
+// --- Mock Data ---
+const MOCK_INVENTORY_DATA = [
+    { name: 'เนื้อสันในวัว', daysLeft: 1, lot: 'A001', importDate: '15/10/2568', expiryDate: '17/10/2568', status: 'critical', category: 'เนื้อสัตว์' },
+    { name: 'อกไก่', daysLeft: 2, lot: 'A002', importDate: '15/10/2568', expiryDate: '18/10/2568', status: 'warning', category: 'เนื้อสัตว์' },
+    { name: 'ผักกาดขาว', daysLeft: 3, lot: 'B203', importDate: '14/10/2568', expiryDate: '19/10/2568', status: 'warning', category: 'ผัก' },
+    { name: 'เนื้อหมูสามชั้น', daysLeft: 4, lot: 'A003', importDate: '13/10/2568', expiryDate: '20/10/2568', status: 'good', category: 'เนื้อสัตว์' },
+    { name: 'คะน้า', daysLeft: 5, lot: 'B206', importDate: '12/10/2568', expiryDate: '21/10/2568', status: 'good', category: 'ผัก' },
+    { name: 'แครอท', daysLeft: 7, lot: 'B204', importDate: '10/10/2568', expiryDate: '23/10/2568', status: 'good', category: 'ผัก' },
+    { name: 'หอมใหญ่', daysLeft: 14, lot: 'B207', importDate: '03/10/2568', expiryDate: '30/10/2568', status: 'good', category: 'ผัก' },
+    { name: 'ซอสหอยนางรม', daysLeft: 150, lot: 'C511', importDate: '01/06/2568', expiryDate: '14/03/2569', status: 'good', category: 'เครื่องปรุง' },
+    { name: 'น้ำปลา', daysLeft: 200, lot: 'C512', importDate: '20/05/2568', expiryDate: '04/05/2569', status: 'good', category: 'เครื่องปรุง' },
+    { name: 'น้ำตาลทราย', daysLeft: 365, lot: 'C513', importDate: '01/01/2568', expiryDate: '16/10/2569', status: 'good', category: 'เครื่องปรุง' },
+    { name: 'กุ้งแม่น้ำ', daysLeft: 2, lot: 'D101', importDate: '15/10/2568', expiryDate: '18/10/2568', status: 'warning', category: 'อาหารทะเล' },
+    { name: 'ปลาหมึก', daysLeft: 3, lot: 'D102', importDate: '14/10/2568', expiryDate: '19/10/2568', status: 'warning', category: 'อาหารทะเล' },
+    { name: 'พริกขี้หนู', daysLeft: 1, lot: 'B205', importDate: '16/10/2568', expiryDate: '17/10/2568', status: 'critical', category: 'ผัก' },
+].sort((a, b) => a.daysLeft - b.daysLeft);
+
+const MOCK_CATEGORIES = [
+    { name: 'ทั้งหมด' },
+    { name: 'ผัก' },
+    { name: 'เนื้อสัตว์' },
+    { name: 'เครื่องปรุง' },
+    { name: 'อาหารทะเล' },
 ];
-const iconMap = Object.fromEntries(iconOptions.map(opt => [opt.name, opt.icon]));
-
-const categoryToIconNameMap = {
-  'เนื้อสัตว์': 'Beef',
-  'ผัก': 'Leaf',
-  'ทะเล': 'Fish',
-  'ผลไม้': 'Apple',
-  'เครื่องปรุง': 'SprayCan',
-  'อื่นๆ': 'MoreHorizontal',
-};
-
 
 // --- Color Status Styles ---
 const statusStyles = {
@@ -48,19 +44,19 @@ const ItemCard = ({ item }) => {
     const styles = statusStyles[item.status] || statusStyles.good;
     return (
         <div className="bg-white rounded-lg flex items-stretch overflow-hidden shadow-sm">
-            <div className={`flex-shrink-0 w-24 p-2 flex flex-col items-center justify-center text-white ${styles.bg}`}>
-                <span className="text-4xl font-bold">{item.daysLeft < 0 ? 'EXP' : item.daysLeft}</span>
-                <span className="text-base font-bold">day left</span>
+            <div className={`flex-shrink-0 w-20 sm:w-24 p-2 flex flex-col items-center justify-center text-white ${styles.bg}`}>
+                <span className="text-3xl sm:text-4xl font-bold">{item.daysLeft < 0 ? 'EXP' : item.daysLeft}</span>
+                <span className="text-sm sm:text-base font-bold">day left</span>
             </div>
-            <div className="flex-grow px-5 py-3">
-                <h3 className="font-bold text-gray-800 mb-2">{item.name}</h3>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-600">
-                    <span className="text-sm text-gray-400">Lot</span>
-                    <span className="text-sm text-black text-right font-medium">{item.lot}</span>
-                    <span className="text-sm text-gray-400">วันที่นำเข้า</span>
-                    <span className="text-sm text-black text-right font-medium">{item.importDate}</span>
-                    <span className="text-sm text-gray-400">วันที่หมดอายุ</span>
-                    <span className="text-sm text-black text-right font-medium">{item.expiryDate}</span>
+            <div className="flex-grow px-4 sm:px-5 py-3">
+                <h3 className="font-bold text-gray-800 mb-2 truncate">{item.name}</h3>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:text-sm text-gray-600">
+                    <span className="text-gray-400">ล็อต</span>
+                    <span className="text-black text-right font-medium">{item.lot}</span>
+                    <span className="text-gray-400">วันที่นำเข้า</span>
+                    <span className="text-black text-right font-medium">{item.importDate}</span>
+                    <span className="text-gray-400">วันที่หมดอายุ</span>
+                    <span className="text-black text-right font-medium">{item.expiryDate}</span>
                 </div>
             </div>
         </div>
@@ -68,85 +64,17 @@ const ItemCard = ({ item }) => {
 };
 
 
-// ========= Main Dashboard Page (Final Version) =========
+// ========= Main Dashboard Page (Frontend-Only Version) =========
 export default function DashboardPage() {
     const router = useRouter();
 
     // --- States ---
-    const [inventoryData, setInventoryData] = useState([]);
-    const [categories, setCategories] = useState([]);
+    const [inventoryData] = useState(MOCK_INVENTORY_DATA);
+    const [categories] = useState(MOCK_CATEGORIES);
     const [activeFilter, setActiveFilter] = useState('ทั้งหมด');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
     const itemsPerPage = 12;
-
-    // --- Data Fetching Effect ---
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [stockRes, categoriesRes] = await Promise.all([
-                    fetch('/api/stockin'),
-                    fetch('/api/categories')
-                ]);
-
-                if (!stockRes.ok || !categoriesRes.ok) {
-                    throw new Error('ไม่สามารถดึงข้อมูลจากเซิร์ฟเวอร์ได้');
-                }
-
-                // Process stock data
-                const batches = await stockRes.json();
-                const processedItems = batches.flatMap(batch => 
-                    batch.stockins.map(stockin => {
-                        const expiryDate = new Date(stockin.expiry_date);
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        
-                        const diffTime = expiryDate - today;
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                        let status = 'good';
-                        if (diffDays <= 1) status = 'critical';
-                        else if (diffDays <= 3) status = 'warning';
-
-                        return {
-                            name: stockin.ingredient.name,
-                            daysLeft: diffDays,
-                            lot: batch.batch_id,
-                            importDate: new Date(stockin.received_date).toLocaleDateString('th-TH'),
-                            expiryDate: expiryDate.toLocaleDateString('th-TH'),
-                            status: status,
-                            category: stockin.ingredient.category.category_name,
-                        };
-                    })
-                )
-                .filter(item => item.daysLeft > 0)
-                .sort((a, b) => a.daysLeft - b.daysLeft);
-                
-                setInventoryData(processedItems);
-
-                // Process categories data
-                const dbCategories = await categoriesRes.json();
-                // *** START: MODIFICATION ***
-                // สร้าง array ของหมวดหมู่โดยไม่มี object icon
-                const formattedCategories = [
-                    { name: 'ทั้งหมด' },
-                    ...dbCategories.map(cat => ({
-                        name: cat.category_name,
-                    }))
-                ];
-                // *** END: MODIFICATION ***
-                setCategories(formattedCategories);
-
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
 
     // --- Filtering and Pagination Logic ---
     const filteredItems = inventoryData
@@ -169,12 +97,13 @@ export default function DashboardPage() {
 
     // --- Render Logic ---
     const renderContent = () => {
-        if (isLoading) return <p className="text-center text-gray-500 py-10">กำลังโหลดข้อมูล...</p>;
-        if (error) return <p className="text-center text-red-500 py-10">เกิดข้อผิดพลาด: {error}</p>;
-        if (paginatedItems.length === 0) return <p className="text-center text-gray-500 py-10">ไม่พบรายการวัตถุดิบ</p>;
+        if (paginatedItems.length === 0) {
+            return <p className="text-center text-gray-500 py-10">ไม่พบรายการวัตถุดิบ</p>;
+        }
         
+        // Responsive Grid
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
                 {paginatedItems.map((item, index) => (
                     <ItemCard key={`${item.lot}-${index}`} item={item} />
                 ))}
@@ -186,30 +115,31 @@ export default function DashboardPage() {
         <div className="flex h-screen bg-white"> 
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto py-9 px-25">
-                    <div className="flex justify-between items-center mb-8">
+                <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 md:px-16 lg:px-25">
+                    {/* Responsive Header */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4 sm:gap-0">
                         <div>
                             <h1 className="text-black text-3xl font-bold">หน้าหลัก</h1>
                             <p className="text-[#979999]">แสดงรายการวัตถุดิบใกล้หมดอายุ ที่อยู่ภายในร้านของคุณ</p>
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 lg:gap-4">
                             <button
                                 onClick={() => router.push("/stockout")}
-                                className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] text-[#3FA170] font-medium flex items-center gap-2 hover:bg-green-50 transition-colors"
+                                className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] text-[#3FA170] font-medium flex items-center gap-2 hover:bg-green-50 transition-colors w-full sm:w-auto justify-center"
                             >
                                 <FileText size={16} /> เบิกจ่ายวัตถุดิบ
                             </button>
                             <button
                                 onClick={() => router.push("/stockin")}
-                                className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors"
+                                className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors w-full sm:w-auto justify-center"
                             >
                                 <Plus size={16} /> เพิ่มวัตถุดิบ
                             </button>
                         </div>
                     </div>
 
-                    {/* Filter and Search Controls */}
-                    <div className="flex items-center gap-4 mb-6">
+                    {/* Filter and Search */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
                         <CustomDropdown 
                             label="หมวดหมู่" 
                             categories={categories} 
@@ -229,7 +159,7 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Item Grid and Pagination */}
-                    <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] min-h-[400px]">
+                    <div className="bg-[#F6F8FA] p-4 sm:p-9 rounded-lg border border-[#E5E5E5] min-h-[400px]">
                         {renderContent()}
                         {totalPages > 1 && (
                             <Pagination 

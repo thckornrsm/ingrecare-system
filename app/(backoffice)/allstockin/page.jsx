@@ -9,18 +9,35 @@ import {
     Utensils, Leaf, Beef, Fish, Apple, SprayCan, MoreHorizontal
 } from 'lucide-react';
 
-// Sample data from the target code
+// Sample data
 const initialIngredientsData = [
-    { id: 100001, name: "เนื้อวากิวพรีเมียม", expiry_day: 7, category_id: "เนื้อสัตว์", quantity: 10.00, unit_type: "kg.", },
-    { id: 100002, name: "ผักกาดขาว", expiry_day: 10, category_id: "ผัก", quantity: 2.50, unit_type: "kg.", },
-    { id: 100003, name: "เนื้อหมูสับ", expiry_day: 7, category_id: "เนื้อสัตว์", quantity: 5.00, unit_type: "kg.", },
-    { id: 100004, name: "ปลาคอลลี่", expiry_day: 10, category_id: "ทะเล", quantity: 5, unit_type: "pack", },
-    { id: 100005, name: "ปลาหมึก", expiry_day: 10, category_id: "ทะเล", quantity: 3.00, unit_type: "kg.", },
-    { id: 100006, name: "ซีอิ๊วขาว", expiry_day: 30, category_id: "เครื่องปรุง", quantity: 7, unit_type: "bottle", },
-    { id: 100007, name: "พริกไทยดำป่น", expiry_day: 30, category_id: "เครื่องปรุง", quantity: 4, unit_type: "bottle", },
-    { id: 100008, name: "น้ำซุป", expiry_day: 15, category_id: "อื่นๆ", quantity: 12, unit_type: "kg.", },
-    { id: 100009, name: "แตงโม", expiry_day: 10, category_id: "ผลไม้", quantity: 8, unit_type: "kg.", },
+  { id: 100001, name: "เนื้อวากิวพรีเมียม", shelflife_day: 7, category_id: "เนื้อสัตว์", quantity: 10.00, unit_type: "kg.", },
+  { id: 100002, name: "ผักกาดขาว", shelflife_day: 10, category_id: "ผัก", quantity: 2.50, unit_type: "kg.", },
+  { id: 100003, name: "เนื้อหมูสับ", shelflife_day: 7, category_id: "เนื้อสัตว์", quantity: 5.00, unit_type: "kg.", },
+  { id: 100004, name: "ปลาคอลลี่", shelflife_day: 10, category_id: "ทะเล", quantity: 5, unit_type: "pack.", },
+  { id: 100005, name: "ปลาหมึก", shelflife_day: 10, category_id: "ทะเล", quantity: 3.00, unit_type: "kg.", },
+  { id: 100006, name: "ซีอิ๊วขาว", shelflife_day: 30, category_id: "เครื่องปรุง", quantity: 7, unit_type: "bottle.", },
+  { id: 100007, name: "พริกไทยดำป่น", shelflife_day: 30, category_id: "เครื่องปรุง", quantity: 4, unit_type: "bottle.", },
+  { id: 100008, name: "น้ำซุป", shelflife_day: 15, category_id: "อื่นๆ", quantity: 12, unit_type: "kg.", },
+  { id: 100009, name: "แตงโม", shelflife_day: 10, category_id: "ผลไม้", quantity: 8, unit_type: "kg.", },
+  { id: 100010, name: "สับปะรด", shelflife_day: 10, category_id: "ผลไม้", quantity: 6, unit_type: "kg.", },
+  { id: 100011, name: "น้ำมันมะกอก", shelflife_day: 60, category_id: "เครื่องปรุง", quantity: 5, unit_type: "bottle.", },
+  { id: 100012, name: "น้ำตาลทราย", shelflife_day: 90, category_id: "เครื่องปรุง", quantity: 20, unit_type: "kg.", },
+  { id: 100013, name: "เกลือป่น", shelflife_day: 90, category_id: "เครื่องปรุง", quantity: 15, unit_type: "kg.", },
+  { id: 100014, name: "พริกขี้หนูสวน", shelflife_day: 7, category_id: "ผัก", quantity: 1.00, unit_type: "kg.", },
+  { id: 100015, name: "กระเทียม", shelflife_day: 30, category_id: "ผัก", quantity: 3.00, unit_type: "kg.", },
+  { id: 100016, name: "หอมแดง", shelflife_day: 30, category_id: "ผัก", quantity: 4.00, unit_type: "kg.", },
+  { id: 100017, name: "ขิง", shelflife_day: 30, category_id: "ผัก", quantity: 2.00, unit_type: "kg.", },
+  { id: 100018, name: "ตะไคร้", shelflife_day: 15, category_id: "ผัก", quantity: 3.00, unit_type: "kg.", },
+  { id: 100019, name: "ใบมะกรูด", shelflife_day: 7, category_id: "ผัก", quantity: 0.50, unit_type: "kg.", },
+  { id: 100020, name: "น้ำปลา", shelflife_day: 60, category_id: "เครื่องปรุง", quantity: 10, unit_type: "bottle.", },
+  { id: 100021, name: "เต้าหู้ขาว", shelflife_day: 5, category_id: "อื่นๆ", quantity: 20, unit_type: "pack.", },
+  { id: 100022, name: "ไข่ไก่", shelflife_day: 14, category_id: "อื่นๆ", quantity: 30, unit_type: "pack.", },
+  { id: 100023, name: "แป้งสาลี", shelflife_day: 180, category_id: "เครื่องปรุง", quantity: 25, unit_type: "kg.", },
+  { id: 100024, name: "แป้งข้าวเจ้า", shelflife_day: 180, category_id: "เครื่องปรุง", quantity: 20, unit_type: "kg.", },
+  { id: 100025, name: "ข้าวสารหอมมะลิ", shelflife_day: 365, category_id: "เครื่องปรุง", quantity: 50, unit_type: "kg.", },
 ];
+const categories = ["ทั้งหมด", ...new Set(initialIngredientsData.map(item => item.category_id))];
 
 // Pre-process data to add date fields for sorting and display
 const ingredients = initialIngredientsData.map((ingredient, index) => ({
@@ -124,32 +141,37 @@ export default function AllStockin() {
     <div className="flex h-screen bg-white">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto py-9 px-25">
+        <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
           <div className="max-w-7xl mx-auto">
             <div className="mb-8">
-              <h1 className="text-black text-3xl font-bold">ประวัติการนำเข้า</h1>
-              <p className="text-gray-500">ตารางข้อมูลเกี่ยวกับการนำเข้าวัตถุดิบในระบบ</p>
+              <h1 className="text-black text-3xl font-bold">วัตถุดิบทั้งหมด</h1>
+              <p className="text-[#979999]">ตารางข้อมูลเกี่ยวกับวัตถุดิบทั้งหมดในปัจจุบัน</p>
             </div>
 
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
-              
-                <div className="relative"> 
-                  <CustomDropdown label="หมวดหมู่ " categories={categoryOptions} selectedCategory={category}
+            {/* Filter and Search */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
+                  <CustomDropdown
+                    label="หมวดหมู่ "
+                    categories={categories}
+                    selectedCategory={category}
                     onSelectCategory={(selectedCat) => {
                       setCategory(selectedCat);
                       setCurrentPage(1);
                     }}
                   />
-                </div>
                 <div className="relative w-full">
-                  <input type="text" placeholder="ค้นหาจากชื่อวัตถุดิบ..." value={searchTerm}
+                  <input 
+                    type="text" 
+                    placeholder="ค้นหาจากชื่อวัตถุดิบ..." 
+                    value={searchTerm}
                     onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                    className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]" />
+                    className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]" 
+                  />
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 </div>
-              
             </div>
-
+            
+            {/* Table */}
             <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left text-gray-700">
@@ -198,6 +220,8 @@ export default function AllStockin() {
                 </table>
               </div>
             </div>
+
+            {/* Pagination */}
             {totalPages > 0 && (
               <Pagination
                 currentPage={currentPage}
