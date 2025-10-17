@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Pagination from '@/components/Pagination';
 import CustomDropdown from '@/components/CustomDropdown';
-import { Plus, FileText, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
+import { Icon } from '@iconify/react';
 
 // --- Mock Data ---
 const MOCK_INVENTORY_DATA = [
@@ -32,14 +33,14 @@ const MOCK_CATEGORIES = [
     { name: 'อาหารทะเล' },
 ];
 
-// --- Color Status Styles ---
+// status color
 const statusStyles = {
-    critical: { bg: 'bg-[#E15050]' },
-    warning: { bg: 'bg-[#F9BF22]' },
-    good: { bg: 'bg-[#3FA170]' },
+    critical: { bg: 'bg-[#E15050]' }, //เขียว
+    warning: { bg: 'bg-[#F9BF22]' }, //เหลือง
+    good: { bg: 'bg-[#3FA170]' }, // แดง
 };
 
-// --- ItemCard Component ---
+// ItemCard
 const ItemCard = ({ item }) => {
     const styles = statusStyles[item.status] || statusStyles.good;
     return (
@@ -49,14 +50,14 @@ const ItemCard = ({ item }) => {
                 <span className="text-sm sm:text-base font-bold">day left</span>
             </div>
             <div className="flex-grow px-4 sm:px-5 py-3">
-                <h3 className="font-bold text-gray-800 mb-2 truncate">{item.name}</h3>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:text-sm text-gray-600">
+                <h3 className="font-semibold text-gray-800 mb-2 truncate">{item.name}</h3>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:text-sm text-[#B8B8B8]">
                     <span className="text-gray-400">ล็อต</span>
-                    <span className="text-black text-right font-medium">{item.lot}</span>
+                    <span className="text-black text-right font-normal">{item.lot}</span>
                     <span className="text-gray-400">วันที่นำเข้า</span>
-                    <span className="text-black text-right font-medium">{item.importDate}</span>
+                    <span className="text-black text-right font-normal">{item.importDate}</span>
                     <span className="text-gray-400">วันที่หมดอายุ</span>
-                    <span className="text-black text-right font-medium">{item.expiryDate}</span>
+                    <span className="text-black text-right font-normal">{item.expiryDate}</span>
                 </div>
             </div>
         </div>
@@ -64,11 +65,10 @@ const ItemCard = ({ item }) => {
 };
 
 
-// ========= Main Dashboard Page (Frontend-Only Version) =========
+// Main
 export default function DashboardPage() {
     const router = useRouter();
 
-    // --- States ---
     const [inventoryData] = useState(MOCK_INVENTORY_DATA);
     const [categories] = useState(MOCK_CATEGORIES);
     const [activeFilter, setActiveFilter] = useState('ทั้งหมด');
@@ -76,7 +76,7 @@ export default function DashboardPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 12;
 
-    // --- Filtering and Pagination Logic ---
+    // Filtering and Pagination
     const filteredItems = inventoryData
         .filter(item => activeFilter === 'ทั้งหมด' || item.category === activeFilter)
         .filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -84,7 +84,7 @@ export default function DashboardPage() {
     const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
     const paginatedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-    // --- Handlers ---
+    // Helper and Handler
     const handleSelectCategory = (selected) => {
         setActiveFilter(selected);
         setCurrentPage(1);
@@ -95,7 +95,6 @@ export default function DashboardPage() {
         setCurrentPage(1);
     };
 
-    // --- Render Logic ---
     const renderContent = () => {
         if (paginatedItems.length === 0) {
             return <p className="text-center text-gray-500 py-10">ไม่พบรายการวัตถุดิบ</p>;
@@ -115,25 +114,24 @@ export default function DashboardPage() {
         <div className="flex h-screen bg-white"> 
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 md:px-16 lg:px-25">
-                    {/* Responsive Header */}
+                <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4 sm:gap-0">
                         <div>
                             <h1 className="text-black text-3xl font-bold">หน้าหลัก</h1>
                             <p className="text-[#979999]">แสดงรายการวัตถุดิบใกล้หมดอายุ ที่อยู่ภายในร้านของคุณ</p>
                         </div>
-                        <div className="flex items-center gap-2 lg:gap-4">
+                        <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 lg:gap-4">
                             <button
                                 onClick={() => router.push("/stockout")}
                                 className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] text-[#3FA170] font-medium flex items-center gap-2 hover:bg-green-50 transition-colors w-full sm:w-auto justify-center"
                             >
-                                <FileText size={16} /> เบิกจ่ายวัตถุดิบ
+                                <Icon icon="icon-park-solid:inbox-out" className="w-4 h-4" /> เบิกจ่ายวัตถุดิบ
                             </button>
                             <button
                                 onClick={() => router.push("/stockin")}
                                 className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors w-full sm:w-auto justify-center"
                             >
-                                <Plus size={16} /> เพิ่มวัตถุดิบ
+                                <Icon icon="icon-park-twotone:inbox-in" className="w-4 h-4" /> นำเข้าวัตถุดิบ
                             </button>
                         </div>
                     </div>
@@ -159,16 +157,16 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Item Grid and Pagination */}
-                    <div className="bg-[#F6F8FA] p-4 sm:p-9 rounded-lg border border-[#E5E5E5] min-h-[400px]">
+                    <div className="bg-[#F6F8FA] p-4 sm:p-9 rounded-lg border border-[#E5E5E5] h-auto">
                         {renderContent()}
-                        {totalPages > 1 && (
-                            <Pagination 
-                                currentPage={currentPage} 
-                                totalPages={totalPages} 
-                                onPageChange={setCurrentPage} 
-                            />
-                        )}
-                    </div>  
+                    </div>
+                    {totalPages > 1 && (
+                        <Pagination 
+                            currentPage={currentPage} 
+                            totalPages={totalPages} 
+                            onPageChange={setCurrentPage} 
+                        />
+                    )}  
                 </main>
             </div>
         </div>

@@ -3,10 +3,9 @@ import React, { useState, useMemo } from "react";
 import Sidebar from "@/components/Sidebar";
 import CustomDropdown from "@/components/CustomDropdown";
 import Pagination from "@/components/Pagination";
-import DeletedModal from "@/components/DeletedModal"; // 1. Import Modal สำหรับลบ
-import EditModal from "@/components/EditModal";   // 2. Import Modal สำหรับแก้ไข
-import { Icon } from '@iconify/react';
-import { Search, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import DeletedModal from "@/components/DeletedModal";
+import EditModal from "@/components/EditModal";
+import { Search, ChevronsUpDown, ChevronUp, ChevronDown, Trash2, PencilLine } from 'lucide-react';
 
 // Sample data
 const initialIngredientsData = [
@@ -44,7 +43,11 @@ export default function AllExpired() {
     };
 
     const handleOpenDeletedModal = (ingredient) => {
-        setSelectedIngredient(ingredient);
+        const itemToForceDelete = {
+            ...ingredient,
+            count: 0,
+        };
+        setSelectedIngredient(itemToForceDelete);
         setIsDeletedModalOpen(true);
     };
 
@@ -137,8 +140,8 @@ export default function AllExpired() {
         <div className="flex h-screen bg-white">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
-                    <div className="max-w-7xl mx-auto">
+                <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
+                    <div>
                         <div className="mb-8">
                             <h1 className="text-black text-3xl font-bold">วัตถุดิบหมดอายุ</h1>
                             <p className="text-[#979999]">ตารางข้อมูลเกี่ยวกับวัตถุดิบที่หมดอายุแล้ว</p>
@@ -193,16 +196,15 @@ export default function AllExpired() {
                                                 <td className="py-3 px-4">{ingredient.unit_type}</td>
                                                 <td className="py-3 px-4">
                                                     <div className="flex justify-start space-x-2">
-                                                        {/* 5. แก้ไข onClick ของปุ่มให้เรียกฟังก์ชันเปิด Modal */}
                                                         <button 
                                                             onClick={() => handleOpenEditModal(ingredient)}
-                                                            className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors">
-                                                            <Icon icon="mynaui:edit" className="w-4 h-4" />
+                                                            className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 transition-colors">
+                                                            <PencilLine size={16} />
                                                         </button>
                                                         <button 
                                                             onClick={() => handleOpenDeletedModal(ingredient)}
-                                                            className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition-colors">
-                                                            <Icon icon="fluent:delete-20-regular" className="w-4 h-4" />
+                                                            className="p-1.5 rounded-md text-[#E15050] hover:bg-red-100 transition-colors">
+                                                            <Trash2 size={16} />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -242,7 +244,7 @@ export default function AllExpired() {
                         isOpen={isDeletedModalOpen}
                         onClose={() => setIsDeletedModalOpen(false)}
                         onConfirm={handleConfirmDelete}
-                        itemName={selectedIngredient.name}
+                        itemToDelete={selectedIngredient}
                     />
                     <EditModal
                         isOpen={isEditModalOpen}

@@ -205,7 +205,7 @@ export default function ImportPage() {
         <div className="flex h-screen bg-white">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
+                <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
                     <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
                         <div>
                             <h1 className="text-black text-3xl font-bold">นำเข้าวัตถุดิบ</h1>

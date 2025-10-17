@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import CustomDropdown from "@/components/CustomDropdown";
 
-// 1. เพิ่ม prop 'formType' เพื่อใช้กำหนดรูปแบบฟอร์ม
 function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units = [], formType = 'default' }) {
     const [formData, setFormData] = useState({});
+    // **1. เพิ่ม State สำหรับจัดการ Error ของชื่อ**
+    const [nameError, setNameError] = useState(false); 
 
     useEffect(() => {
         if (ingredient) {
@@ -21,6 +22,8 @@ function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units
                 out_date: outDate,
                 out_time: outTime,
             });
+            // รีเซ็ต Error เมื่อ Modal เปิด
+            setNameError(false);
         }
     }, [ingredient, isOpen]);
 
@@ -31,6 +34,11 @@ function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        
+        // **3. จัดการ Error เมื่อเริ่มพิมพ์**
+        if (name === 'name' && value.trim()) {
+            setNameError(false);
+        }
     };
 
     const handleDropdownChange = (fieldName, value) => {
@@ -38,6 +46,14 @@ function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units
     };
 
     const handleSave = () => {
+        // **3. ตรวจสอบชื่อวัตถุดิบก่อนบันทึก**
+        if (!formData.name || formData.name.trim() === '') {
+            setNameError(true);
+            return; // หยุดการบันทึก
+        }
+        
+        setNameError(false); // ล้าง error ถ้าผ่าน
+
         const updatedIngredient = {
             ...ingredient,
             ...formData,
@@ -54,25 +70,51 @@ function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units
       }
     };
 
-    const InputField = ({ label, ...props }) => (
+    // **2. ปรับปรุง InputField ให้รับ prop isError และ errorMessage**
+    const InputField = ({ label, isError, errorMessage, ...props }) => (
         <div>
             <label className="text-sm font-medium text-gray-700 block mb-1.5">{label}</label>
             <input
                 onKeyDown={handleKeyDown}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3FA170] transition"
+                // ใช้ Conditional Class สำหรับขอบแดง
+                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 transition 
+                    ${isError 
+                        ? 'border-red-500 focus:ring-red-500' // ถ้า Error ให้เป็นขอบแดง
+                        : 'border-gray-300 focus:ring-[#3FA170]' // ถ้าปกติ
+                    }`
+                }
                 {...props}
             />
+            {/* แสดงข้อความเตือนเล็ก ๆ */}
+            {isError && (
+                <p className="mt-1 text-sm text-red-500">{errorMessage}</p>
+            )}
         </div>
     );
 
     // 2. สร้างฟอร์มสำหรับแต่ละ Type ตามเงื่อนไข
     const renderFormContent = () => {
+        // ใช้ตัวแปร isNameError เพื่อส่งไปที่ InputField เฉพาะชื่อ
+        const isNameError = nameError && (!formData.name || formData.name.trim() === '');
+        
+        const NameInput = () => (
+            <InputField 
+                label="ชื่อวัตถุดิบ" 
+                name="name" 
+                value={formData.name || ''} 
+                onChange={handleChange} 
+                autoFocus 
+                isError={isNameError} 
+                errorMessage="ชื่อวัตถุดิบห้ามเว้นว่าง" 
+            />
+        );
+
         switch (formType) {
             // Case 4: AllStockOut
             case 'stock-out':
                 return (
                     <>
-                        <InputField label="ชื่อวัตถุดิบ" name="name" value={formData.name || ''} onChange={handleChange} autoFocus />
+                        <NameInput />
                         <div>
                             <label className="text-sm font-medium text-gray-700 block mb-1.5">หมวดหมู่</label>
                             <CustomDropdown placeholder="เลือกหมวดหมู่" categories={categories} selectedCategory={formData.category_id} onSelectCategory={(val) => handleDropdownChange('category_id', val)} />
@@ -93,7 +135,7 @@ function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units
             case 'stock-in':
                  return (
                     <>
-                        <InputField label="ชื่อวัตถุดิบ" name="name" value={formData.name || ''} onChange={handleChange} autoFocus />
+                        <NameInput />
                         <div>
                             <label className="text-sm font-medium text-gray-700 block mb-1.5">หมวดหมู่</label>
                             <CustomDropdown placeholder="เลือกหมวดหมู่" categories={categories} selectedCategory={formData.category_id} onSelectCategory={(val) => handleDropdownChange('category_id', val)} />
@@ -113,8 +155,8 @@ function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units
             // Case 1 & 2: AllIngredient & AllExpired (Default)
             default:
                 return (
-                     <>
-                        <InputField label="ชื่อวัตถุดิบ" name="name" value={formData.name || ''} onChange={handleChange} autoFocus />
+                    <>
+                        <NameInput />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-sm font-medium text-gray-700 block mb-1.5">หมวดหมู่</label>

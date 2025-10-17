@@ -5,8 +5,7 @@ import CustomDropdown from "@/components/CustomDropdown";
 import Pagination from "@/components/Pagination";
 import EditModal from "@/components/EditModal";
 import DeletedModal from "@/components/DeletedModal";
-import { Icon } from '@iconify/react';
-import { Search, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, ChevronsUpDown, ChevronUp, ChevronDown, Trash2, PencilLine } from 'lucide-react';
 
 const initialData = [
     { id: 100001, name: "เนื้อวากิวพรีเมียม", shelflife_day: 7, category_id: "เนื้อสัตว์", quantity: 10.00, unit_type: "kg.", },
@@ -43,7 +42,11 @@ export default function AllStockout() {
     };
 
     const handleOpenDeletedModal = (ingredient) => {
-        setSelectedIngredient(ingredient);
+        const itemToForceDelete = {
+            ...ingredient,
+            count: 0,
+        };
+        setSelectedIngredient(itemToForceDelete);
         setIsDeletedModalOpen(true);
     };
 
@@ -124,8 +127,8 @@ export default function AllStockout() {
         <div className="flex h-screen bg-white">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto py-9 px-10">
-                    <div className="max-w-7xl mx-auto">
+                <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
+                    <div>
                         <div className="mb-8">
                             <h1 className="text-black text-3xl font-bold">ประวัติการเบิกจ่าย</h1>
                             <p className="text-[#979999]">ตารางข้อมูลเกี่ยวกับการเบิกจ่ายวัตถุดิบในระบบ</p>
@@ -164,11 +167,13 @@ export default function AllStockout() {
                                                 <td className="py-3 px-4">{ingredient.unit_type}</td>
                                                 <td className="py-3 px-4">
                                                     <div className="flex justify-start space-x-2">
-                                                        <button onClick={() => handleOpenEditModal(ingredient)} className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200">
-                                                            <Icon icon="mynaui:edit" className="w-4 h-4" />
+                                                        <button onClick={() => handleOpenEditModal(ingredient)} 
+                                                            className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 transition-colors">
+                                                            <PencilLine size={16} />
                                                         </button>
-                                                        <button onClick={() => handleOpenDeletedModal(ingredient)} className="p-1.5 rounded-md text-red-500 hover:bg-red-100">
-                                                            <Icon icon="fluent:delete-20-regular" className="w-4 h-4" />
+                                                        <button onClick={() => handleOpenDeletedModal(ingredient)} 
+                                                            className="p-1.5 rounded-md text-[#E15050] hover:bg-red-100 transition-colors">
+                                                            <Trash2 size={16} />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -187,7 +192,12 @@ export default function AllStockout() {
             {/* เพิ่ม prop 'formType' เข้าไปตรงนี้ */}
             {selectedIngredient && (
                 <>
-                    <DeletedModal isOpen={isDeletedModalOpen} onClose={() => setIsDeletedModalOpen(false)} onConfirm={handleConfirmDelete} itemName={selectedIngredient.name} />
+                    <DeletedModal 
+                        isOpen={isDeletedModalOpen} 
+                        onClose={() => setIsDeletedModalOpen(false)} 
+                        onConfirm={handleConfirmDelete} 
+                        itemToDelete={selectedIngredient}
+                    />
                     <EditModal 
                         isOpen={isEditModalOpen} 
                         onClose={() => setIsEditModalOpen(false)} 

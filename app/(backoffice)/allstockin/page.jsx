@@ -5,8 +5,7 @@ import CustomDropdown from "@/components/CustomDropdown";
 import Pagination from "@/components/Pagination";
 import EditModal from "@/components/EditModal";
 import DeletedModal from "@/components/DeletedModal";
-import { Icon } from '@iconify/react';
-import { Search, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, ChevronsUpDown, ChevronUp, ChevronDown, Trash2, PencilLine } from 'lucide-react';
 
 const initialIngredientsData = [
     { id: 100001, name: "เนื้อวากิวพรีเมียม", shelflife_day: 7, category_id: "เนื้อสัตว์", quantity: 10.00, unit_type: "kg.", },
@@ -48,25 +47,21 @@ export default function AllStockin() {
     };
 
     const handleOpenDeletedModal = (ingredient) => {
-        setSelectedIngredient(ingredient);
+        const itemToForceDelete = {
+            ...ingredient,
+            count: 0,
+        };
+        setSelectedIngredient(itemToForceDelete);
         setIsDeletedModalOpen(true);
     };
 
-    // --- ฟังก์ชันนี้ถูกอัปเดตให้คำนวณวันหมดอายุใหม่ ---
     const handleSaveChanges = (updatedDataFromModal) => {
-        // 1. สร้าง object วันที่จาก received_date ที่อาจมีการแก้ไข
         const newReceivedDate = new Date(updatedDataFromModal.received_date);
-        
-        // 2. สร้าง object วันที่หมดอายุใหม่ โดยเริ่มจากวันที่นำเข้าใหม่
         const newExpiryDate = new Date(newReceivedDate);
-        
-        // 3. บวกจำนวนวัน (shelflife_day) ที่แก้ไขใหม่เข้าไป
         newExpiryDate.setDate(newReceivedDate.getDate() + Number(updatedDataFromModal.shelflife_day));
-
-        // 4. สร้าง object ข้อมูลสุดท้ายที่จะบันทึก
         const finalUpdatedIngredient = {
             ...updatedDataFromModal,
-            expiry_date: newExpiryDate.toISOString().split('T')[0] // แปลงกลับเป็น YYYY-MM-DD
+            expiry_date: newExpiryDate.toISOString().split('T')[0]
         };
 
         setIngredients(prev => prev.map(item =>
@@ -144,8 +139,8 @@ export default function AllStockin() {
         <div className="flex h-screen bg-white">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto py-9 px-10">
-                    <div className="max-w-7xl mx-auto">
+                <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
+                    <div>
                         <div className="mb-8">
                             <h1 className="text-black text-3xl font-bold">ประวัติการนำเข้า</h1>
                             <p className="text-[#979999]">ตารางข้อมูลเกี่ยวกับการนำเข้าวัตถุดิบในระบบ</p>
@@ -199,11 +194,13 @@ export default function AllStockin() {
                                                 <td className="py-3 px-4">{ingredient.unit_type}</td>
                                                 <td className="py-3 px-4">
                                                     <div className="flex justify-start space-x-2">
-                                                        <button onClick={() => handleOpenEditModal(ingredient)} className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200">
-                                                            <Icon icon="mynaui:edit" className="w-4 h-4" />
+                                                        <button onClick={() => handleOpenEditModal(ingredient)} 
+                                                            className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 transition-colors">
+                                                            <PencilLine size={16} />
                                                         </button>
-                                                        <button onClick={() => handleOpenDeletedModal(ingredient)} className="p-1.5 rounded-md text-red-500 hover:bg-red-100">
-                                                            <Icon icon="fluent:delete-20-regular" className="w-4 h-4" />
+                                                        <button onClick={() => handleOpenDeletedModal(ingredient)} 
+                                                            className="p-1.5 rounded-md text-[#E15050] hover:bg-red-100 transition-colors">
+                                                            <Trash2 size={16} />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -223,7 +220,12 @@ export default function AllStockin() {
             {/* Modal Components */}
             {selectedIngredient && (
                 <>
-                    <DeletedModal isOpen={isDeletedModalOpen} onClose={() => setIsDeletedModalOpen(false)} onConfirm={handleConfirmDelete} itemName={selectedIngredient.name} />
+                    <DeletedModal 
+                        isOpen={isDeletedModalOpen} 
+                        onClose={() => setIsDeletedModalOpen(false)} 
+                        onConfirm={handleConfirmDelete} 
+                        itemToDelete={selectedIngredient}
+                    />
                     <EditModal 
                         isOpen={isEditModalOpen} 
                         onClose={() => setIsEditModalOpen(false)} 

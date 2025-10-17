@@ -286,7 +286,7 @@ export default function StatisticsPage() {
 
         return (
             <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4  gap-6 mb-8">
                     <StatCard icon={<ArrowDownToLine size={20} />} title="ปริมาณการนำเข้า" value={currentData.summary?.import || 'N/A'} context={`ข้อมูลเดือน ${selectedMonth}`} />
                     <StatCard icon={<ArrowUpFromLine size={20} />} title="ปริมาณที่ถูกเบิกจ่าย" value={currentData.summary?.dispense || 'N/A'} context={`ข้อมูลเดือน ${selectedMonth}`} />
                     <StatCard icon={<Archive size={20} />} title="คงเหลือในสต็อก" value={currentData.summary?.stock || 'N/A'} context="อัปเดตล่าสุด" />
@@ -325,7 +325,7 @@ export default function StatisticsPage() {
         <div className="flex h-full bg-white">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto py-9 px-25">
+                <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
                     <div className="mb-8">
                         <h1 className="text-black text-3xl font-bold">สถิติการใช้งาน</h1>
                         <p className="text-gray-500">ภาพรวมสต็อกวัตถุดิบเพื่อการวางแผนและจัดการ</p>
