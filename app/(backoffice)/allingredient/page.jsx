@@ -61,7 +61,7 @@ export default function AllIngredientsPage() {
     const [category, setCategory] = useState('ทั้งหมด');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [sortConfig, setSortConfig] = useState({ key: 'daysLeft', direction: 'ascending' });
+    const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'descending' });
     const [itemsPerPage, setItemsPerPage] = useState(20);
 
     useEffect(() => {
@@ -214,9 +214,7 @@ export default function AllIngredientsPage() {
     };
 
     return (
-    <div className="flex h-screen bg-white">
-        <Sidebar />
-        <div className="flex-1 flex flex-col overflow-hidden">
+
             <main className="flex-1 overflow-y-auto py-9 px-25">
                 <div className="max-w-7xl mx-auto">
                     <div className="mb-8">
@@ -309,7 +307,5 @@ export default function AllIngredientsPage() {
                     )}
                 </div>
             </main>
-        </div>
-    </div>
     )
 }

@@ -330,50 +330,55 @@ export default function StockInPage() {
     };
 
     return (
-        <div className="flex h-screen bg-white">
-            <Sidebar />
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto py-9 px-10 md:px-24">
-                    <form onSubmit={handleSubmit}>
-                        <div className="flex justify-between items-center mb-8">
-                            <div>
-                                <h1 className="text-black text-3xl font-bold">นำเข้าวัตถุดิบ</h1>
-                                <p className="text-[#979999]">เพิ่มข้อมูลการนำเข้าของวัตถุดิบในแต่ละล็อต</p>
-                            </div>
-                            <button type="button" onClick={handleAddItem} className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors">
-                                <Plus size={16}/> เพิ่มรายการ
-                            </button>
+        <>
+            <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
+                <form onSubmit={handleSubmit}>
+                    <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
+                        <div>
+                            <h1 className="text-black text-3xl font-bold">นำเข้าวัตถุดิบ</h1>
+                            <p className="text-[#979999]">เพิ่มข้อมูลการนำเข้าของวัตถุดิบในแต่ละล็อต</p>
                         </div>
-                        
-                        {isLoading ? <p className="text-center text-gray-500">กำลังโหลดฟอร์ม...</p> : 
-                        <div className="space-y-6">
-                            {items.map(item => (
-                                <IngredientFormRow 
-                                    key={item.id}
-                                    item={item}
-                                    onUpdate={handleUpdateItem}
-                                    onRemove={items.length > 1 ? handleRemoveItem : null}
-                                    availableCategories={availableCategories}
-                                    onAddNewCategoryClick={() => setAddCategoryModalOpen(true)}
-                                    quantityUnits={availableUnits}
-                                    onAddNewQuantityUnitClick={() => setAddUnitModalOpen(true)}
-                                    shelfLifeUnits={availableTimeUnits}
-                                />
-                            ))}
-                        </div>
-                        }
+                        <button 
+                            type="button" 
+                            onClick={handleAddItem} 
+                            className="w-full sm:w-auto justify-center px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors">
+                            <Plus size={16}/> เพิ่มรายการ
+                        </button>
+                    </div>
+                    
+                    {isLoading ? <p className="text-center text-gray-500">กำลังโหลดฟอร์ม...</p> : 
+                    <div className="space-y-6">
+                        {items.map(item => (
+                            <IngredientFormRow 
+                                key={item.id}
+                                item={item}
+                                onUpdate={handleUpdateItem}
+                                onRemove={items.length > 1 ? handleRemoveItem : null}
+                                availableCategories={availableCategories}
+                                onAddNewCategoryClick={() => setAddCategoryModalOpen(true)}
+                                quantityUnits={availableUnits}
+                                onAddNewQuantityUnitClick={() => setAddUnitModalOpen(true)}
+                                shelfLifeUnits={availableTimeUnits}
+                            />
+                        ))}
+                    </div>
+                    }
 
-                        <div className="flex justify-end gap-4 pt-6">
-                            <button type="button" onClick={handleClearAll} className="px-6 py-2 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
-                                ล้างข้อมูล
-                            </button>
-                            <button type="submit" className="px-6 py-2 text-sm text-white bg-[#3FA170] rounded-md hover:bg-[#1E7957]">
-                                ยืนยันข้อมูล
-                            </button>
-                        </div>
-                    </form>
-                </main>
-            </div>
+                    <div className="flex flex-wrap justify-end gap-4 pt-6">
+                        <button 
+                            type="button" 
+                            onClick={handleClearAll} 
+                            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
+                            ล้างข้อมูล
+                        </button>
+                        <button 
+                            type="submit" 
+                            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-white bg-[#3FA170] rounded-md hover:bg-[#1E7957]">
+                            ยืนยันข้อมูล
+                        </button>
+                    </div>
+                </form>
+            </main>
             
             {isConfirmModalOpen && (
                 <ConfirmationModal 
@@ -404,6 +409,6 @@ export default function StockInPage() {
                     onClose={() => setToast({ show: false, message: '', type: '' })} 
                 />
             )}
-        </div>
+        </>
     );
 }

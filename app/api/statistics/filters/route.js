@@ -1,0 +1,41 @@
+// /app/api/statistics/filters/route.js
+
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+
+const formatDateToThaiMonthYear = (date) => {
+    const year = date.getFullYear() + 543;
+    const month = date.toLocaleString('th-TH', { month: 'long' });
+    return `${month} ${year}`;
+};
+
+export async function GET() {
+    try {
+        const stockInMonths = await prisma.stockin.findMany({
+            select: { received_date: true },
+            distinct: ['received_date'],
+        });
+        const stockOutMonths = await prisma.stockout.findMany({
+            select: { out_date: true },
+            distinct: ['out_date'],
+        });
+        
+        const allDates = [
+            ...stockInMonths.map(item => item.received_date),
+            ...stockOutMonths.map(item => item.out_date)
+        ];
+
+        const uniqueMonths = [...new Set(allDates.map(date => 
+            formatDateToThaiMonthYear(new Date(date))
+        ))];
+        
+        // ✨ เหลือแค่การส่ง availableMonths กลับไป
+        return NextResponse.json({ 
+            availableMonths: uniqueMonths.map(m => ({ name: m })),
+        });
+
+    } catch (e) {
+        console.error('FILTERS_API_ERROR', e);
+        return NextResponse.json({ error: 'ไม่สามารถโหลดข้อมูลตัวกรองเดือนได้' }, { status: 500 });
+    }
+}

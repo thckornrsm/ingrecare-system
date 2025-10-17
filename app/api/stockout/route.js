@@ -98,62 +98,52 @@ export async function POST(req) {
       }
 
       const batch = await tx.batch.create({
-        data: {
-          user_id: userId,
-          description: description || `Stock-out at ${outTime.toLocaleString()}`,
-        },
-      });
+        data: {
+          type: 'STOCK_OUT', // <-- ระบุประเภท
+          user_id: userId,
+          description: description || `Stock-out at ${outTime.toLocaleString()}`,
+        },
+      });
 
-      for (const item of items) {
-        const newStockout = await tx.stockout.create({
-          data: {
-            batch_id: batch.batch_id,
-            ingredient_id: item.ingredient_id,
-            quantity: item.quantity,
-            unit_id: item.unit_id,
-            out_date: outTime,
-            user_id: userId,
-          },
-        });
+      // 3. วนลูปเพื่อสร้าง stockout และอัปเดตสต็อก
+      for (const item of items) {
+        const currentInventory = await tx.ingredient_now.findFirst({ where: { ingredient_id: item.ingredient_id } });
 
+        const newStockout = await tx.stockout.create({
+          data: {
+            batch_id: batch.batch_id, // <-- ใช้ batch_id ที่เพิ่งสร้าง
+            ingredient_id: item.ingredient_id,
+            quantity: item.quantity,
+            unit_id: item.unit_id,
+            out_date: outTime,
+            user_id: userId,
+          },
+        });
+
+        await tx.ingredient_now.update({
+          where: { inventory_id: currentInventory.inventory_id },
+          data: { quantity: { decrement: item.quantity }, last_update: outTime },
+        });
+
+        // บันทึก history
         await tx.history.create({
-          data: {
-            action_type: 'stockout',
-            stockout_id: newStockout.stockout_id,
-            user_id: userId,
-          },
-        });
-
-        const inventoryItem = await tx.ingredient_now.findFirst({
-          where: { ingredient_id: item.ingredient_id }
-        });
-
-        await tx.ingredient_now.update({
-          where: {
-            inventory_id: inventoryItem.inventory_id
-          },
-          data: {
-            quantity: {
-              decrement: item.quantity,
+            data: {
+              action_type: 'stockout',
+              stockout_id: newStockout.stockout_id,
+              user_id: userId,
             },
-            last_update: outTime,
-          },
         });
-      }
+      }
+      return batch;
+    });
 
-      return batch;
-    });
+    return NextResponse.json({ message: 'เบิกของสำเร็จ', batchId: newBatch.batch_id }, { status: 201 });
 
-    return NextResponse.json(
-      { message: 'เบิกของสำเร็จ', batchId: newBatch.batch_id },
-      { status: 201 }
-    );
-
-  } catch (e) {
-    console.error('--- STOCKOUT ERROR ---', e);
-    if (e.message.startsWith('สินค้าไม่พอ:')) {
-      return NextResponse.json({ error: e.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการเบิกของ' }, { status: 500 });
-  }
+  } catch (e) {
+    console.error('--- STOCKOUT ERROR ---', e);
+    if (e.message.startsWith('สินค้าไม่พอ:')) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการเบิกของ' }, { status: 500 });
+  }
 }

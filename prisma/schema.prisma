@@ -8,6 +8,11 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
+enum BatchType {
+  STOCK_IN
+  STOCK_OUT
+}
+
 enum Role {
   manager
   kitchen_staff
@@ -137,6 +142,7 @@ model ingredients {
 
 model batch {
   batch_id    Int              @id @default(autoincrement())
+  type        BatchType        @default(STOCK_IN)
   created_at  DateTime         @default(now())
   user_id     Int
   description String?          @db.VarChar(255)
@@ -145,6 +151,8 @@ model batch {
   stockouts   stockout[]
   inventory   ingredient_now[]
   expiry      expiry_tack[]
+
+  lot_number  Int?             // ใช้สำหรับนับลำดับล็อตเฉพาะของ STOCK_IN
 }
 
 model stockin {

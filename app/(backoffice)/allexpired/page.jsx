@@ -201,9 +201,7 @@ export default function ExpiredPage() {
 
     // --- Render ---
     return (
-        <div className="flex h-screen bg-white">
-            <Sidebar />
-            <div className="flex-1 flex flex-col overflow-hidden">
+
                 <main className="flex-1 overflow-y-auto py-9 px-25">
                     <div className="max-w-7xl mx-auto">
                         <div className="mb-8">
@@ -290,7 +288,6 @@ export default function ExpiredPage() {
                         )}
                     </div>
                 </main>
-            </div>
-        </div>
+
     );
 }

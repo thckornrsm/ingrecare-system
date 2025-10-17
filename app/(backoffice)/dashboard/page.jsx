@@ -63,7 +63,7 @@ const ItemCard = ({ item }) => {
                 <h3 className="font-bold text-gray-800 mb-2">{item.name}</h3>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-600">
                     <span className="text-sm text-gray-400">ล็อต</span>
-                    <span className="text-sm text-black text-right font-medium">{item.lot}</span>
+                    <span className="text-sm text-black text-right font-medium">{item.lot_number}</span>
                     <span className="text-sm text-gray-400">วันที่นำเข้า</span>
                     <span className="text-sm text-black text-right font-medium">{item.importDate}</span>
                     <span className="text-sm text-gray-400">วันที่หมดอายุ</span>
@@ -120,7 +120,7 @@ export default function DashboardPage() {
                         return {
                             name: stockin.ingredient.name,
                             daysLeft: diffDays,
-                            lot: batch.batch_id,
+                            lot_number: batch.lot_number,
                             importDate: new Date(stockin.received_date).toLocaleDateString('th-TH'),
                             expiryDate: expiryDate.toLocaleDateString('th-TH'),
                             status: status,
@@ -190,9 +190,7 @@ export default function DashboardPage() {
     };
 
     return (
-        <div className="flex h-screen bg-white"> 
-            <Sidebar />
-            <div className="flex-1 flex flex-col overflow-hidden">
+    
                 <main className="flex-1 overflow-y-auto py-9 px-25">
                     <div className="flex justify-between items-center mb-8">
                         <div>
@@ -247,7 +245,6 @@ export default function DashboardPage() {
                         )}
                     </div>  
                 </main>
-            </div>
-        </div>
+         
     );
 }
