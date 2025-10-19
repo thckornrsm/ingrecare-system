@@ -1,24 +1,14 @@
+// app/(backoffice)/allingredient/page.jsx
+
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
-import Sidebar from "@/components/Sidebar";
 import CustomDropdown from "@/components/CustomDropdown";
 import Pagination from "@/components/Pagination";
-import { Icon } from '@iconify/react';
-import { 
-    Search, ChevronsUpDown, ChevronUp, ChevronDown,
-    Utensils, Leaf, Beef, Fish, Apple, SprayCan, MoreHorizontal 
-} from 'lucide-react';
+import DeletedModal from "@/components/DeletedModal";
+import EditModal from "@/components/EditModal";
+import { Search, ChevronsUpDown, ChevronUp, ChevronDown, Trash2, PencilLine } from 'lucide-react';
 
-const categoryIconMap = {
-    'เนื้อสัตว์': <Beef size={16} className="text-gray-500"/>,
-    'ผัก': <Leaf size={16} className="text-gray-500"/>,
-    'ทะเล': <Fish size={16} className="text-gray-500"/>,
-    'ผลไม้': <Apple size={16} className="text-gray-500"/>,
-    'เครื่องปรุง': <SprayCan size={16} className="text-gray-500"/>,
-    'อื่นๆ': <MoreHorizontal size={16} className="text-gray-500"/>,
-};
-
-// --- Helper Component for Expiry Status Display ---
+// ExpiryStatus Component
 const ExpiryStatus = ({ date, days }) => {
     if (!date || days === Infinity) {
         return <span className="text-gray-500">N/A</span>;
@@ -52,12 +42,17 @@ const ExpiryStatus = ({ date, days }) => {
     );
 };
 
-
+// Main Page
 export default function AllIngredientsPage() {
     const [ingredients, setIngredients] = useState([]);
+    const [isDeletedModalOpen, setIsDeletedModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedIngredient, setSelectedIngredient] = useState(null);
+
     const [categoryOptions, setCategoryOptions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+
     const [category, setCategory] = useState('ทั้งหมด');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -114,9 +109,9 @@ export default function AllIngredientsPage() {
                     return {
                         id: ingredientId,
                         name: item.ingredient.name,
+                        category_id: item.ingredient.category.category_name,
                         expiryDate: latestExpiryDate || null,
                         daysLeft: daysLeft,
-                        category_id: item.ingredient.category.category_name,
                         quantity: item.quantity,
                         unit_type: item.unit.unit_name,
                     };
@@ -124,7 +119,6 @@ export default function AllIngredientsPage() {
                 
                 setIngredients(formattedIngredients);
 
-                // This is for the prototype that does not include icons in the dropdown
                 const dynamicCategoryOptions = [
                     { name: 'ทั้งหมด' },
                     ...dbCategories.map(cat => ({
@@ -143,11 +137,12 @@ export default function AllIngredientsPage() {
         fetchData();
     }, []);
     
+    // Filtering and Sorting
     const filteredIngredients = useMemo(() => {
         return ingredients
             .filter(item => category === 'ทั้งหมด' || item.category_id === category)
             .filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    }, [ingredients, searchTerm, category]);
+    }, [searchTerm, category, ingredients]);
 
     const sortedAndPaginatedIngredients = useMemo(() => {
         let sortedData = [...filteredIngredients];
@@ -166,6 +161,7 @@ export default function AllIngredientsPage() {
         return sortedData.slice(startIndex, startIndex + itemsPerPage);
     }, [filteredIngredients, sortConfig, currentPage, itemsPerPage]);
 
+    // Helpers and Handlers
     const requestSort = (key) => {
         let direction = 'ascending';
         if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -178,10 +174,8 @@ export default function AllIngredientsPage() {
         setItemsPerPage(Number(value));
         setCurrentPage(1);
     };
-    
     const totalPages = Math.ceil(filteredIngredients.length / itemsPerPage);
 
-    // --- Handlers for filtering and searching (as per prototype) ---
     const handleSelectCategory = (selected) => {
         setCategory(selected);
         setCurrentPage(1);
@@ -213,99 +207,134 @@ export default function AllIngredientsPage() {
         );
     };
 
+    const handleOpenDeletedModal = (ingredient) => {
+        const itemToForceDelete = {
+            ...ingredient,
+            count: 0,
+        };
+        setSelectedIngredient(itemToForceDelete);
+        setIsDeletedModalOpen(true);
+    };
+
     return (
-
+        <div className="flex-1 flex flex-col overflow-hidden">
             <main className="flex-1 overflow-y-auto py-9 px-25">
-                <div className="max-w-7xl mx-auto">
-                    <div className="mb-8">
-                        <h1 className="text-black text-3xl font-bold">วัตถุดิบทั้งหมดในสต็อก</h1>
-                        <p className="text-gray-500">ตารางข้อมูลเกี่ยวกับวัตถุดิบทั้งหมดในสต็อก</p>
-                    </div>
+                <div className="mb-8">
+                    <h1 className="text-black text-3xl font-bold">วัตถุดิบทั้งหมดในสต็อก</h1>
+                    <p className="text-gray-500">ตารางข้อมูลเกี่ยวกับวัตถุดิบทั้งหมดในสต็อก</p>
+                </div>
 
-                    {/* Filter and Search Controls (Modified to match prototype) */}
-                    <div className="flex items-center gap-4 mb-6">
-                        <CustomDropdown 
-                            label="หมวดหมู่" 
-                            categories={categoryOptions} 
-                            selectedCategory={category} 
-                            onSelectCategory={handleSelectCategory} 
+                {/* Filter and Search */}
+                <div className="flex items-center gap-4 mb-6">
+                    <CustomDropdown 
+                        label="หมวดหมู่" 
+                        categories={categoryOptions} 
+                        selectedCategory={category} 
+                        onSelectCategory={handleSelectCategory} 
+                    />
+                    <div className="relative w-full">
+                        <input 
+                            type="text" 
+                            placeholder="ค้นหาจากชื่อวัตถุดิบ..." 
+                            value={searchTerm}
+                            onChange={handleSearchChange}
+                            className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]" 
                         />
-                        <div className="relative w-full">
-                            <input 
-                                type="text" 
-                                placeholder="ค้นหาจากชื่อวัตถุดิบ..." 
-                                value={searchTerm}
-                                onChange={handleSearchChange}
-                                className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-green-500" 
-                            />
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        </div>
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     </div>
+                </div>
 
-                    <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left text-gray-700">
-                                <thead className="text-sm text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
-                                    <tr>
-                                        <SortableHeader label="ID" columnKey="id" />
-                                        <SortableHeader label="ชื่อวัตถุดิบ" columnKey="name" />
-                                        <SortableHeader label="วันหมดอายุล่าสุด" columnKey="daysLeft" />
-                                        <SortableHeader label="หมวดหมู่" columnKey="category_id" />
-                                        <SortableHeader label="จำนวนคงเหลือ" columnKey="quantity" />
-                                        <SortableHeader label="หน่วยนับ" columnKey="unit_type" />
-                                        <th scope="col" className="py-3 px-4"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {isLoading ? (
-                                        <tr><td colSpan="7" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
-                                    ) : error ? (
-                                        <tr><td colSpan="7" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
-                                    ) : sortedAndPaginatedIngredients.length > 0 ? (
-                                        sortedAndPaginatedIngredients.map((ingredient) => (
-                                            <tr key={ingredient.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
-                                                <td className="py-3 px-4 text-gray-500">{ingredient.id}</td>
-                                                <td className="py-3 px-4 text-gray-900 font-medium">{ingredient.name}</td>
-                                                <td className="py-2 px-4">
-                                                   <ExpiryStatus date={ingredient.expiryDate} days={ingredient.daysLeft} />
-                                                </td>
-                                                <td className="py-3 px-4">{ingredient.category_id}</td>
-                                                <td className="py-3 px-4">{ingredient.quantity.toFixed(2)}</td>
-                                                <td className="py-3 px-4">{ingredient.unit_type}</td>
-                                                <td className="py-3 ">
-                                                    <div className="flex justify-center space-x-1">
-                                                        <button className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors">
-                                                            <Icon icon="mynaui:edit" className="w-4 h-4" />
-                                                        </button>
-                                                        <button className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition-colors">
-                                                            <Icon icon="fluent:delete-20-regular" className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="7" className="text-center p-8 text-gray-500">
-                                                ไม่พบข้อมูลวัตถุดิบในสต็อก
+                {/* Table */}
+                <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left text-gray-700">
+                            <thead className="text-sm text-gray-500 capitalize bg-gray-100 border-b border-gray-200">
+                                <tr>
+                                    <SortableHeader label="ID" columnKey="id" />
+                                    <SortableHeader label="ชื่อวัตถุดิบ" columnKey="name" />
+                                    <SortableHeader label="วันหมดอายุล่าสุด" columnKey="daysLeft" />
+                                    <SortableHeader label="หมวดหมู่" columnKey="category_id" />
+                                    <SortableHeader label="จำนวนคงเหลือ" columnKey="quantity" />
+                                    <SortableHeader label="หน่วยนับ" columnKey="unit_type" />
+                                    <th scope="col" className="py-3 px-4"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {isLoading ? (
+                                    <tr><td colSpan="7" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
+                                ) : error ? (
+                                    <tr><td colSpan="7" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
+                                ) : sortedAndPaginatedIngredients.length > 0 ? (
+                                    sortedAndPaginatedIngredients.map((ingredient) => (
+                                        <tr key={ingredient.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+                                            <td className="py-3 px-4 text-gray-500">{ingredient.id}</td>
+                                            <td className="py-3 px-4 text-gray-900 font-medium">{ingredient.name}</td>
+                                            <td className="py-2 px-4">
+                                               <ExpiryStatus date={ingredient.expiryDate} days={ingredient.daysLeft} />
+                                            </td>
+                                            <td className="py-3 px-4">{ingredient.category_id}</td>
+                                            <td className="py-3 px-4">{ingredient.quantity.toFixed(2)}</td>
+                                            <td className="py-3 px-4">{ingredient.unit_type}</td>
+                                            <td className="py-3 ">
+                                                <div className="flex justify-start space-x-1">
+                                                    <button 
+                                                        onClick={() => handleOpenEditModal(item)} 
+                                                        className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors">
+                                                        <PencilLine size={16} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleOpenDeletedModal(item)}
+                                                        className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition-colors">
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="7" className="text-center p-8 text-gray-500">
+                                            ไม่พบข้อมูล
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
-                    {totalPages > 0 && !isLoading && !error && (
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={setCurrentPage}
-                            itemsPerPage={itemsPerPage}
-                            onItemsPerPageChange={handleItemsPerPageChange}
-                            totalItems={filteredIngredients.length}
-                        />
-                    )}
                 </div>
+
+                {/* Pagination */}
+                {totalPages > 0 && !isLoading && !error && (
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                        itemsPerPage={itemsPerPage}
+                        onItemsPerPageChange={handleItemsPerPageChange}
+                        totalItems={filteredItems.length}
+                    />
+                )}
             </main>
-    )
+
+            {/* Modals */}
+            {selectedIngredient && (
+                <>
+                    <DeletedModal
+                        isOpen={isDeletedModalOpen}
+                        onClose={() => setIsDeletedModalOpen(false)}
+                        onConfirm={handleConfirmDelete}
+                        itemToDelete={selectedIngredient}
+                    />
+                    <EditModal
+                        isOpen={isEditModalOpen}
+                        onClose={() => setIsEditModalOpen(false)}
+                        onSave={handleSaveChanges}
+                        ingredient={selectedIngredient}
+                        categories={categoriesForDropdown}
+                        units={unitsForDropdown}
+                    />
+                </>
+            )}
+        </div>
+    );
 }

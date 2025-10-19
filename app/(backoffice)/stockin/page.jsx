@@ -1,19 +1,17 @@
+// app/(backoffice)/stockin/page.jsx
 'use client';
 
 import React, { useState, useEffect, forwardRef } from 'react';
-import Sidebar from '@/components/Sidebar';
 import CustomDropdown from '@/components/CustomDropdown'; 
 import AddCategoryModal from '@/components/AddCategoryModal'; 
 import AddUnitModal from '@/components/AddUnitModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { useRouter } from 'next/navigation';
-import { 
-    Plus, Calendar, Trash2, Info, 
-    CheckCircle2, AlertCircle, X 
-} from 'lucide-react';
+import { Plus, Calendar, Trash2, CheckCircle2, AlertCircle, X } from 'lucide-react';
 
-// ========= CustomDateInput Component =========
+// CustomDateInput Component
 const CustomDateInput = forwardRef(({ value, onClick, placeholder }, ref) => (
     <div className="relative w-full cursor-pointer" onClick={onClick} ref={ref}>
         <input
@@ -28,7 +26,7 @@ const CustomDateInput = forwardRef(({ value, onClick, placeholder }, ref) => (
 ));
 CustomDateInput.displayName = 'CustomDateInput';
 
-// ========= IngredientFormRow Component (Updated) =========
+// IngredientFormRow Component
 const IngredientFormRow = ({ 
     item, onUpdate, onRemove, 
     availableCategories, onAddNewCategoryClick,
@@ -63,36 +61,36 @@ const IngredientFormRow = ({
                     <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อวัตถุดิบ <span className="text-red-500">*</span></label>
                     <input 
                         type="text" 
-                        placeholder="เช่น เนื้อหมูสันนอก, ผักกาดขาว" 
+                        placeholder="เช่น เนื้อหมูสันนอก, ผักกาดขาว"
                         value={item.name} 
                         onChange={(e) => handleInputChange('name', e.target.value)} 
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 bg-white text-black"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ประเภทของวัตถุดิบ <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่ของวัตถุดิบ <span className="text-red-500">*</span></label>
                     <CustomDropdown 
                         categories={availableCategories}
                         selectedCategory={item.category_name} 
                         onSelectCategory={(selectedType) => handleInputChange('category_name', selectedType)}
-                        placeholder="เลือกประเภทของวัตถุดิบ"
+                        placeholder="เลือกหรือเพิ่มหมวดหมู่ของวัตถุดิบ"
                         onAddNewClick={onAddNewCategoryClick}
                         addNewText="เพิ่มหมวดหมู่"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-black mb-1">จำนวน <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-black mb-1">จำนวนนำเข้า <span className="text-red-500">*</span></label>
                     <input type="number" min="0.01" step="0.01" value={item.quantity} onChange={(e) => handleInputChange('quantity', e.target.value)} 
-                    placeholder="เช่น 2.5, 10" 
+                    placeholder="ระบุค่าตัวเลข เช่น 2.5, 10" 
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 bg-white text-black"/>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-black mb-1">หน่วย <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-black mb-1">หน่วยนับ <span className="text-red-500">*</span></label>
                     <CustomDropdown
                         categories={quantityUnits}
                         selectedCategory={item.unit_name}
                         onSelectCategory={(unit) => handleInputChange('unit_name', unit)}
-                        placeholder="เช่น กิโลกรัม, แพ็ค, ขวด"
+                        placeholder="เลือกหรือเพิ่มหน่วยนับ"
                         onAddNewClick={onAddNewQuantityUnitClick}
                         addNewText="เพิ่มหน่วยนับ"
                     />
@@ -138,29 +136,7 @@ const ToastNotification = ({ message, type, onClose }) => {
     );
 };
 
-// ========= ConfirmationModal Component =========
-const ConfirmationModal = ({ onClose, onConfirm, isSubmitting }) => (
-     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-        <div className="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm w-full mx-4 border">
-            <div className="mx-auto w-16 h-16 border-2 border-green-500 rounded-full flex items-center justify-center mb-4">
-                <Info size={40} className="text-green-500" />
-            </div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">ยืนยันการบันทึกข้อมูล</h2>
-            <p className="text-gray-500 mb-6">คุณต้องการบันทึกข้อมูลการนำเข้าทั้งหมดใช่หรือไม่?</p>
-            <div className="flex justify-center gap-4">
-                <button onClick={onClose} className="px-8 py-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-                    ยกเลิก
-                </button>
-                <button onClick={onConfirm} disabled={isSubmitting} className="px-8 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-green-300">
-                    {isSubmitting ? 'กำลังบันทึก...' : 'ยืนยัน'}
-                </button>
-            </div>
-        </div>
-    </div>
-);
-
-
-// ========= Main Import Page (Stock-in Form) =========
+// Main Page
 export default function StockInPage() {
     const router = useRouter();
 
@@ -331,7 +307,7 @@ export default function StockInPage() {
 
     return (
         <>
-            <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
+            <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
                 <form onSubmit={handleSubmit}>
                     <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
                         <div>
@@ -342,7 +318,7 @@ export default function StockInPage() {
                             type="button" 
                             onClick={handleAddItem} 
                             className="w-full sm:w-auto justify-center px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors">
-                            <Plus size={16}/> เพิ่มรายการ
+                            <Plus size={16}/> เพิ่มรายการวัตถุดิบ
                         </button>
                     </div>
                     
@@ -385,6 +361,7 @@ export default function StockInPage() {
                     onClose={() => setConfirmModalOpen(false)}
                     onConfirm={handleConfirmSubmit}
                     isSubmitting={isSubmitting}
+                    formType="stock-in"
                 />
             )}
             

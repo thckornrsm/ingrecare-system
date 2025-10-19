@@ -1,24 +1,20 @@
+// app/(backoffice)/settings/page.jsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import Sidebar from '@/components/Sidebar';
 import AddCategoryModal from '@/components/AddCategoryModal';
 import DeletedModal from '@/components/DeletedModal';
 import { X, PencilLine, Trash2, Plus, EyeOff, Eye } from 'lucide-react';
 
 const DataDisplayField = ({ label, value, span, type, isPassword, showPassword, setShowPassword }) => (
     <div className={span}>
-        {/* Label: smaller, uppercase, gray */}
         <p className="text-xs text-gray-500 tracking-wider mb-1">{label}</p>
-        
-        {/* Value container: handles password toggle */}
         <div className={`flex items-center ${isPassword ? 'justify-between' : ''}`}>
             <p 
                 className={`font-medium text-gray-800 break-words ${
                     type === 'h1' ? "text-2xl text-[#3FA170]" : 'text-base'
                 }`}
             >
-                {/* Logic for password visibility */}
                 {isPassword 
                     ? (showPassword ? value : '•••••••••') 
                     : value
@@ -357,6 +353,7 @@ const ManageCategories = () => {
     );
 }
 
+// Main Page
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('about');
     const tabs = [
@@ -365,30 +362,29 @@ export default function SettingsPage() {
     ];
 
     return (
-
-                <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
-                    <div className="mb-8">
-                        <h1 className="text-black text-3xl font-bold">การตั้งค่า</h1>
-                        <p className="text-[#979999]">จัดการข้อมูลบัญชีร้านค้าและหมวดหมู่ได้ที่นี่</p>
-                    </div>
-                    <div className="border-b border-gray-300">
-                        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                            {tabs.map(tab => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id ? 'border-[#3FA170] text-[#3FA170]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </nav>
-                    </div>
-                    <div className="mt-8">
-                        {activeTab === 'about' && <AboutStore />}
-                        {activeTab === 'categories' && <ManageCategories />}
-                    </div>
-                </main>
+        <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
+            <div className="mb-8">
+                <h1 className="text-black text-3xl font-bold">การตั้งค่า</h1>
+                <p className="text-[#979999]">จัดการข้อมูลบัญชีร้านค้าและหมวดหมู่ได้ที่นี่</p>
+            </div>
+            <div className="border-b border-gray-300">
+                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id ? 'border-[#3FA170] text-[#3FA170]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </nav>
+            </div>
+            <div className="mt-8">
+                {activeTab === 'about' && <AboutStore />}
+                {activeTab === 'categories' && <ManageCategories />}
+            </div>
+        </main>
 
     );
 }

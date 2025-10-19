@@ -1,12 +1,11 @@
+// app/(backoffice)/statistics/page.jsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import Sidebar from '@/components/Sidebar';
 import CustomDropdown from '@/components/CustomDropdown';
 import { ArrowDownToLine, ArrowUpFromLine, Archive, CalendarDays, Trophy } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-// --- ฟังก์ชันตัวช่วย ---
 const convertThaiMonthToNumber = (monthName) => {
     const months = {
         'มกราคม': 1, 'กุมภาพันธ์': 2, 'มีนาคม': 3, 'เมษายน': 4,
@@ -24,7 +23,7 @@ const CATEGORY_COLORS = {
     'อื่นๆ': { color: 'bg-gray-400' }
 };
 
-// --- Components ย่อย ---
+// Stat Card
 const StatCard = ({ icon, title, value, unit, context }) => (
     <div className="bg-white p-6 rounded-lg border border-gray-200 flex flex-col justify-between min-h-[164px]">
         <div className="flex items-center gap-3 text-gray-600">
@@ -40,6 +39,7 @@ const StatCard = ({ icon, title, value, unit, context }) => (
     </div>
 );
 
+// Stat Insight (Card4)
 const KeyInsightCard = ({ insight }) => {
     if (!insight || !insight.name) {
         return (
@@ -65,12 +65,12 @@ const KeyInsightCard = ({ insight }) => {
     );
 };
 
-// ✨ --- Components กราฟที่นำกลับมา --- ✨
+// Donut Chart
 const DonutChart = ({ data }) => {
     if (!data || data.length === 0) return <div className="p-8 text-center text-gray-500 min-h-[300px] flex items-center justify-center">ไม่มีข้อมูลสัดส่วน</div>;
     return (
         <div className="flex flex-col md:flex-row items-center justify-center gap-x-12 gap-y-6 p-6 min-h-[300px]">
-            <div className="w-40 h-40 bg-gray-200 rounded-full flex items-center justify-center"><p className="text-gray-500 text-sm">Chart</p></div>
+            <div className="w-auto h-auto lg:w-40 lg:w-40 bg-gray-200 rounded-full flex items-center justify-center"><p className="text-gray-500 text-sm">Chart</p></div>
             <div className="flex flex-col gap-2 w-full max-w-xs">
               {data.map(item => (
                 <div key={item.name} className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-gray-50">
@@ -130,12 +130,11 @@ const TrendChart = ({ data }) => {
     );
 };
 
-
 const TransactionHistoryTable = ({ title, data, type }) => {
     // โค้ด TransactionHistoryTable เหมือนเดิม
 };
 
-/* ================= Main Statistics Page ================= */
+// Main Page
 export default function StatisticsPage() {
     const [selectedCategory, setSelectedCategory] = useState('ทั้งหมด');
     const [selectedMonth, setSelectedMonth] = useState('');
@@ -192,7 +191,6 @@ export default function StatisticsPage() {
                 if (!res.ok) throw new Error((await res.json()).error || 'เกิดข้อผิดพลาด');
                 const data = await res.json();
                 
-                // ✨ นำข้อมูลกราฟกลับมาประมวลผล
                 const formattedData = {
                     summary: {
                         import: data.summary.importTotal,
@@ -237,16 +235,14 @@ export default function StatisticsPage() {
 
         return (
             <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
                     <StatCard icon={<ArrowDownToLine size={20} />} title="ปริมาณนำเข้า" value={currentData.summary?.import.toLocaleString() || 'N/A'} context={`ข้อมูลเดือน ${selectedMonth}`} />
                     <StatCard icon={<ArrowUpFromLine size={20} />} title="ปริมาณเบิกจ่าย" value={currentData.summary?.dispense.toLocaleString() || 'N/A'} context={`ข้อมูลเดือน ${selectedMonth}`} />
                     <StatCard icon={<Archive size={20} />} title="คงเหลือในสต็อก" value={currentData.summary?.stock.toLocaleString() || 'N/A'} context="อัปเดตล่าสุด" />
                     <KeyInsightCard insight={keyInsight} />
                 </div>
 
-                {/* ✨ --- ส่วนที่แก้ไข --- ✨ */}
                 <div className="space-y-8">
-                    {/* ส่วนที่ 1: กราฟวงกลม หรือ กราฟแท่ง */}
                     <div className="bg-white rounded-lg border border-gray-200">
                         <h2 className="p-4 font-semibold border-b text-gray-800">
                             {selectedCategory === 'ทั้งหมด' ? 'สัดส่วนการใช้วัตถุดิบทั้งหมด' : `วัตถุดิบที่ใช้บ่อยในหมวด "${selectedCategory}"`}
@@ -258,7 +254,6 @@ export default function StatisticsPage() {
                         )}
                     </div>
 
-                    {/* ส่วนที่ 2: กราฟเส้น (จะแสดงเมื่อเลือก 'ทั้งหมด' เท่านั้น) */}
                     {selectedCategory === 'ทั้งหมด' && (
                         <div className="bg-white rounded-lg border border-gray-200">
                             <h2 className="p-4 font-semibold border-b text-gray-800">แนวโน้มการนำเข้า-เบิกจ่าย ({selectedMonth})</h2>
@@ -271,7 +266,7 @@ export default function StatisticsPage() {
     };
 
     return (
-        <main className="flex-1 overflow-y-auto py-6 px-4 sm:px-6 md:py-9 md:px-10 lg:px-16">
+        <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
             <div className="mb-8">
                 <h1 className="text-black text-2xl sm:text-3xl font-bold">สถิติและประวัติ</h1>
                 <p className="text-gray-500">ภาพรวมสต็อกวัตถุดิบเพื่อการวางแผนและจัดการ</p>

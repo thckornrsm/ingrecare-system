@@ -377,7 +377,7 @@ export default function AllStockin() {
                                     <SortableHeader label="วันหมดอายุ" columnKey="expiry_date" />
                                     <SortableHeader label="หมวดหมู่" columnKey="category" />
                                     <SortableHeader label="จำนวน" columnKey="quantity" />
-                                    <SortableHeader label="หน่วย" columnKey="unit" />
+                                    <SortableHeader label="หน่วยนับ" columnKey="unit" />
                                     <th scope="col" className="py-3 px-4"></th>
                                 </tr>
                             </thead>
@@ -388,40 +388,73 @@ export default function AllStockin() {
                                     <tr><td colSpan="8" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
                                 ) : sortedAndPaginatedIngredients.length > 0 ? (sortedAndPaginatedIngredients.map((item) => (
                                     <tr key={item.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
-                                        <td className="py-3 px-4 text-gray-600">{item.id}</td>
+                                        <td className="py-3 px-4">{item.id}</td>
                                         <td className="py-3 px-4 font-medium text-gray-800">{item.name}</td>
-                                        <td className="py-3 px-4 text-gray-600">{formatDate(item.received_date)}</td>
-                                        <td className="py-3 px-4 text-gray-600">{formatDate(item.expiry_date)}</td>
-                                        <td className="py-3 px-4 text-gray-600">{item.category}</td>
-                                        <td className="py-3 px-4 text-gray-600">{item.quantity.toFixed(2)}</td>
-                                        <td className="py-3 px-4 text-gray-600">{item.unit}</td>
+                                        <td className="py-3 px-4">{formatDate(item.received_date)}</td>
+                                        <td className="py-3 px-4">{formatDate(item.expiry_date)}</td>
+                                        <td className="py-3 px-4">{item.category}</td>
+                                        <td className="py-3 px-4">{item.quantity.toFixed(2)}</td>
+                                        <td className="py-3 px-4">{item.unit}</td>
                                         <td className="py-3 px-4">
                                             <div className="flex justify-start space-x-1">
-                                                <button onClick={() => handleEditClick(item)} className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors"><Icon icon="mynaui:edit" className="w-4 h-4" /></button>
-                                                <button onClick={() => handleDeleteClick(item)} className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition-colors"><Icon icon="fluent:delete-20-regular" className="w-4 h-4" /></button>
+                                                <button 
+                                                    onClick={() => handleOpenEditModal(item)} 
+                                                    className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors">
+                                                    <PencilLine size={16} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleOpenDeletedModal(item)}
+                                                    className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition-colors">
+                                                    <Trash2 size={16} />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
                                 ))
                                 ) : (
-                                    <tr><td colSpan="8" className="text-center p-8 text-gray-500">ไม่พบข้อมูล</td></tr>
+                                    <tr>
+                                        <td colSpan="7" className="text-center p-8 text-gray-500">
+                                            ไม่พบข้อมูล
+                                        </td>
+                                    </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
                 </div>
-                
-                {!isLoading && !error && filteredIngredients.length > 0 && (
+
+                {/* Pagination */}
+                {totalPages > 0 && !isLoading && !error && (
                     <Pagination
                         currentPage={currentPage}
                         totalPages={totalPages}
                         onPageChange={setCurrentPage}
                         itemsPerPage={itemsPerPage}
-                        onItemsPerPageChange={(val) => { setItemsPerPage(Number(val)); setCurrentPage(1); }}
-                        totalItems={filteredIngredients.length}
+                        onItemsPerPageChange={handleItemsPerPageChange}
+                        totalItems={filteredItems.length}
                     />
                 )}
-            </div>
-        </main>
+            </main>
+
+            {/* Modals */}
+            {selectedIngredient && (
+                <>
+                    <DeletedModal
+                        isOpen={isDeletedModalOpen}
+                        onClose={() => setIsDeletedModalOpen(false)}
+                        onConfirm={handleConfirmDelete}
+                        itemToDelete={selectedIngredient}
+                    />
+                    <EditModal
+                        isOpen={isEditModalOpen}
+                        onClose={() => setIsEditModalOpen(false)}
+                        onSave={handleSaveChanges}
+                        ingredient={selectedIngredient}
+                        categories={categoriesForDropdown}
+                        units={unitsForDropdown}
+                    />
+                </>
+            )}
+        </div>
     );
 }

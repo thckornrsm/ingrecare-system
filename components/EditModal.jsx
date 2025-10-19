@@ -6,7 +6,6 @@ import CustomDropdown from "@/components/CustomDropdown";
 
 function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units = [], formType = 'default' }) {
     const [formData, setFormData] = useState({});
-    // **1. เพิ่ม State สำหรับจัดการ Error ของชื่อ**
     const [nameError, setNameError] = useState(false); 
 
     useEffect(() => {
@@ -22,7 +21,6 @@ function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units
                 out_date: outDate,
                 out_time: outTime,
             });
-            // รีเซ็ต Error เมื่อ Modal เปิด
             setNameError(false);
         }
     }, [ingredient, isOpen]);
@@ -34,8 +32,7 @@ function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        
-        // **3. จัดการ Error เมื่อเริ่มพิมพ์**
+
         if (name === 'name' && value.trim()) {
             setNameError(false);
         }
@@ -46,13 +43,11 @@ function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units
     };
 
     const handleSave = () => {
-        // **3. ตรวจสอบชื่อวัตถุดิบก่อนบันทึก**
         if (!formData.name || formData.name.trim() === '') {
             setNameError(true);
-            return; // หยุดการบันทึก
+            return;
         }
-        
-        setNameError(false); // ล้าง error ถ้าผ่าน
+        setNameError(false);
 
         const updatedIngredient = {
             ...ingredient,
@@ -70,13 +65,11 @@ function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units
       }
     };
 
-    // **2. ปรับปรุง InputField ให้รับ prop isError และ errorMessage**
     const InputField = ({ label, isError, errorMessage, ...props }) => (
         <div>
             <label className="text-sm font-medium text-gray-700 block mb-1.5">{label}</label>
             <input
                 onKeyDown={handleKeyDown}
-                // ใช้ Conditional Class สำหรับขอบแดง
                 className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 transition 
                     ${isError 
                         ? 'border-red-500 focus:ring-red-500' // ถ้า Error ให้เป็นขอบแดง
@@ -85,18 +78,14 @@ function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units
                 }
                 {...props}
             />
-            {/* แสดงข้อความเตือนเล็ก ๆ */}
             {isError && (
                 <p className="mt-1 text-sm text-red-500">{errorMessage}</p>
             )}
         </div>
     );
 
-    // 2. สร้างฟอร์มสำหรับแต่ละ Type ตามเงื่อนไข
     const renderFormContent = () => {
-        // ใช้ตัวแปร isNameError เพื่อส่งไปที่ InputField เฉพาะชื่อ
         const isNameError = nameError && (!formData.name || formData.name.trim() === '');
-        
         const NameInput = () => (
             <InputField 
                 label="ชื่อวัตถุดิบ" 
@@ -187,11 +176,15 @@ function EditModal({ isOpen, onClose, onSave, ingredient, categories = [], units
                     {renderFormContent()}
                 </div>
 
-                <div className="flex justify-end gap-4 mt-8">
-                    <button onClick={onClose} className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
+                <div className="flex flex-wrap justify-center gap-4 mt-8">
+                    <button onClick={onClose} 
+                        className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                    >
                         ยกเลิก
                     </button>
-                    <button onClick={handleSave} className="px-6 py-2 text-sm font-medium text-white bg-[#3FA170] rounded-md hover:bg-[#2F7A5E]">
+                    <button onClick={handleSave} 
+                        className="px-6 py-2 text-sm font-medium text-white bg-[#3FA170] rounded-md hover:bg-[#2F7A5E] transition-colors"
+                    >
                         แก้ไขข้อมูล
                     </button>
                 </div>
