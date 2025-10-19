@@ -20,7 +20,6 @@ function CustomDropdown({
 
     const filteredCategories = dropdownSearch
         ? categories.filter(c => {
-            // ✨ แก้ไขจุดที่ 1: ตรวจสอบทั้ง 'name' และ 'category_name'
             const name = isObjectArray ? (c.name || c.category_name) : c;
             return name ? name.toLowerCase().includes(dropdownSearch.toLowerCase()) : false;
         })
@@ -43,7 +42,6 @@ function CustomDropdown({
         }
 
         if (isObjectArray) {
-            // ✨ แก้ไขจุดที่ 2: ค้นหาจากทั้ง 'name' และ 'category_name'
             const selectedObj = categories.find(c => (c.name || c.category_name) === selectedCategory);
             return <span>{selectedObj ? (selectedObj.name || selectedObj.category_name) : selectedCategory}</span>;
         }
@@ -62,7 +60,7 @@ function CustomDropdown({
                     {label && <span className="text-gray-500 mr-2">{label}:</span>}
                     {getSelectedDisplay()}
                 </div>
-                {isOpen ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
+                <ChevronDown size={16} className={`transition-transform text-gray-400 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isOpen && (
@@ -76,9 +74,8 @@ function CustomDropdown({
                     </div>
                     <ul className="py-1 max-h-48 overflow-y-auto">
                         {filteredCategories.map((cat, index) => {
-                            // ✨ แก้ไขจุดที่ 3: ดึงค่าจาก 'name' หรือ 'category_name'
                             const name = isObjectArray ? (cat.name || cat.category_name) : cat;
-                            if (!name) return null; // ไม่แสดงรายการถ้าไม่มีชื่อ
+                            if (!name) return null;
                             
                             return (
                                 <li 

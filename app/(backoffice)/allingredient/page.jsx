@@ -168,6 +168,7 @@ export default function AllIngredientsPage() {
             direction = 'descending';
         }
         setSortConfig({ key, direction });
+        setCurrentPage(1);
     };
 
     const handleItemsPerPageChange = (value) => {

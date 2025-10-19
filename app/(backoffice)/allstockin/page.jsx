@@ -1,15 +1,15 @@
+// app/(backoffice)/allstockin/page.jsx
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import {
-    Search, ChevronsUpDown, ChevronUp, ChevronDown,
-    Utensils, Leaf, Beef, Fish, Apple, SprayCan, MoreHorizontal,
-    ChevronLeft, ChevronRight, AlertTriangle, Trash2, X
-} from 'lucide-react';
-import { Icon } from '@iconify/react';
+import CustomDropdown from "@/components/CustomDropdown";
+import Pagination from "@/components/Pagination";
+import DeletedModal from "@/components/DeletedModal";
+import EditModal from "@/components/EditModal";
+import { Search, ChevronsUpDown, ChevronUp, ChevronDown, PencilLine, Trash2 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
-// ========= Inline Components (นำโค้ดที่คุณส่งมารวมไว้ที่นี่) =========
+/*  โค้ดเดิม (เอาออกแล้วใช้โค้ดใน CustomDropdown.jsx แทน ไม่ได้ลบเพราะเผื่อเชื่อมไม่เหมือนกัน)
 
 const CustomDropdown = ({ categories, selectedCategory, onSelectCategory }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -56,71 +56,10 @@ const CustomDropdown = ({ categories, selectedCategory, onSelectCategory }) => {
         </div>
     );
 };
+*/
 
-const Pagination = ({ currentPage, totalPages, onPageChange, itemsPerPage, onItemsPerPageChange, totalItems }) => {
-    const startItem = totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
-    const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+/*  โค้ดเดิม (เอาออกแล้วใช้โค้ดใน DeletedModal.jsx แทน ไม่ได้ลบเพราะเผื่อเชื่อมไม่เหมือนกัน)
 
-    return (
-        <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-sm text-gray-600 px-1 py-2 gap-4">
-            <div>
-                <span className="font-medium">แสดงรายการ {startItem}-{endItem}</span> จาก {totalItems}
-            </div>
-            <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                    <span>จำนวนต่อหน้า:</span>
-                    <select value={itemsPerPage} onChange={(e) => onItemsPerPageChange(e.target.value)} className="border-gray-300 border rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-green-500">
-                        <option value="10">10</option>
-                        <option value="20">20</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="font-medium">{currentPage} / {totalPages || 1}</span>
-                    <button onClick={() => { if (currentPage > 1) onPageChange(currentPage - 1); }} disabled={currentPage === 1} className="p-1.5 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100">
-                        <ChevronLeft size={20} />
-                    </button>
-                    <button onClick={() => { if (currentPage < totalPages) onPageChange(currentPage + 1); }} disabled={currentPage === totalPages || totalPages === 0} className="p-1.5 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100">
-                        <ChevronRight size={20} />
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// นำโค้ดจาก DeletedModal.jsx มาใช้ในชื่อ ConfirmationModal
-const ConfirmationModal = ({ isOpen, onClose, onConfirm, itemToDelete }) => {
-  if (!isOpen || !itemToDelete) {
-    return null;
-  }
-  return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md mx-4 text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-100 mb-6">
-              <Trash2 className="h-10 w-10 text-red-500" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-xl font-medium text-gray-800 mb-2">
-              ยืนยันการลบข้อมูล
-            </h3>
-            <p className="text-gray-500 mb-6">
-              คุณต้องการลบ "{itemToDelete.name}" ใช่หรือไม่?
-            </p>
-            <div className="flex flex-wrap justify-center gap-4 mt-8">
-              <button onClick={onClose} className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
-                ยกเลิก
-              </button>
-              <button onClick={onConfirm} className="px-6 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors">
-                ใช่, ลบเลย
-              </button>
-            </div>
-      </div>
-    </div>
-  );
-};
-
-// นำโค้ดจาก EditModal.jsx มาใช้ในชื่อ EditStockinModal
 const EditStockinModal = ({ isOpen, onClose, onSave, itemData }) => {
     const [formData, setFormData] = useState({});
     const [errors, setErrors] = useState({});
@@ -212,24 +151,40 @@ const EditStockinModal = ({ isOpen, onClose, onSave, itemData }) => {
         </div>
     );
 };
+*/
 
+const processedInitialData = initialIngredientsData.map((ingredient, index) => {
+    const received = new Date();
+    received.setDate(received.getDate() - (index * 2 + 5));
+    const expiry = new Date(received);
+    expiry.setDate(expiry.getDate() + ingredient.shelflife_day);
+    return {
+        ...ingredient,
+        received_date: received.toISOString().split('T')[0],
+        expiry_date: expiry.toISOString().split('T')[0],
+    };
+});
 
-const categoryIconMap = {
-    'เนื้อสัตว์': <Beef size={16} className="text-gray-500" />, 'ผัก': <Leaf size={16} className="text-gray-500" />, 'ทะเล': <Fish size={16} className="text-gray-500" />, 'ผลไม้': <Apple size={16} className="text-gray-500" />, 'เครื่องปรุง': <SprayCan size={16} className="text-gray-500" />, 'อื่นๆ': <MoreHorizontal size={16} className="text-gray-500" />, 'ทั้งหมด': <Utensils size={16} className="text-gray-500" />
-};
-
+// Main Page
 export default function AllStockin() {
+    const [ingredients, setIngredients] = useState(processedInitialData);
     const [stockinHistory, setStockinHistory] = useState([]);
+    const [categoryOptions, setCategoryOptions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const [isDeletedModalOpen, setIsDeletedModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedIngredient, setSelectedIngredient] = useState(null);
+    const [itemToDelete, setItemToDelete] = useState(null);
+    const [itemToEdit, setItemToEdit] = useState(null);
+
     const [category, setCategory] = useState('ทั้งหมด');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'descending' });
-    const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [itemToDelete, setItemToDelete] = useState(null);
-    const [itemToEdit, setItemToEdit] = useState(null);
-
+    const [itemsPerPage, setItemsPerPage] = useState(20);
+    
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
@@ -239,7 +194,13 @@ export default function AllStockin() {
                 const batches = await res.json();
                 const formattedHistory = batches.flatMap(batch =>
                     batch.stockins.map(stockin => ({
-                        id: stockin.stockin_id, name: stockin.ingredient.name, received_date: stockin.received_date, expiry_date: stockin.expiry_date, category: stockin.ingredient.category.category_name, quantity: stockin.quantity, unit: stockin.unit.unit_name,
+                        id: stockin.stockin_id,
+                        name: stockin.ingredient.name,
+                        category: stockin.ingredient.category.category_name,
+                        received_date: stockin.received_date,
+                        expiry_date: stockin.expiry_date,
+                        quantity: stockin.quantity,
+                        unit: stockin.unit.unit_name,
                     }))
                 );
                 setStockinHistory(formattedHistory);
@@ -251,59 +212,51 @@ export default function AllStockin() {
         };
         fetchData();
     }, []);
-
-    const categoryOptions = useMemo(() => {
-        if (stockinHistory.length === 0) return [{ name: 'ทั้งหมด', icon: categoryIconMap['ทั้งหมด'] }];
-        const uniqueCategoryNames = ["ทั้งหมด", ...new Set(stockinHistory.map(item => item.category))];
-        return uniqueCategoryNames.map(name => ({
-            name: name, icon: categoryIconMap[name] || <MoreHorizontal size={16} className="text-gray-500" />
-        }));
-    }, [stockinHistory]);
     
+    // Filtering and Sorting
     const filteredIngredients = useMemo(() => {
-        return stockinHistory.filter(item => (category === 'ทั้งหมด' || item.category === category) && item.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    }, [stockinHistory, category, searchTerm]);
+        return stockinHistory
+            .filter(item => category === 'ทั้งหมด' || item.category_id === category)
+            .filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    }, [searchTerm, category, stockinHistory]);
 
     const sortedAndPaginatedIngredients = useMemo(() => {
         let sortedData = [...filteredIngredients];
         if (sortConfig.key) {
             sortedData.sort((a, b) => {
-                if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'ascending' ? -1 : 1;
-                if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'ascending' ? 1 : -1;
+                if (a[sortConfig.key] < b[sortConfig.key]) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (a[sortConfig.key] > b[sortConfig.key]) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
                 return 0;
             });
         }
-        return sortedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return sortedData.slice(startIndex, startIndex + itemsPerPage);
     }, [filteredIngredients, sortConfig, currentPage, itemsPerPage]);
 
-    const totalPages = Math.ceil(filteredIngredients.length / itemsPerPage);
-
+    // Helpers and Handlers
     const requestSort = (key) => {
         let direction = 'ascending';
         if (sortConfig.key === key && sortConfig.direction === 'ascending') {
             direction = 'descending';
         }
         setSortConfig({ key, direction });
+        setCurrentPage(1);
     };
+
+    const handleItemsPerPageChange = (value) => {
+        setItemsPerPage(Number(value));
+        setCurrentPage(1);
+    };
+    const totalPages = Math.ceil(filteredIngredients.length / itemsPerPage);
 
     const handleDeleteClick = (item) => setItemToDelete(item);
     const handleEditClick = (item) => setItemToEdit(item);
-
-    const handleConfirmDelete = async () => {
-        if (!itemToDelete) return;
-        const loadingToast = toast.loading('กำลังลบข้อมูล...');
-        try {
-            const res = await fetch(`/api/stockin/${itemToDelete.id}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error((await res.json()).error || 'ไม่สามารถลบข้อมูลได้');
-            setStockinHistory(prev => prev.filter(item => item.id !== itemToDelete.id));
-            toast.success('ลบข้อมูลสำเร็จ!', { id: loadingToast });
-        } catch (err) {
-            toast.error(`เกิดข้อผิดพลาด: ${err.message}`, { id: loadingToast });
-        } finally {
-            setItemToDelete(null);
-        }
-    };
-
+    
+/*  โค้ดเดิม
     const handleSaveEdit = async (formData) => {
         const loadingToast = toast.loading('กำลังบันทึกการแก้ไข...');
         try {
@@ -325,8 +278,72 @@ export default function AllStockin() {
             setItemToEdit(null);
         }
     };
+*/
 
-    const formatDate = (dateString) => new Date(dateString).toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
+/*  โค้ดเดิม
+    const handleConfirmDelete = async () => {
+        if (!itemToDelete) return;
+        const loadingToast = toast.loading('กำลังลบข้อมูล...');
+        try {
+            const res = await fetch(`/api/stockin/${itemToDelete.id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error((await res.json()).error || 'ไม่สามารถลบข้อมูลได้');
+            setStockinHistory(prev => prev.filter(item => item.id !== itemToDelete.id));
+            toast.success('ลบข้อมูลสำเร็จ!', { id: loadingToast });
+        } catch (err) {
+            toast.error(`เกิดข้อผิดพลาด: ${err.message}`, { id: loadingToast });
+        } finally {
+            setItemToDelete(null);
+        }
+
+    };
+*/
+
+    const handleOpenDeletedModal = (ingredient) => {
+        const itemToForceDelete = {
+            ...ingredient,
+            count: 0,
+        };
+        setSelectedIngredient(itemToForceDelete);
+        setIsDeletedModalOpen(true);
+    };
+
+    const handleSaveChanges = (updatedIngredient) => {
+        if (updatedIngredient) {
+            setIngredients(prev => prev.map(item =>
+                item.id === updatedIngredient.id ? updatedIngredient : item
+            ));
+            console.log("Saved:", updatedIngredient);
+            setIsEditModalOpen(false);
+            setSelectedIngredient(null);
+        }
+    }
+
+    const handleConfirmDelete = () => {
+        if (selectedIngredient) {
+            setIngredients(prev => prev.filter(item => item.id !== selectedIngredient.id));
+            console.log("Deleted:", selectedIngredient.name);
+            setIsDeletedModalOpen(false);
+        }
+    };
+
+    const handleSelectCategory = (selected) => {
+        setCategory(selected);
+        setCurrentPage(1);
+    };
+
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+        setCurrentPage(1);
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        });
+    };
 
     const SortIndicator = ({ direction, isActive }) => {
         if (!isActive) return <ChevronsUpDown size={14} className="text-gray-400 opacity-50 group-hover:opacity-100" />;
@@ -334,11 +351,14 @@ export default function AllStockin() {
         return <ChevronDown size={16} className="text-gray-800" />;
     };
 
-    const SortableHeader = ({ label, columnKey }) => {
+    const SortableHeader = ({ label, columnKey, className }) => {
         const isActive = sortConfig.key === columnKey;
         return (
-            <th scope="col" className="py-3 px-4 font-medium select-none">
-                <button onClick={() => requestSort(columnKey)} className="flex items-center gap-2 group w-full text-left">
+            <th scope="col" className={`py-3 px-4 font-medium select-none ${className}`}>
+                <button
+                    onClick={() => requestSort(columnKey)}
+                    className="flex items-center gap-2 group w-full text-left"
+                >
                     <span>{label}</span>
                     <SortIndicator direction={sortConfig.direction} isActive={isActive} />
                 </button>
@@ -347,52 +367,75 @@ export default function AllStockin() {
     };
 
     return (
-        <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-6 lg:px-8">
-            <Toaster position="top-right" />
-            <ConfirmationModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={handleConfirmDelete} itemToDelete={itemToDelete} />
-            <EditStockinModal isOpen={!!itemToEdit} onClose={() => setItemToEdit(null)} onSave={handleSaveEdit} itemData={itemToEdit} />
-
-            <div className="max-w-7xl mx-auto">
+        <div className="flex-1 flex flex-col overflow-hidden">
+            <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
+                
+                <Toaster position="top-right" />
+{/* 
+                <ConfirmationModal 
+                    isOpen={!!itemToDelete} 
+                    onClose={() => setItemToDelete(null)} 
+                    onConfirm={handleConfirmDelete} 
+                    itemToDelete={itemToDelete} />
+                <EditStockinModal 
+                    isOpen={!!itemToEdit} 
+                    onClose={() => setItemToEdit(null)}
+                    onSave={handleSaveEdit} 
+                    itemData={itemToEdit} />
+*/}
                 <div className="mb-8">
                     <h1 className="text-black text-3xl font-bold">ประวัติการนำเข้า</h1>
-                    <p className="text-gray-500">ตารางข้อมูลเกี่ยวกับการนำเข้าวัตถุดิบในระบบ</p>
+                    <p className="text-[#979999]">ตารางข้อมูลเกี่ยวกับการนำเข้าวัตถุดิบในระบบ</p>
                 </div>
 
+                {/* Filters and Search */}  
                 <div className="flex items-center gap-4 mb-6">
-                    <CustomDropdown categories={categoryOptions} selectedCategory={category} onSelectCategory={(cat) => { setCategory(cat); setCurrentPage(1); }} />
+                    <CustomDropdown 
+                        label="หมวดหมู่" 
+                        categories={categoryOptions}
+                        selectedCategory={category} 
+                        onSelectCategory={handleSelectCategory} 
+                    />
                     <div className="relative w-full">
-                        <input type="text" placeholder="ค้นหาจากชื่อวัตถุดิบ..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-green-500" />
+                        <input 
+                            type="text" 
+                            placeholder="ค้นหาจากชื่อวัตถุดิบ..." 
+                            value={searchTerm}
+                            onChange={handleSearchChange}
+                            className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]" 
+                        />
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     </div>
                 </div>
 
+                {/* Table */}
                 <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left text-gray-700">
-                            <thead className="text-sm text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+                            <thead className="text-sm text-gray-500 capitalize bg-gray-100 border-b border-gray-200">
                                 <tr>
                                     <SortableHeader label="ID" columnKey="id" />
                                     <SortableHeader label="ชื่อ" columnKey="name" />
+                                    <SortableHeader label="หมวดหมู่" columnKey="category" />
                                     <SortableHeader label="วันที่นำเข้า" columnKey="received_date" />
                                     <SortableHeader label="วันหมดอายุ" columnKey="expiry_date" />
-                                    <SortableHeader label="หมวดหมู่" columnKey="category" />
-                                    <SortableHeader label="จำนวน" columnKey="quantity" />
+                                    <SortableHeader label="จำนวนคงเหลือ" columnKey="quantity" />
                                     <SortableHeader label="หน่วยนับ" columnKey="unit" />
                                     <th scope="col" className="py-3 px-4"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {isLoading ? (
-                                    <tr><td colSpan="8" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
+                                    <tr><td colSpan="7" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
                                 ) : error ? (
-                                    <tr><td colSpan="8" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
+                                    <tr><td colSpan="7" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
                                 ) : sortedAndPaginatedIngredients.length > 0 ? (sortedAndPaginatedIngredients.map((item) => (
                                     <tr key={item.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
                                         <td className="py-3 px-4">{item.id}</td>
-                                        <td className="py-3 px-4 font-medium text-gray-800">{item.name}</td>
+                                        <td className="py-3 px-4">{item.name}</td>
+                                        <td className="py-3 px-4">{item.category}</td>
                                         <td className="py-3 px-4">{formatDate(item.received_date)}</td>
                                         <td className="py-3 px-4">{formatDate(item.expiry_date)}</td>
-                                        <td className="py-3 px-4">{item.category}</td>
                                         <td className="py-3 px-4">{item.quantity.toFixed(2)}</td>
                                         <td className="py-3 px-4">{item.unit}</td>
                                         <td className="py-3 px-4">

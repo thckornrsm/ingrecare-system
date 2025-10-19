@@ -89,6 +89,7 @@ export default function ExpiredPage() {
             .filter(item => category === 'ทั้งหมด' || item.category_id === category)
             .filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
     }, [allExpiredItems, searchTerm, category]);
+    
     const sortedAndPaginatedItems = useMemo(() => {
         let sortedData = [...filteredItems];
         if (sortConfig.key) {
