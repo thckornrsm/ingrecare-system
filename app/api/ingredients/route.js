@@ -1,47 +1,77 @@
-import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
-// GET: ดึงข้อมูลวัตถุดิบทั้งหมด (ปรับปรุงให้ดึงหน่วยเวลามาด้วย)
+const endOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const categoryId = searchParams.get('categoryId');
-
     const whereClause = categoryId ? { category_id: parseInt(categoryId, 10) } : {};
 
+    // 1) ดึงข้อมูลวัตถุดิบพื้นฐาน + หน่วย + หน่วยเวลา shelf life
     const ingredients = await prisma.ingredients.findMany({
       where: whereClause,
       include: {
-        category: {
-          select: { category_name: true },
-        },
-        unit: {
-          select: { unit_name: true },
-        },
-        // --- เพิ่มส่วนนี้เข้ามา ---
-        shelflife_unit: {
-            select: { unit_name: true }, // ดึงชื่อหน่วยเวลามาด้วย
-        }
+        category: { select: { category_name: true } },
+        unit: { select: { unit_name: true } },
+        shelflife_unit: { select: { unit_name: true } },
       },
-      orderBy: {
-        ingredient_id: 'asc',
+      orderBy: { ingredient_id: 'asc' },
+    });
+
+    // 2) ดึงคงเหลือตามล็อตเพื่อคำนวณหมดอายุ
+    const lots = await prisma.ingredient_now.findMany({
+      where: { quantity: { gt: 0 } },
+      include: {
+        batch: { include: { expiry: true } }, // expiry_tack[]
+        ingredient: true,
       },
     });
 
-    return NextResponse.json(ingredients);
+    const byIngredient = new Map(); // ingredient_id -> { totalNonExpired, soonestExpiry }
+    const now = new Date();
+
+    for (const l of lots) {
+      const expRow = l.batch.expiry.find((e) => e.ingredient_id === l.ingredient_id);
+      const exp = expRow ? expRow.expiry_date : null;
+
+      // นโยบายความปลอดภัยอาหาร: ถ้าไม่มีวันหมดอายุ -> ถือว่าหมดอายุ
+      const expired = exp ? endOfDay(exp) < now : true;
+
+      if (!expired) {
+        const current = byIngredient.get(l.ingredient_id) || { totalNonExpired: 0, soonestExpiry: null };
+        current.totalNonExpired += Number(l.quantity);
+        if (!current.soonestExpiry || (exp && exp < current.soonestExpiry)) {
+          current.soonestExpiry = exp;
+        }
+        byIngredient.set(l.ingredient_id, current);
+      }
+    }
+
+    // 3) ผนวกสถานะลงผลลัพธ์
+    const result = ingredients.map((ing) => {
+      const agg = byIngredient.get(ing.ingredient_id);
+      const total_nonexpired_qty = agg?.totalNonExpired ?? 0;
+      const is_expired = total_nonexpired_qty <= 0;
+      const soonest_expiry_date = agg?.soonestExpiry ? agg.soonestExpiry.toISOString() : null;
+      return {
+        ...ing,
+        is_expired,
+        total_nonexpired_qty,
+        soonest_expiry_date,
+      };
+    });
+
+    return NextResponse.json(result);
   } catch (error) {
-    console.error("INGREDIENTS_FETCH_ERROR", error);
-    return NextResponse.json(
-      { error: 'ไม่สามารถดึงข้อมูลวัตถุดิบได้' },
-      { status: 500 }
-    );
+    console.error('INGREDIENTS_FETCH_ERROR', error);
+    return NextResponse.json({ error: 'ไม่สามารถดึงข้อมูลวัตถุดิบได้' }, { status: 500 });
   }
 }
 
-// POST: สร้างวัตถุดิบใหม่ (ปรับปรุงให้รับข้อมูล shelflife แบบใหม่)
 export async function POST(req) {
   try {
-    // --- แก้ไข: รับ shelflife_value และ shelflife_unit_id แทน shelflife_day ---
     const { name, category_id, unit_id, shelflife_value, shelflife_unit_id } = await req.json();
 
     if (!name || !category_id || !unit_id || shelflife_value === undefined || !shelflife_unit_id) {
@@ -56,7 +86,6 @@ export async function POST(req) {
         name,
         category_id: parseInt(category_id, 10),
         unit_id: parseInt(unit_id, 10),
-        // --- แก้ไข: บันทึกข้อมูล shelflife แบบใหม่ ---
         shelflife_value: parseInt(shelflife_value, 10),
         shelflife_unit_id: parseInt(shelflife_unit_id, 10),
       },
@@ -64,82 +93,7 @@ export async function POST(req) {
 
     return NextResponse.json(newIngredient, { status: 201 });
   } catch (error) {
-    console.error("INGREDIENTS_CREATE_ERROR", error);
-    return NextResponse.json(
-      { error: 'ไม่สามารถสร้างวัตถุดิบได้' },
-      { status: 500 }
-    );
-  }
-}
-
-// PUT: อัปเดตข้อมูลวัตถุดิบ (ปรับปรุงให้รับข้อมูล shelflife แบบใหม่)
-export async function PUT(req) {
-  try {
-    // --- แก้ไข: รับ shelflife_value และ shelflife_unit_id แทน shelflife_day ---
-    const { ingredient_id, name, category_id, unit_id, shelflife_value, shelflife_unit_id } = await req.json();
-
-    if (!ingredient_id) {
-        return NextResponse.json({ error: 'กรุณาระบุ ingredient_id' }, { status: 400 });
-    }
-
-    const updatedIngredient = await prisma.ingredients.update({
-      where: {
-        ingredient_id: parseInt(ingredient_id, 10),
-      },
-      data: {
-        name,
-        category_id: category_id ? parseInt(category_id, 10) : undefined,
-        unit_id: unit_id ? parseInt(unit_id, 10) : undefined,
-        // --- แก้ไข: อัปเดตข้อมูล shelflife แบบใหม่ ---
-        shelflife_value: shelflife_value !== undefined ? parseInt(shelflife_value, 10) : undefined,
-        shelflife_unit_id: shelflife_unit_id ? parseInt(shelflife_unit_id, 10) : undefined,
-      },
-    });
-
-    return NextResponse.json(updatedIngredient);
-  } catch (error) {
-    if (error.code === 'P2025') {
-       return NextResponse.json({ error: 'ไม่พบวัตถุดิบที่ต้องการแก้ไข' }, { status: 404 });
-    }
-    console.error("INGREDIENTS_UPDATE_ERROR", error);
-    return NextResponse.json(
-      { error: 'ไม่สามารถอัปเดตวัตถุดิบได้' },
-      { status: 500 }
-    );
-  }
-}
-
-// DELETE: ลบวัตถุดิบ (ไม่มีการเปลี่ยนแปลง)
-export async function DELETE(req) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'กรุณาระบุ id ของวัตถุดิบที่ต้องการลบ' },
-        { status: 400 }
-      );
-    }
-
-    await prisma.ingredients.delete({
-      where: {
-        ingredient_id: parseInt(id, 10),
-      },
-    });
-
-    return NextResponse.json({ message: 'ลบวัตถุดิบสำเร็จ' });
-  } catch (error) {
-    if (error.code === 'P2025') {
-       return NextResponse.json({ error: 'ไม่พบวัตถุดิบที่ต้องการลบ' }, { status: 404 });
-    }
-    if (error.code === 'P2003') {
-        return NextResponse.json({ error: 'ไม่สามารถลบได้ เนื่องจากวัตถุดิบนี้ถูกใช้งานอยู่' }, { status: 409 });
-    }
-    console.error("INGREDIENTS_DELETE_ERROR", error);
-    return NextResponse.json(
-      { error: 'ไม่สามารถลบวัตถุดิบได้' },
-      { status: 500 }
-    );
+    console.error('INGREDIENTS_CREATE_ERROR', error);
+    return NextResponse.json({ error: 'ไม่สามารถสร้างวัตถุดิบได้' }, { status: 500 });
   }
 }

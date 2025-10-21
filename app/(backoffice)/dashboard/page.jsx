@@ -236,14 +236,17 @@ export default function DashboardPage() {
                     {/* Item Grid and Pagination */}
                     <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] min-h-[400px]">
                         {renderContent()}
-                        {totalPages > 1 && (
+                       
+                    </div>  
+                     {totalPages > 1 && (
                             <Pagination 
                                 currentPage={currentPage} 
                                 totalPages={totalPages} 
                                 onPageChange={setCurrentPage} 
+                                itemsPerPage={itemsPerPage}
+                                totalItems={filteredItems.length}
                             />
                         )}
-                    </div>  
                 </main>
          
     );

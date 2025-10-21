@@ -1,79 +1,14 @@
-// app/api/stockin/[id]/route.js
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifySession } from '@/utils/auth';
+import { cookies } from 'next/headers';
 
 /**
- * @description ลบรายการ Stock In และปรับปรุงสต็อก
- */
+ * @description ลบรายการ Stock In และปรับปรุงสต็อก
+ */
 export async function DELETE(request, { params }) {
-    // ... (โค้ด DELETE method เดิมของคุณ) ...
     try {
-        const token = request.cookies.get('token')?.value;
-        const session = await verifySession(token);
-        if (!session) {
-            return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
-        }
-
-        const { id } = params;
-        const stockinId = parseInt(id);
-
-        if (isNaN(stockinId)) {
-            return NextResponse.json({ error: 'ID ไม่ถูกต้อง' }, { status: 400 });
-        }
-
-        const result = await prisma.$transaction(async (tx) => {
-            const stockinToDelete = await tx.stockin.findUnique({
-                where: { stockin_id: stockinId },
-            });
-
-            if (!stockinToDelete) {
-                throw new Error('ไม่พบรายการนำเข้าที่ต้องการลบ');
-            }
-
-            const currentInventory = await tx.ingredient_now.findFirst({
-                where: { ingredient_id: stockinToDelete.ingredient_id },
-            });
-
-            if (!currentInventory || currentInventory.quantity < stockinToDelete.quantity) {
-                throw new Error('ไม่สามารถลบรายการได้เนื่องจากสต็อกปัจจุบันไม่เพียงพอ');
-            }
-
-            await tx.ingredient_now.update({
-                where: { inventory_id: currentInventory.inventory_id },
-                data: {
-                    quantity: { decrement: stockinToDelete.quantity },
-                },
-            });
-
-            await tx.history.deleteMany({
-                where: { stockin_id: stockinId },
-            });
-
-            const deletedStockin = await tx.stockin.delete({
-                where: { stockin_id: stockinId },
-            });
-
-            return deletedStockin;
-        });
-
-        return NextResponse.json({ message: `ลบรายการ #${result.stockin_id} สำเร็จ` });
-
-    } catch (e) {
-        console.error('--- DELETE STOCKIN ERROR ---', e);
-        return NextResponse.json({ error: e.message || 'เกิดข้อผิดพลาดในการลบข้อมูล' }, { status: 500 });
-    }
-}
-
-
-/**
- * @description อัปเดตรายการ Stock In และปรับปรุงสต็อกตามการเปลี่ยนแปลงจำนวน
- */
-export async function PUT(request, { params }) {
-    try {
-        // 1. ตรวจสอบสิทธิ์
-        const token = request.cookies.get('token')?.value;
+        const token = cookies().get('token')?.value;
         const session = await verifySession(token);
         if (!session) {
             return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
@@ -84,17 +19,111 @@ export async function PUT(request, { params }) {
             return NextResponse.json({ error: 'ID ไม่ถูกต้อง' }, { status: 400 });
         }
 
-        // 2. รับและตรวจสอบข้อมูลจาก Frontend
-        const { name, quantity, received_date, expiry_date } = await request.json();
+        // --- DATABASE TRANSACTION ---
+        await prisma.$transaction(async (tx) => {
+            // 1. ค้นหารายการนำเข้าที่จะลบ
+            const stockinToDelete = await tx.stockin.findUnique({
+                where: { stockin_id: stockinId },
+            });
+
+            if (!stockinToDelete) {
+                throw new Error('NOT_FOUND');
+            }
+            
+            const ingredientId = stockinToDelete.ingredient_id;
+
+            // 2. ตรวจสอบสต็อกปัจจุบันก่อน
+            const currentInventory = await tx.ingredient_now.findFirst({
+                where: { ingredient_id: ingredientId },
+            });
+
+            if (!currentInventory || currentInventory.quantity < stockinToDelete.quantity) {
+                throw new Error('INSUFFICIENT_STOCK');
+            }
+            
+            // 3. นับจำนวน lot ทั้งหมดของวัตถุดิบนี้
+            const totalLots = await tx.stockin.count({
+                where: { ingredient_id: ingredientId },
+            });
+
+            // 4. แยกตรรกะการทำงาน
+            if (totalLots > 1) {
+                // --- กรณีมีหลาย lot: ลบเฉพาะ lot นี้ ---
+                await tx.ingredient_now.updateMany({
+                    where: { ingredient_id: ingredientId },
+                    data: { quantity: { decrement: stockinToDelete.quantity } },
+                });
+                await tx.history.deleteMany({ where: { stockin_id: stockinId } });
+                await tx.stockin.delete({ where: { stockin_id: stockinId } });
+
+            } else {
+                // --- กรณีเป็น lot สุดท้าย: ลบวัตถุดิบหลักทิ้งไปด้วย ---
+                // ตรวจสอบก่อนว่าเคยมีการเบิกจ่ายหรือไม่ ถ้ามี จะลบวัตถุดิบหลักไม่ได้
+                const stockoutCount = await tx.stockout.count({
+                    where: { ingredient_id: ingredientId },
+                });
+
+                if (stockoutCount > 0) {
+                    throw new Error('HAS_HISTORY');
+                }
+
+                // ถ้าไม่มีประวัติเบิกจ่าย ก็ทำการล้างข้อมูลทั้งหมด
+                await tx.history.deleteMany({ where: { stockin_id: stockinId } });
+                await tx.stockin.delete({ where: { stockin_id: stockinId } });
+                await tx.expiry_tack.deleteMany({ where: { ingredient_id: ingredientId } });
+                await tx.ingredient_now.deleteMany({ where: { ingredient_id: ingredientId } });
+                await tx.ingredients.delete({ where: { ingredient_id: ingredientId } });
+            }
+        });
+
+        return NextResponse.json({ message: `ลบรายการ #${stockinId} และอัปเดตสต็อกสำเร็จ` });
+
+    } catch (e) {
+        if (e.message === 'NOT_FOUND') {
+            return NextResponse.json({ error: 'ไม่พบรายการนำเข้าที่ต้องการลบ' }, { status: 404 });
+        }
+        if (e.message === 'INSUFFICIENT_STOCK') {
+            return NextResponse.json(
+                { error: 'ลบไม่ได้ สต็อกปัจจุบันมีน้อยกว่าจำนวนที่นำเข้า (อาจมีการเบิกจ่ายไปแล้ว)' },
+                { status: 409 }
+            );
+        }
+        if (e.message === 'HAS_HISTORY') {
+             return NextResponse.json(
+                { error: 'ลบวัตถุดิบหลักไม่ได้ เนื่องจากมีประวัติการเบิกจ่ายอยู่' },
+                { status: 409 }
+            );
+        }
+        console.error('--- DELETE STOCKIN ERROR ---', e);
+        return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการลบข้อมูล' }, { status: 500 });
+    }
+}
+
+
+/**
+ * @description อัปเดตรายการ Stock In และปรับปรุงสต็อก/ข้อมูลหลัก
+ */
+export async function PUT(request, { params }) {
+    try {
+        const token = cookies().get('token')?.value;
+        const session = await verifySession(token);
+        if (!session) {
+            return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
+        }
+
+        const stockinId = parseInt(params.id);
+        if (isNaN(stockinId)) {
+            return NextResponse.json({ error: 'ID ไม่ถูกต้อง' }, { status: 400 });
+        }
+
+        const { name, quantity, received_date, expiry_date, category, unit } = await request.json();
         const updatedQuantity = parseFloat(quantity);
 
         if (!name || isNaN(updatedQuantity) || updatedQuantity <= 0 || !received_date || !expiry_date) {
             return NextResponse.json({ error: 'ข้อมูลไม่ครบถ้วนหรือไม่ถูกต้อง' }, { status: 400 });
         }
 
-        // 3. ใช้ Transaction เพื่อความปลอดภัยของข้อมูล
         const result = await prisma.$transaction(async (tx) => {
-            // ค้นหารายการ Stockin เดิม
             const oldStockin = await tx.stockin.findUnique({
                 where: { stockin_id: stockinId },
                 include: { ingredient: true }
@@ -104,59 +133,56 @@ export async function PUT(request, { params }) {
                 throw new Error('ไม่พบรายการนำเข้าที่ต้องการแก้ไข');
             }
 
-            // --- ส่วนจัดการการเปลี่ยนชื่อ ---
+            const ingredientUpdates = {};
+            const stockinUpdates = {};
+
             if (name.trim() !== oldStockin.ingredient.name) {
-                const newName = name.trim();
-                
-                // ตรวจสอบว่าชื่อใหม่ซ้ำกับวัตถุดิบอื่นหรือไม่
-                const existingIngredient = await tx.ingredients.findFirst({
-                    where: {
-                        name: newName,
-                        NOT: { ingredient_id: oldStockin.ingredient_id }
-                    }
-                });
+                ingredientUpdates.name = name.trim();
+            }
 
-                if (existingIngredient) {
-                    throw new Error(`ชื่อ '${newName}' มีอยู่แล้วในระบบ`);
+            if (category) {
+                const foundCategory = await tx.categories.findFirst({
+                    where: { category_name: category },
+                });
+                if (!foundCategory) {
+                    throw new Error(`ไม่พบหมวดหมู่ที่ชื่อว่า '${category}'`);
                 }
+                ingredientUpdates.category_id = foundCategory.category_id;
+            }
 
-                // อัปเดตชื่อในตาราง ingredients (ตารางหลัก)
-                await tx.ingredients.update({
-                    where: { ingredient_id: oldStockin.ingredient_id },
-                    data: { name: newName }
+            if (unit) {
+                const foundUnit = await tx.units.findFirst({
+                    where: { unit_name: unit },
                 });
+                if (!foundUnit) {
+                    throw new Error(`ไม่พบหน่วยนับที่ชื่อว่า '${unit}'`);
+                }
+                stockinUpdates.unit_id = foundUnit.unit_id;
+                ingredientUpdates.unit_id = foundUnit.unit_id;
             }
             
-            // --- ส่วนจัดการการเปลี่ยนจำนวน และอัปเดตสต็อก ---
-            const quantityDifference = updatedQuantity - oldStockin.quantity;
-
-            if (quantityDifference !== 0) {
-                const currentInventory = await tx.ingredient_now.findFirst({
+            if (Object.keys(ingredientUpdates).length > 0) {
+                 await tx.ingredients.update({
                     where: { ingredient_id: oldStockin.ingredient_id },
-                });
-
-                if (!currentInventory) {
-                    throw new Error('ไม่พบข้อมูลสต็อกปัจจุบันของวัตถุดิบนี้');
-                }
-
-                const newStockQuantity = currentInventory.quantity + quantityDifference;
-                if (newStockQuantity < 0) {
-                    throw new Error('ไม่สามารถแก้ไขได้ เนื่องจากสต็อกจะติดลบ');
-                }
-
-                await tx.ingredient_now.update({
-                    where: { inventory_id: currentInventory.inventory_id },
-                    data: { quantity: newStockQuantity },
+                    data: ingredientUpdates,
                 });
             }
 
-            // --- อัปเดตรายการ Stockin หลัก ---
+            const quantityDifference = updatedQuantity - oldStockin.quantity;
+            if (quantityDifference !== 0) {
+                await tx.ingredient_now.updateMany({
+                    where: { ingredient_id: oldStockin.ingredient_id },
+                    data: { quantity: { increment: quantityDifference } },
+                });
+            }
+
             const updatedStockin = await tx.stockin.update({
                 where: { stockin_id: stockinId },
                 data: {
                     quantity: updatedQuantity,
                     received_date: new Date(received_date),
                     expiry_date: new Date(expiry_date),
+                    ...stockinUpdates,
                 },
                 include: {
                     ingredient: { include: { category: true } },
@@ -167,7 +193,6 @@ export async function PUT(request, { params }) {
             return updatedStockin;
         });
 
-        // 4. จัดรูปแบบข้อมูลเพื่อส่งกลับให้ Frontend
         const formattedResult = {
             id: result.stockin_id,
             name: result.ingredient.name,
@@ -181,7 +206,11 @@ export async function PUT(request, { params }) {
         return NextResponse.json({ message: `อัปเดตรายการ #${formattedResult.id} สำเร็จ`, updatedItem: formattedResult });
 
     } catch (e) {
+        if (e.message.startsWith('ไม่พบหมวดหมู่') || e.message.startsWith('ไม่พบหน่วยนับ')) {
+            return NextResponse.json({ error: e.message }, { status: 404 });
+        }
         console.error('--- PUT STOCKIN ERROR ---', e);
         return NextResponse.json({ error: e.message || 'เกิดข้อผิดพลาดในการแก้ไขข้อมูล' }, { status: 500 });
     }
 }
+

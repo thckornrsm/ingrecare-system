@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { verifySession } from '@/utils/auth';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 /**
  * @description ดึงข้อมูลประวัติการเบิกของทั้งหมด (สำหรับร้านค้าที่ล็อกอินอยู่)
@@ -8,47 +9,46 @@ import { NextResponse } from 'next/server';
  * @returns {NextResponse}
  */
 export async function GET(req) {
-  try {
-    // 1. ตรวจสอบสิทธิ์ผู้ใช้
-    const token = req.cookies.get('token');
-    if (!token || !token.value) {
-        return NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 });
-    }
-    const session = await verifySession(token.value);
-    if (!session) {
-        return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
-    }
-    const { sid: storeId } = session;
+    try {
+        const cookieStore = await cookies();
+        const token = cookieStore.get('token');
+        if (!token || !token.value) {
+            return NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 });
+        }
+        const session = await verifySession(token.value);
+        if (!session) {
+            return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
+        }
+        const { sid: storeId } = session;
 
-    // 2. ดึงข้อมูล stockouts เฉพาะของร้านค้านี้
-    const stockouts = await prisma.stockout.findMany({
-      where: {
-        user: {
-            store_id: storeId,
-        }
-      },
-      orderBy: {
-        out_date: 'desc', // เรียงตามวันที่เบิก ล่าสุดขึ้นก่อน
-      },
-      include: {
-        ingredient: {
-          include: {
-            category: true, // ดึงข้อมูลหมวดหมู่
-          },
-        },
-        unit: true, // ดึงข้อมูลหน่วยนับ
-        user: {
-            select: {
-                name: true // <-- แก้ไขจาก username เป็น name
-            }
-        }
-      },
-    });
-    return NextResponse.json(stockouts, { status: 200 });
-  } catch (e) {
-    console.error('--- GET ALL STOCKOUTS ERROR ---', e);
-    return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการดึงข้อมูล' }, { status: 500 });
-  }
+        const stockouts = await prisma.stockout.findMany({
+            where: {
+                user: {
+                    store_id: storeId,
+                }
+            },
+            orderBy: {
+                out_date: 'desc',
+            },
+            include: {
+                ingredient: {
+                    include: {
+                        category: true,
+                    },
+                },
+                unit: true,
+                user: {
+                    select: {
+                        name: true
+                    }
+                }
+            },
+        });
+        return NextResponse.json(stockouts, { status: 200 });
+    } catch (e) {
+        console.error('--- GET ALL STOCKOUTS ERROR ---', e);
+        return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการดึงข้อมูล' }, { status: 500 });
+    }
 }
 
 /**
@@ -57,93 +57,100 @@ export async function GET(req) {
  * @returns {NextResponse}
  */
 export async function POST(req) {
-  try {
-    const token = req.cookies.get('token');
-    if (!token || !token.value) {
-      return NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 });
-    }
-    
-    const session = await verifySession(token.value);
-    if (!session) {
-      return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
-    }
-    const { uid: userId } = session;
-
-    const body = await req.json();
-    const { description, items } = body;
-
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json(
-        { error: 'ข้อมูลไม่ถูกต้อง, กรุณาระบุรายการสินค้า (items)' },
-        { status: 400 }
-      );
-    }
-    
-    const outTime = new Date();
-
-    const newBatch = await prisma.$transaction(async (tx) => {
-      for (const item of items) {
-        const currentInventory = await tx.ingredient_now.findFirst({
-          where: { ingredient_id: item.ingredient_id },
-        });
-
-        if (!currentInventory || currentInventory.quantity < item.quantity) {
-          const ingredient = await tx.ingredients.findUnique({
-            where: { ingredient_id: item.ingredient_id },
-            select: { name: true }
-          });
-          const ingredientName = ingredient?.name || `ID ${item.ingredient_id}`;
-          throw new Error(`สินค้าไม่พอ: '${ingredientName}' มีในสต็อก ${currentInventory?.quantity || 0} แต่ต้องการเบิก ${item.quantity}`);
+    try {
+        const cookieStore = await cookies();
+        const token = cookieStore.get('token');
+        if (!token || !token.value) {
+            return NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 });
         }
-      }
+        
+        const session = await verifySession(token.value);
+        if (!session) {
+            return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
+        }
+        const { uid: userId } = session;
 
-      const batch = await tx.batch.create({
-        data: {
-          type: 'STOCK_OUT', // <-- ระบุประเภท
-          user_id: userId,
-          description: description || `Stock-out at ${outTime.toLocaleString()}`,
-        },
-      });
+        const body = await req.json();
+        const { description, items } = body;
 
-      // 3. วนลูปเพื่อสร้าง stockout และอัปเดตสต็อก
-      for (const item of items) {
-        const currentInventory = await tx.ingredient_now.findFirst({ where: { ingredient_id: item.ingredient_id } });
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return NextResponse.json(
+                { error: 'ข้อมูลไม่ถูกต้อง, กรุณาระบุรายการสินค้า (items)' },
+                { status: 400 }
+            );
+        }
+        
+        const outTime = new Date();
 
-        const newStockout = await tx.stockout.create({
-          data: {
-            batch_id: batch.batch_id, // <-- ใช้ batch_id ที่เพิ่งสร้าง
-            ingredient_id: item.ingredient_id,
-            quantity: item.quantity,
-            unit_id: item.unit_id,
-            out_date: outTime,
-            user_id: userId,
-          },
-        });
+        const newBatch = await prisma.$transaction(async (tx) => {
+            // 1. ตรวจสอบสต็อกทั้งหมดก่อนเริ่มทำรายการ
+            for (const item of items) {
+                const currentInventory = await tx.ingredient_now.findFirst({
+                    where: { ingredient_id: item.ingredient_id },
+                });
 
-        await tx.ingredient_now.update({
-          where: { inventory_id: currentInventory.inventory_id },
-          data: { quantity: { decrement: item.quantity }, last_update: outTime },
-        });
+                if (!currentInventory || currentInventory.quantity < item.quantity) {
+                    const ingredient = await tx.ingredients.findUnique({
+                        where: { ingredient_id: item.ingredient_id },
+                        select: { name: true }
+                    });
+                    const ingredientName = ingredient?.name || `ID ${item.ingredient_id}`;
+                    throw new Error(`สินค้าไม่พอ: '${ingredientName}' มีในสต็อก ${currentInventory?.quantity || 0} แต่ต้องการเบิก ${item.quantity}`);
+                }
+            }
 
-        // บันทึก history
-        await tx.history.create({
-            data: {
-              action_type: 'stockout',
-              stockout_id: newStockout.stockout_id,
-              user_id: userId,
-            },
+            // 2. สร้าง Batch
+            const batch = await tx.batch.create({
+                data: {
+                    type: 'STOCK_OUT',
+                    user_id: userId,
+                    description: description || `Stock-out at ${outTime.toLocaleString('th-TH')}`,
+                },
+            });
+
+            // 3. วนลูปเพื่อสร้าง stockout และอัปเดตสต็อก
+            for (const item of items) {
+                // สร้างรายการเบิกจ่าย
+                const newStockout = await tx.stockout.create({
+                    data: {
+                        batch_id: batch.batch_id,
+                        ingredient_id: item.ingredient_id,
+                        quantity: item.quantity,
+                        unit_id: item.unit_id,
+                        out_date: outTime,
+                        user_id: userId,
+                    },
+                });
+
+                // **แก้ไข:** อัปเดตสต็อกด้วย updateMany เพื่อความเสถียร
+                await tx.ingredient_now.updateMany({
+                    where: { ingredient_id: item.ingredient_id },
+                    data: { 
+                        quantity: { decrement: item.quantity },
+                        last_update: outTime 
+                    },
+                });
+
+                // บันทึก history
+                await tx.history.create({
+                    data: {
+                        action_type: 'stockout',
+                        stockout_id: newStockout.stockout_id,
+                        user_id: userId,
+                    },
+                });
+            }
+            return batch;
         });
-      }
-      return batch;
-    });
 
-    return NextResponse.json({ message: 'เบิกของสำเร็จ', batchId: newBatch.batch_id }, { status: 201 });
+        return NextResponse.json({ message: 'เบิกของสำเร็จ', batchId: newBatch.batch_id }, { status: 201 });
 
-  } catch (e) {
-    console.error('--- STOCKOUT ERROR ---', e);
-    if (e.message.startsWith('สินค้าไม่พอ:')) {
-      return NextResponse.json({ error: e.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการเบิกของ' }, { status: 500 });
-  }
+    } catch (e) {
+        console.error('--- STOCKOUT ERROR ---', e);
+        if (e.message.startsWith('สินค้าไม่พอ:')) {
+            return NextResponse.json({ error: e.message }, { status: 400 });
+        }
+        return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการเบิกของ' }, { status: 500 });
+    }
 }
+
