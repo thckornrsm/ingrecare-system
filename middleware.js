@@ -7,7 +7,7 @@ const publicRoutes = ['/login', '/forget-password', '/reset-password'];
 
 // 2. กำหนด Path ที่ต้อง Login (ยกเว้น /dashboard)
 const protectedRoutes = [
-     '/dashboard',  
+    '/dashboard',  
     '/statistics',
     '/stockin',
     '/stockout',

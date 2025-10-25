@@ -1,4 +1,4 @@
-/* รายงานการเบิกจ่ายวัตถุดิบ */
+// app/(backoffice)/stockout/page.jsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -53,7 +53,7 @@ const isExpired = (ing) => {
   return end < new Date();
 };
 
-/* ---------- Toast Notification ---------- */
+// Toast Notification Component
 const ToastNotification = ({ message, type, onClose }) => {
   const isSuccess = type === 'success';
   const bgColor = isSuccess ? 'bg-green-100' : 'bg-red-100';
@@ -72,7 +72,7 @@ const ToastNotification = ({ message, type, onClose }) => {
   );
 };
 
-/* ---------- Disburse Form Row ---------- */
+// Form Row Component
 const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units, onWarn }) => {
   const [searchTerm, setSearchTerm] = useState(item.itemName || '');
   const [suggestions, setSuggestions] = useState([]);
@@ -95,7 +95,7 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
   };
 
   const handleSelectSuggestion = (ingredient) => {
-    // ❌ บล็อกเลือกวัตถุดิบที่หมดอายุ
+    // บล็อกเลือกวัตถุดิบที่หมดอายุ
     if (isExpired(ingredient)) {
       onWarn?.('วัตถุดิบนี้หมดอายุแล้ว ไม่สามารถเบิกได้', 'error');
       return;
@@ -127,9 +127,16 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
 
   return (
     <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] relative">
-      <button onClick={() => onRemove(item.id)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500">
-        <Trash2 size={18} />
-      </button>
+      {onRemove && (
+        <button
+          type="button"
+          onClick={() => onRemove(item.id)}
+          className="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition-colors"
+        >
+          <Trash2 size={18} />
+        </button>
+      )}
+      
       <form className="space-y-6">
         <div className="relative">
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -137,12 +144,12 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
           </label>
           <input
             type="text"
-            placeholder="ค้นหาชื่อวัตถุดิบในสต็อก เช่น เนื้อหมูสันนอก, ผักกาดขาว"
+            placeholder="ชื่อวัตถุดิบในสต็อก เช่น เนื้อหมูสันนอก, ผักกาดขาว"
             value={searchTerm}
             onChange={handleSearchChange}
             onFocus={() => setIsFocused(true)}
-            onBlur={() => setTimeout(() => setIsFocused(false), 200)} // เผื่อเวลาคลิก suggestion
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"
+            onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 bg-white text-black"
           />
 
           {isFocused && suggestions.length > 0 && (
@@ -187,35 +194,27 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
               onPaste={blockInvalidPaste}
               onWheel={(e) => e.currentTarget.blur()}
               disabled={selectedIsExpired}
-              placeholder={selectedIsExpired ? 'รายการนี้หมดอายุ' : 'เช่น 2.5, 10'}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black ${
+              placeholder={selectedIsExpired ? 'รายการนี้หมดอายุ' : 'ระบุค่าตัวเลข เช่น 2.5, 10'}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 bg-white text-black ${
                 selectedIsExpired ? 'bg-gray-100 cursor-not-allowed' : ''
               }`}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              หน่วย <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={item.unit_id || ''}
-              onChange={handleUnitChange}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white ${
-                !item.unit_id ? 'text-gray-400' : 'text-black'
-              } ${selectedIsExpired ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-              disabled={!item.ingredient_id || selectedIsExpired}
-            >
-              <option value="" disabled>
-                -
-              </option>
-              {units.map((unit) => (
-                <option key={unit.unit_id} value={unit.unit_id}>
-                  {unit.unit_name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            หน่วยนับ <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={item.unit || 'แสดงผลอัตโนมัติ เมื่อระบุชื่อวัตถุดิบ'}
+            readOnly
+            disabled={selectedIsExpired}
+            className={`w-full px-3 py-2 rounded-md focus:outline-none bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-300 focus:ring-2 focus:ring-[#3FA170] ${
+              selectedIsExpired ? 'bg-gray-100 cursor-not-allowed' : ''
+            }`}
+          />
+        </div>
         </div>
 
         {selectedIsExpired && (
@@ -226,7 +225,7 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
   );
 };
 
-/* ---------- Main DisbursePage ---------- */
+// Main Page
 export default function DisbursePage() {
   const router = useRouter();
 
@@ -262,7 +261,6 @@ export default function DisbursePage() {
     fetchData();
   }, []);
 
-  // 🔒 ล็อกสกรีนเมื่อเปิดโมดัล (กัน scroll พื้นหลัง)
   useEffect(() => {
     document.body.classList.toggle('overflow-hidden', isModalOpen);
     return () => document.body.classList.remove('overflow-hidden');
@@ -278,7 +276,6 @@ export default function DisbursePage() {
   const handleUpdateItem = (id, updated) => setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...updated } : i)));
   const handleClearAll = () => setItems((prev) => prev.map((i) => ({ ...createNewItem(), id: i.id })));
 
-  // ✅ ตรวจว่ามีรายการหมดอายุใน selection ไหม
   const hasExpiredInSelection = () =>
     items.some((it) => {
       const ing = availableIngredients.find((a) => a.ingredient_id === it.ingredient_id);
@@ -297,7 +294,6 @@ export default function DisbursePage() {
   };
 
   const handleConfirmSubmit = async () => {
-    // กันอีกชั้น (ป้องกันความผิดพลาดจาก state)
     if (hasExpiredInSelection()) {
       setIsModalOpen(false);
       return showToast('มีวัตถุดิบที่หมดอายุในรายการ ไม่สามารถเบิกได้', 'error');
@@ -336,7 +332,7 @@ export default function DisbursePage() {
 
   return (
     <>
-      <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
+      <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
         <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
           <div>
             <h1 className="text-black text-3xl font-bold">เบิกจ่ายวัตถุดิบ</h1>
@@ -382,7 +378,6 @@ export default function DisbursePage() {
         </div>
       </main>
 
-      {/* ✅ ใช้ ConfirmationModal ที่แชร์กับหน้า stockin */}
       <ConfirmationModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

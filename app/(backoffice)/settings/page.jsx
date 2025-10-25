@@ -10,7 +10,6 @@ import { X, PencilLine, Trash2, Plus } from 'lucide-react';
 import { safeFetchJSON } from '@/utils/safeFetchJSON';
 import toast, { Toaster } from 'react-hot-toast';
 
-/* ========== Reusable display field ========== */
 const DataDisplayField = ({ label, value, span, type }) => (
   <div className={span}>
     <p className="mb-1 text-xs tracking-wider text-gray-500">{label}</p>
@@ -26,7 +25,7 @@ const DataDisplayField = ({ label, value, span, type }) => (
   </div>
 );
 
-/* ========== Tab: บัญชีร้านค้า ========== */
+// Tab: บัญชีร้านค้า
 const AboutStore = () => {
   const me = useSession();
 
@@ -80,7 +79,6 @@ const AboutStore = () => {
   );
 };
 
-/* ========== Modal: แก้ชื่อรายการ (หมวด/หน่วย) ========== */
 function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื่อใหม่' }) {
   const [name, setName] = useState('');
   const [error, setError] = useState(false);
@@ -156,7 +154,6 @@ function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื�
   );
 }
 
-/* ========== ตารางรายการ (หมวด/หน่วย) ========== */
 const CategorySection = ({ title, items, onAddClick, onEditClick, onDeleteClick }) => (
   <div>
     <div className="mb-6 flex flex-wrap items-center justify-between">
@@ -166,7 +163,7 @@ const CategorySection = ({ title, items, onAddClick, onEditClick, onDeleteClick 
         className="flex items-center space-x-2 text-[#3FA170] transition-colors hover:text-[#2F7A5E]"
       >
         <Plus size={20} />
-        <span>เพิ่ม</span>
+        <span>เพิ่มหมวดหมู่</span>
       </button>
     </div>
 
@@ -210,7 +207,7 @@ const CategorySection = ({ title, items, onAddClick, onEditClick, onDeleteClick 
             ) : (
               <tr>
                 <td colSpan="3" className="py-8 text-center text-gray-500">
-                  ไม่มีข้อมูล
+                  กำลังโหลดข้อมูล...
                 </td>
               </tr>
             )}
@@ -221,23 +218,20 @@ const CategorySection = ({ title, items, onAddClick, onEditClick, onDeleteClick 
   </div>
 );
 
-/* ========== Tab: จัดการหมวดหมู่/หน่วยนับ (นับจำนวนวัตถุดิบให้ด้วย) ========== */
+// Tab: แก้ไขหมวดหมู่/หน่วยนับ
 const ManageCategories = () => {
   const [materialCategories, setMaterialCategories] = useState([]);
   const [unitCategories, setUnitCategories] = useState([]);
 
-  // แยกโมดัล “เพิ่มหมวดหมู่” และ “เพิ่มหน่วยนับ”
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [isAddUnitOpen, setIsAddUnitOpen] = useState(false);
 
-  // แก้ไข/ลบ
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeletedModalOpen, setIsDeletedModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [modalContext, setModalContext] = useState(''); // 'material' | 'unit'
+  const [modalContext, setModalContext] = useState('');
   const [error, setError] = useState('');
 
-  // รวม count ที่ client เป็น fallback ถ้า API ไม่ส่งมา
   const buildCountsFromIngredients = (ingredients) => {
     const byCat = new Map();
     const byUnit = new Map();
@@ -299,11 +293,9 @@ const ManageCategories = () => {
     refreshAll();
   }, []);
 
-  // เปิดโมดัลตามส่วน
   const handleOpenAddCategory = () => setIsAddCategoryOpen(true);
   const handleOpenAddUnit = () => setIsAddUnitOpen(true);
 
-  // แก้ไข/ลบ
   const handleOpenEdit = (item, type) => {
     setModalContext(type);
     setSelectedItem(item);
@@ -315,7 +307,6 @@ const ManageCategories = () => {
     setIsDeletedModalOpen(true);
   };
 
-  // สร้างใหม่
   const handleCreateCategory = async ({ name }) => {
     try {
       await safeFetchJSON('/api/categories', {
@@ -345,7 +336,6 @@ const ManageCategories = () => {
     }
   };
 
-  // อัปเดต (PUT ใช้ { name } ตาม API ที่คุณให้มา) — มี toast เฉพาะตอนจบ
   const handleConfirmEdit = async ({ id, name }) => {
     const url = modalContext === 'material' ? `/api/categories/${id}` : `/api/units/${id}`;
     try {
@@ -362,7 +352,6 @@ const ManageCategories = () => {
     }
   };
 
-  // ลบ — มี toast เฉพาะตอนจบ
   const handleConfirmDelete = async () => {
     if (!selectedItem) return;
     const url =
@@ -381,9 +370,7 @@ const ManageCategories = () => {
 
   return (
     <div className="space-y-10">
-      {/* Toaster แสดงเฉพาะตอนอยู่แท็บนี้ */}
       <Toaster position="top-right" />
-
       {error && <p className="text-red-600">{error}</p>}
 
       <CategorySection
@@ -402,7 +389,6 @@ const ManageCategories = () => {
         onDeleteClick={(item) => handleOpenDelete(item, 'unit')}
       />
 
-      {/* โมดัลเพิ่ม “หมวดหมู่” */}
       <AddCategoryModal
         isOpen={isAddCategoryOpen}
         onClose={() => setIsAddCategoryOpen(false)}
@@ -410,7 +396,6 @@ const ManageCategories = () => {
         existingCategories={materialCategories.map((c) => ({ name: c.name }))}
       />
 
-      {/* โมดัลเพิ่ม “หน่วยนับ” */}
       <AddUnitModal
         isOpen={isAddUnitOpen}
         onClose={() => setIsAddUnitOpen(false)}
@@ -418,7 +403,6 @@ const ManageCategories = () => {
         existingUnits={unitCategories.map((u) => ({ name: u.name }))}
       />
 
-      {/* แก้ไข */}
       {selectedItem && (
         <EditCategoryModal
           isOpen={isEditModalOpen}
@@ -429,7 +413,6 @@ const ManageCategories = () => {
         />
       )}
 
-      {/* ลบ */}
       {selectedItem && (
         <DeletedModal
           isOpen={isDeletedModalOpen}
@@ -442,7 +425,7 @@ const ManageCategories = () => {
   );
 };
 
-/* ========== Settings Page ========== */
+// Main Page
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('about');
   const tabs = [
@@ -464,7 +447,7 @@ export default function SettingsPage() {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
+              className={`whitespace-nowrap border-b-2 py-2 px-1 border-b-2 text-sm font-medium transition-colors ${
                 activeTab === t.id
                   ? 'border-[#3FA170] text-[#3FA170]'
                   : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'

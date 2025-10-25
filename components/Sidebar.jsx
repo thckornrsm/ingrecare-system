@@ -158,39 +158,37 @@ export default function Sidebar({storeName, userEmail}) {
           </div>
         </section>
         
-        {/* Use mt-auto to push the following sections to the bottom */}
-        
-          <section>
-            <SectionHeader label="ทั่วไป" />
-            <div className="space-y-2">
-              {generalMenu.map((m) => (
-                <NavItem
-                  key={m.href}
-                  href={m.href}
-                  label={m.label}
-                  iconString={m.iconString}
-                  active={isActive(m.href)}
+        <section>
+          <SectionHeader label="ทั่วไป" />
+          <div className="space-y-2">
+            {generalMenu.map((m) => (
+              <NavItem
+                key={m.href}
+                href={m.href}
+                label={m.label}
+                iconString={m.iconString}
+                active={isActive(m.href)}
+              />
+            ))}
+            <button
+                onClick={handleLogout}
+                className={cn(
+                  "w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:ring-offset-2",
+                  "active:translate-y-[1px]",
+                  "max-lg:justify-center",
+                  "lg:shadow-sm",
+                  "bg-white text-black hover:bg-red-50 max-lg:bg-transparent"
+                )}
+              >
+                <Icon
+                  icon="material-symbols:logout" width={16}
+                  className="text-[#E15050]"
                 />
-              ))}
-               <button
-                  onClick={handleLogout}
-                  className={cn(
-                    "w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:ring-offset-2",
-                    "active:translate-y-[1px]",
-                    "max-lg:justify-center",
-                    "lg:shadow-sm",
-                    "bg-white text-black hover:bg-red-50 max-lg:bg-transparent"
-                  )}
-                >
-                  <Icon
-                    icon="material-symbols:logout" width={16}
-                    className="text-[#E15050]"
-                  />
-                  <span className="max-lg:hidden">ออกจากระบบ</span>
-                </button>
-            </div>
-          </section>
+                <span className="max-lg:hidden">ออกจากระบบ</span>
+              </button>
+          </div>
+        </section>
   
       </nav>
     </aside>

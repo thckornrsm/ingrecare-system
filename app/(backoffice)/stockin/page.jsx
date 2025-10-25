@@ -1,16 +1,18 @@
+// app/(backoffice)/stockin/page.jsx
 'use client';
 
 import React, { useState, useEffect, forwardRef } from 'react';
 import CustomDropdown from '@/components/CustomDropdown';
 import AddCategoryModal from '@/components/AddCategoryModal';
 import AddUnitModal from '@/components/AddUnitModal';
+import { Plus, Calendar, Trash2, CheckCircle2, AlertCircle, X } from 'lucide-react';
+
 import dynamic from 'next/dynamic';
 const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal'), { ssr: false });
 
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useRouter } from 'next/navigation';
-import { Plus, Calendar, Trash2, CheckCircle2, AlertCircle, X } from 'lucide-react';
 
 /* ---------- helpers ป้องกันการกรอกค่าที่ไม่ถูกต้อง ---------- */
 const blockInvalidKey = (e) => {
@@ -29,7 +31,7 @@ const setPositiveNumber = (raw, opts = { float: true, min: 0 }) => {
   return num < (opts.min ?? 0) ? '' : cleaned;
 };
 
-/* ---------- date helpers (ใหม่: กัน “อนาคต”) ---------- */
+// Data validation helpers: ไม่ให้เลือกวันที่ในอนาคต
 const startOfDay = (d) => {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
@@ -37,7 +39,7 @@ const startOfDay = (d) => {
 };
 const isFutureDate = (d) => startOfDay(d) > startOfDay(new Date());
 
-/* ---------- CustomDateInput ---------- */
+// Custom date input for react-datepicker
 const CustomDateInput = forwardRef(({ value, onClick, placeholder }, ref) => (
   <div className="relative w-full cursor-pointer" onClick={onClick} ref={ref}>
     <input
@@ -52,7 +54,7 @@ const CustomDateInput = forwardRef(({ value, onClick, placeholder }, ref) => (
 ));
 CustomDateInput.displayName = 'CustomDateInput';
 
-/* ---------- IngredientFormRow ---------- */
+// Ingredient Form Row Component
 const IngredientFormRow = ({
   item, onUpdate, onRemove,
   availableCategories, onAddNewCategoryClick,
@@ -66,13 +68,13 @@ const IngredientFormRow = ({
     if (!date) return;
     if (isFutureDate(date)) {
       onWarn?.('ห้ามเลือกวันที่ในอนาคต', 'error');
-      return; // ไม่อัปเดต
+      return;
     }
     handleInputChange('received_date', date);
   };
 
   return (
-    <div className="bg-[#F6F8FA] p-6 rounded-lg border border-[#E5E5E5] relative">
+    <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] relative">
       {onRemove && (
         <button
           type="button"
@@ -95,8 +97,8 @@ const IngredientFormRow = ({
             wrapperClassName="w-full"
             customInput={<CustomDateInput placeholder="วว/ดด/ปปปป" />}
             popperClassName="z-20"
-            maxDate={new Date()}                // ✅ เลือกได้ถึง “วันนี้” สูงสุด
-            filterDate={(d) => !isFutureDate(d)}// ✅ กันไม่ให้เลือกอนาคต
+            maxDate={new Date()}
+            filterDate={(d) => !isFutureDate(d)} // ป้องกันการเลือกวันที่ในอนาคต
           />
         </div>
 
@@ -115,13 +117,13 @@ const IngredientFormRow = ({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            ประเภทของวัตถุดิบ <span className="text-red-500">*</span>
+            หมวดหมู่ของวัตถุดิบ <span className="text-red-500">*</span>
           </label>
           <CustomDropdown
             categories={availableCategories}
             selectedCategory={item.category_name}
             onSelectCategory={(selectedType) => handleInputChange('category_name', selectedType)}
-            placeholder="เลือกประเภทของวัตถุดิบ"
+            placeholder="เลือกหรือเพิ่มหมวดหมู่ของวัตถุดิบ"
             onAddNewClick={onAddNewCategoryClick}
             addNewText="เพิ่มหมวดหมู่"
           />
@@ -129,7 +131,7 @@ const IngredientFormRow = ({
 
         <div>
           <label className="block text-sm font-medium text-black mb-1">
-            จำนวน <span className="text-red-500">*</span>
+            จำนวนนำเข้า <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -146,20 +148,20 @@ const IngredientFormRow = ({
             onKeyDown={blockInvalidKey}
             onPaste={blockInvalidPaste}
             onWheel={(e) => e.currentTarget.blur()}
-            placeholder="เช่น 2.5, 10"
+            placeholder="ระบุค่าตัวเลข เช่น 2.5, 10"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 bg-white text-black"
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-black mb-1">
-            หน่วย <span className="text-red-500">*</span>
+            หน่วยนับ <span className="text-red-500">*</span>
           </label>
           <CustomDropdown
             categories={quantityUnits}
             selectedCategory={item.unit_name}
             onSelectCategory={(unit) => handleInputChange('unit_name', unit)}
-            placeholder="เช่น กิโลกรัม, แพ็ค, ขวด"
+            placeholder="เลือกหรือเพิ่มหน่วยนับ"
             onAddNewClick={onAddNewQuantityUnitClick}
             addNewText="เพิ่มหน่วยนับ"
           />
@@ -184,7 +186,7 @@ const IngredientFormRow = ({
             onKeyDown={blockInvalidKey}
             onPaste={blockInvalidPaste}
             onWheel={(e) => e.currentTarget.blur()}
-            placeholder="เช่น 7, 30"
+            placeholder="ระบุค่าตัวเลข เช่น 7, 30"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 bg-white text-black"
           />
         </div>
@@ -197,15 +199,16 @@ const IngredientFormRow = ({
             categories={shelfLifeUnits}
             selectedCategory={item.shelflife_unit_name}
             onSelectCategory={(unit) => handleInputChange('shelflife_unit_name', unit)}
-            placeholder="เช่น วัน, สัปดาห์, เดือน"
+            placeholder="เลือกหน่วยเวลา"
           />
         </div>
+        
       </div>
     </div>
   );
 };
 
-/* ---------- ToastNotification ---------- */
+// Toast Notification Component
 const ToastNotification = ({ message, type, onClose }) => {
   const isSuccess = type === 'success';
   const bgColor = isSuccess ? 'bg-green-100' : 'bg-red-100';
@@ -224,7 +227,7 @@ const ToastNotification = ({ message, type, onClose }) => {
   );
 };
 
-/* ---------- Main: StockInPage ---------- */
+// Main Page
 export default function StockInPage() {
   const router = useRouter();
 
@@ -275,7 +278,6 @@ export default function StockInPage() {
 
   useEffect(() => { fetchDropdownData(); }, []);
 
-  // ล็อกสกรีนเมื่อมี modal ใด ๆ เปิด
   useEffect(() => {
     const anyOpen = isConfirmModalOpen || isAddCategoryModalOpen || isAddUnitModalOpen;
     document.body.classList.toggle('overflow-hidden', anyOpen);
@@ -297,7 +299,6 @@ export default function StockInPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // ✅ ดักวันที่อนาคต (ทุกแถว)
     const hasFuture = items.some(it => !it.received_date || isFutureDate(it.received_date));
     if (hasFuture) {
       showToast('ห้ามนำเข้าด้วยวันที่ในอนาคต กรุณาเลือกวันที่วันนี้หรืิอย้อนหลัง', 'error');
@@ -385,9 +386,9 @@ export default function StockInPage() {
 
   return (
     <>
-      <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
+      <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
         <form onSubmit={handleSubmit}>
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
             <div>
               <h1 className="text-3xl font-bold text-black">นำเข้าวัตถุดิบ</h1>
               <p className="text-[#979999]">เพิ่มข้อมูลการนำเข้าของวัตถุดิบในแต่ละล็อต</p>
@@ -397,42 +398,38 @@ export default function StockInPage() {
               onClick={handleAddItem}
               className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#3FA170] bg-[#3FA170] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1E7957] sm:w-auto"
             >
-              <Plus size={16} /> เพิ่มรายการ
+              <Plus size={16} /> เพิ่มรายการวัตถุดิบ
             </button>
           </div>
-
-          {isLoading ? (
-            <p className="text-center text-gray-500">กำลังโหลดฟอร์ม...</p>
-          ) : (
-            <div className="space-y-6">
-              {items.map(item => (
-                <IngredientFormRow
-                  key={item.id}
-                  item={item}
-                  onUpdate={handleUpdateItem}
-                  onRemove={items.length > 1 ? handleRemoveItem : null}
-                  availableCategories={availableCategories}
-                  onAddNewCategoryClick={() => setAddCategoryModalOpen(true)}
-                  quantityUnits={availableUnits}
-                  onAddNewQuantityUnitClick={() => setAddUnitModalOpen(true)}
-                  shelfLifeUnits={availableTimeUnits}
-                  onWarn={showToast}
-                />
-              ))}
-            </div>
-          )}
+          <div className="space-y-6">
+            {items.map(item => (
+              <IngredientFormRow
+                key={item.id}
+                item={item}
+                onUpdate={handleUpdateItem}
+                onRemove={items.length > 1 ? handleRemoveItem : null}
+                availableCategories={availableCategories}
+                onAddNewCategoryClick={() => setAddCategoryModalOpen(true)}
+                quantityUnits={availableUnits}
+                onAddNewQuantityUnitClick={() => setAddUnitModalOpen(true)}
+                shelfLifeUnits={availableTimeUnits}
+                onWarn={showToast}
+              />
+            ))}
+          </div>
+          
 
           <div className="flex flex-wrap justify-end gap-4 pt-6">
             <button
               type="button"
               onClick={handleClearAll}
-              className="w-full rounded-md bg-gray-200 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 sm:w-auto"
+              className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
             >
               ล้างข้อมูล
             </button>
             <button
               type="submit"
-              className="w-full rounded-md bg-[#3FA170] px-6 py-2 text-sm font-medium text-white hover:bg-[#1E7957] sm:w-auto"
+              className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-white bg-[#3FA170] rounded-md hover:bg-[#1E7957]"
             >
               ยืนยันข้อมูล
             </button>

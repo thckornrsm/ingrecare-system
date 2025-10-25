@@ -2,84 +2,118 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
 import Pagination from '@/components/Pagination';
 import CustomDropdown from '@/components/CustomDropdown';
-import { 
-    Plus, FileText, Search, 
-    // ไอคอนสำหรับ Mapping (ยังคงเก็บไว้เผื่อใช้งานในอนาคต)
-    Utensils, ChefHat, Refrigerator, CookingPot, Soup, Fish, Shrimp, Egg, 
-    Beef, Ham, Drumstick, Pizza, Hamburger, Salad, Apple, Bean, Carrot, 
-    Cherry, Wheat, LeafyGreen, Vegan, Dessert, CakeSlice, Candy, Lollipop, 
-    IceCreamCone, Coffee, Beer, Martini, Wine, CupSoda, Ellipsis, Leaf,
-    SprayCan, MoreHorizontal
-} from 'lucide-react';
+import { Search, X } from 'lucide-react'; // 💡 เพิ่ม X สำหรับปุ่มปิด Modal
+import { Icon } from '@iconify/react';
 
-
-// 1. เก็บรายการไอคอนทั้งหมดที่มีให้เลือก
-const iconOptions = [
-    { name: 'Utensils', icon: Utensils }, { name: 'ChefHat', icon: ChefHat }, { name: 'Refrigerator', icon: Refrigerator }, { name: 'CookingPot', icon: CookingPot }, { name: 'Soup', icon: Soup },
-    { name: 'Fish', icon: Fish }, { name: 'Shrimp', icon: Shrimp },
-    { name: 'Egg', icon: Egg }, { name: 'Beef', icon: Beef }, { name: 'Ham', icon: Ham }, { name: 'Drumstick', icon: Drumstick }, { name: 'Pizza', icon: Pizza }, { name: 'Hamburger', icon: Hamburger },
-    { name: 'Salad', icon: Salad }, { name: 'Apple', icon: Apple }, { name: 'Bean', icon: Bean }, { name: 'Carrot', icon: Carrot }, { name: 'Cherry', icon: Cherry }, { name: 'Wheat', icon: Wheat }, { name: 'LeafyGreen', icon: LeafyGreen }, { name: 'Vegan', icon: Vegan },
-    { name: 'Dessert', icon: Dessert }, { name: 'CakeSlice', icon: CakeSlice }, { name: 'Candy', icon: Lollipop }, { name: 'IceCreamCone', icon: IceCreamCone },
-    { name: 'Coffee', icon: Coffee }, { name: 'Beer', icon: Beer }, { name: 'Martini', icon: Martini }, { name: 'Wine', icon: Wine }, { name: 'CupSoda', icon: CupSoda },
-    { name: 'Leaf', icon: Leaf }, { name: 'SprayCan', icon: SprayCan }, { name: 'MoreHorizontal', icon: MoreHorizontal },
-    { name: 'Ellipsis', icon: Ellipsis }
-];
-const iconMap = Object.fromEntries(iconOptions.map(opt => [opt.name, opt.icon]));
-
-
-// 2. (สำคัญ) สร้างตัวกลางสำหรับจับคู่ "ชื่อหมวดหมู่ไทย" กับ "ชื่อไอคอนอังกฤษ"
-const categoryToIconNameMap = {
-  'เนื้อสัตว์': 'Beef',
-  'ผัก': 'Leaf',
-  'ทะเล': 'Fish',
-  'ผลไม้': 'Apple',
-  'เครื่องปรุง': 'SprayCan',
-  'อื่นๆ': 'MoreHorizontal',
-  // *** หากมีหมวดหมู่ใหม่ ให้มาเพิ่มการจับคู่ที่นี่ ***
-  // 'เบเกอรี่': 'CakeSlice', 
-};
-
-
-// --- Color Status Styles ---
+// Color status styles
 const statusStyles = {
-    critical: { bg: 'bg-[#E15050]' },
-    warning: { bg: 'bg-[#F9BF22]' },
-    good: { bg: 'bg-[#3FA170]' },
+    critical: { bg: 'bg-[#E15050]' }, // Red
+    warning: { bg: 'bg-[#F9BF22]' }, // Yellow
+    good: { bg: 'bg-[#3FA170]' }, // Green
 };
 
-// --- ItemCard Component ---
-const ItemCard = ({ item }) => {
-    const styles = statusStyles[item.status] || statusStyles.good;
+// Detail Modal Component
+const DetailModal = ({ item, onClose }) => {
+    if (!item) return null;
     return (
-        <div className="bg-white rounded-lg flex items-stretch overflow-hidden shadow-sm">
-            <div className={`flex-shrink-0 w-24 p-2 flex flex-col items-center justify-center text-white ${styles.bg}`}>
-                <span className="text-4xl font-bold">{item.daysLeft < 0 ? 'EXP' : item.daysLeft}</span>
-                <span className="text-base font-bold">day left</span>
-            </div>
-            <div className="flex-grow px-5 py-3">
-                <h3 className="font-bold text-gray-800 mb-2">{item.name}</h3>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-600">
-                    <span className="text-sm text-gray-400">ล็อต</span>
-                    <span className="text-sm text-black text-right font-medium">{item.lot_number}</span>
-                    <span className="text-sm text-gray-400">วันที่นำเข้า</span>
-                    <span className="text-sm text-black text-right font-medium">{item.importDate}</span>
-                    <span className="text-sm text-gray-400">วันที่หมดอายุ</span>
-                    <span className="text-sm text-black text-right font-medium">{item.expiryDate}</span>
+        <div className="fixed inset-0 bg-black/10 flex justify-center items-center z-50" onClick={onClose}>
+            <div
+                className="bg-white rounded-lg shadow-xl p-6 w-full max-w-xl mx-4"
+                onClick={(e) => e.stopPropagation()} 
+            >
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Close">
+                        <X size={24} /> 
+                    </button>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className={`flex-1 p-5 rounded-xl text-black flex flex-col justify-center items-center text-center shadow-md
+                            ${item.status === 'critical' ? ' bg-[#E15050]/10' : 
+                            item.status === 'warning' ? 'bg-[#F9BF22]/10' : 
+                            'bg-[#3FA170]/10'}`}>
+                            
+                            {item.status === 'critical' ? (
+                                <Icon icon="lucide:alert-octagon" className="w-8 h-8 mb-1 text-[#E15050]" />
+                            ) : item.status === 'warning' ? (
+                                <Icon icon="lucide:alert-triangle" className="w-8 h-8 mb-1 text-[#F9BF22]" />
+                            ) : (
+                                <Icon icon="lucide:check-circle" className="w-8 h-8 mb-1 text-[#3FA170]" />
+                            )}
+
+                            <p className="text-sm font-light uppercase opacity-90">สถานะใกล้หมดอายุ</p>
+                            <p className="text-2xl font-semibold mt-1">
+                                {item.daysLeft < 0 ? 'หมดอายุแล้ว' : `${item.daysLeft} วัน`}
+                            </p>
+                        </div>
+                        <div className="flex-1 p-5 rounded-xl bg-gray-50 text-black flex flex-col justify-center items-center text-center shadow-md">
+                            <Icon icon="lucide:package" className="w-8 h-8 mb-1" />
+                            <p className="text-sm font-light uppercase opacity-90">ปริมาณคงเหลือ</p>
+                            <p className="text-2xl font-semibold mt-1">
+                                {item.quantity} <span className="text-2xl font-semibold opacity-90">{item.unit}</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+                        <div className="py-3 px-2 border-b border-[#E5E5E5]"> 
+                            <span className="text-xs text-gray-500 block">ล็อตที่</span>
+                            <span className="text-base text-gray-800 font-medium">{item.lot_number}</span>
+                        </div>
+                        <div className="py-3 px-2 border-b border-[#E5E5E5]"> 
+                            <span className="text-xs text-gray-500 block">หมวดหมู่</span>
+                            <span className="text-base text-gray-800 font-medium">{item.category}</span>
+                        </div>
+                        <div className="py-3 px-2 border-b border-[#E5E5E5]"> 
+                            <span className="text-xs text-gray-500 block">วันที่นำเข้า</span>
+                            <span className="text-base text-gray-800 font-medium">{item.importDate}</span>
+                        </div>
+                        <div className="py-3 px-2 border-b border-[#E5E5E5]"> 
+                            <span className="text-xs text-gray-500 block">วันที่หมดอายุ</span>
+                            <span className="text-base text-gray-800 font-medium">{item.expiryDate}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
 
+// Item Card Component
+const ItemCard = ({ item, onSelect }) => {
+    const styles = statusStyles[item.status] || statusStyles.good;
+    return (
+        <button 
+            onClick={onSelect}
+            className="bg-white rounded-lg flex items-stretch overflow-hidden shadow-sm text-left 
+                       hover:shadow-md hover:ring-1 hover:ring-[#E5E5E5] transition-all cursor-pointer" // เพิ่ม hover style
+        >
+            <div className={`flex-shrink-0 w-24 p-2 flex flex-col items-center justify-center text-white ${styles.bg}`}>
+                <span className="text-4xl font-bold">{item.daysLeft < 0 ? 'EXP' : item.daysLeft}</span>
+                <span className="text-base font-bold">day left</span>
+            </div>
+            <div className="flex-grow px-5 py-3">
+                <h3 className="font-semibold text-gray-800 mb-2">{item.name}</h3>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-[#B8B8B8]">
+                    <span className="text-sm text-gray-400">ล็อต</span>
+                    <span className="text-sm text-black text-right font-normal">{item.lot_number}</span>
+                    <span className="text-sm text-gray-400">วันที่นำเข้า</span>
+                    <span className="text-sm text-black text-right font-normal">{item.importDate}</span>
+                    <span className="text-sm text-gray-400">วันที่หมดอายุ</span>
+                    <span className="text-sm text-black text-right font-normal">{item.expiryDate}</span>
+                </div>
+            </div>
+        </button>
+    );
+};
 
-// ========= Main Dashboard Page (Final Version) =========
+// Main Page
 export default function DashboardPage() {
     const router = useRouter();
 
-    // --- States ---
     const [inventoryData, setInventoryData] = useState([]);
     const [categories, setCategories] = useState([]);
     const [activeFilter, setActiveFilter] = useState('ทั้งหมด');
@@ -89,7 +123,9 @@ export default function DashboardPage() {
     const [error, setError] = useState(null);
     const itemsPerPage = 12;
 
-    // --- Data Fetching Effect ---
+    const [selectedItem, setSelectedItem] = useState(null);
+
+    // Data Fetching
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -125,6 +161,8 @@ export default function DashboardPage() {
                             expiryDate: expiryDate.toLocaleDateString('th-TH'),
                             status: status,
                             category: stockin.ingredient.category.category_name,
+                            quantity: stockin.quantity, 
+                            unit: stockin.unit.unit_name, 
                         };
                     })
                 )
@@ -135,15 +173,12 @@ export default function DashboardPage() {
 
                 // Process categories data
                 const dbCategories = await categoriesRes.json();
-                // *** START: MODIFICATION ***
-                // สร้าง array ของหมวดหมู่โดยไม่มี object icon
                 const formattedCategories = [
                     { name: 'ทั้งหมด' },
                     ...dbCategories.map(cat => ({
                         name: cat.category_name,
                     }))
                 ];
-                // *** END: MODIFICATION ***
                 setCategories(formattedCategories);
 
             } catch (err) {
@@ -155,7 +190,7 @@ export default function DashboardPage() {
         fetchData();
     }, []);
 
-    // --- Filtering and Pagination Logic ---
+    // Filtering and Pagination
     const filteredItems = inventoryData
         .filter(item => activeFilter === 'ทั้งหมด' || item.category === activeFilter)
         .filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -163,7 +198,16 @@ export default function DashboardPage() {
     const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
     const paginatedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-    // --- Handlers ---
+    // 💡 NEW HANDLERS: จัดการ Modal
+    const handleCardClick = (item) => {
+        setSelectedItem(item);
+    };
+
+    const handleCloseModal = () => {
+        setSelectedItem(null);
+    };
+    
+    // Handlers (เดิม)
     const handleSelectCategory = (selected) => {
         setActiveFilter(selected);
         setCurrentPage(1);
@@ -174,7 +218,7 @@ export default function DashboardPage() {
         setCurrentPage(1);
     };
 
-    // --- Render Logic ---
+    // Render
     const renderContent = () => {
         if (isLoading) return <p className="text-center text-gray-500 py-10">กำลังโหลดข้อมูล...</p>;
         if (error) return <p className="text-center text-red-500 py-10">เกิดข้อผิดพลาด: {error}</p>;
@@ -183,71 +227,83 @@ export default function DashboardPage() {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {paginatedItems.map((item, index) => (
-                    <ItemCard key={`${item.lot}-${index}`} item={item} />
+                    // ✅ ส่ง onSelect handler ไปที่ ItemCard
+                    <ItemCard 
+                        key={`${item.lot}-${index}`} 
+                        item={item} 
+                        onSelect={() => handleCardClick(item)}
+                    />
                 ))}
             </div>
         );
     };
 
     return (
-    
-                <main className="flex-1 overflow-y-auto py-9 px-25">
-                    <div className="flex justify-between items-center mb-8">
-                        <div>
-                            <h1 className="text-black text-3xl font-bold">หน้าหลัก</h1>
-                            <p className="text-[#979999]">แสดงรายการวัตถุดิบใกล้หมดอายุ ที่อยู่ภายในร้านของคุณ</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={() => router.push("/stockout")}
-                                className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] text-[#3FA170] font-medium flex items-center gap-2 hover:bg-green-50 transition-colors"
-                            >
-                                <FileText size={16} /> เบิกจ่ายวัตถุดิบ
-                            </button>
-                            <button
-                                onClick={() => router.push("/stockin")}
-                                className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors"
-                            >
-                                <Plus size={16} /> เพิ่มวัตถุดิบ
-                            </button>
-                        </div>
-                    </div>
+        <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4 sm:gap-0">
+                <div>
+                    <h1 className="text-black text-3xl font-bold">หน้าหลัก</h1>
+                    <p className="text-[#979999]">แสดงรายการวัตถุดิบใกล้หมดอายุ ที่อยู่ภายในร้านของคุณ</p>
+                </div>
+                <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 lg:gap-4">
+                    <button
+                        onClick={() => router.push("/stockout")}
+                        className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] text-[#3FA170] font-medium flex items-center gap-2 hover:bg-green-50 transition-colors w-full sm:w-auto justify-center"
+                    >
+                        <Icon icon="icon-park-solid:inbox-out" className="w-4 h-4" /> เบิกจ่ายวัตถุดิบ
+                    </button>
+                    <button
+                        onClick={() => router.push("/stockin")}
+                        className="px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors w-full sm:w-auto justify-center"
+                    >
+                        <Icon icon="icon-park-twotone:inbox-in" className="w-4 h-4" /> นำเข้าวัตถุดิบ
+                    </button>
+                </div>
+            </div>
 
-                    {/* Filter and Search Controls */}
-                    <div className="flex items-center gap-4 mb-8">
-                        <CustomDropdown 
-                            label="หมวดหมู่" 
-                            categories={categories} 
-                            selectedCategory={activeFilter} 
-                            onSelectCategory={handleSelectCategory} 
-                        />
-                        <div className="relative w-full">
-                            <input 
-                                type="text" 
-                                placeholder="ค้นหาจากชื่อวัตถุดิบ..." 
-                                value={searchTerm}
-                                onChange={handleSearchChange}
-                                className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]" 
-                            />
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        </div>
-                    </div>
+            {/* Filter and Search */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
+                <CustomDropdown 
+                    label="หมวดหมู่" 
+                    categories={categories} 
+                    selectedCategory={activeFilter} 
+                    onSelectCategory={handleSelectCategory} 
+                />
+                <div className="relative w-full">
+                    <input 
+                        type="text" 
+                        placeholder="ค้นหาจากชื่อวัตถุดิบ..." 
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]" 
+                    />
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                </div>
+            </div>
 
-                    {/* Item Grid and Pagination */}
-                    <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] min-h-[400px]">
-                        {renderContent()}
-                       
-                    </div>  
-                     {totalPages > 1 && (
-                            <Pagination 
-                                currentPage={currentPage} 
-                                totalPages={totalPages} 
-                                onPageChange={setCurrentPage} 
-                                itemsPerPage={itemsPerPage}
-                                totalItems={filteredItems.length}
-                            />
-                        )}
-                </main>
-         
+            {/* Item Grid */}
+            <div className="bg-[#F6F8FA] p-4 sm:p-9 rounded-lg border border-[#E5E5E5] h-auto">
+                {renderContent()}
+            </div> 
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <Pagination 
+                    currentPage={currentPage} 
+                    totalPages={totalPages} 
+                    onPageChange={setCurrentPage} 
+                    itemsPerPage={itemsPerPage}
+                    totalItems={filteredItems.length}
+                />
+            )}
+            
+            {/* ✅ MODAL: แสดง Modal เมื่อมี Item ถูกเลือก */}
+            {selectedItem && (
+                <DetailModal 
+                    item={selectedItem} 
+                    onClose={handleCloseModal} 
+                />
+            )}
+        </main>
     );
 }

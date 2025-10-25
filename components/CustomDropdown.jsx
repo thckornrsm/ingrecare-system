@@ -10,7 +10,8 @@ function CustomDropdown({
     placeholder, 
     onAddNewClick,
     addNewText,
-    label 
+    label,
+    className
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [dropdownSearch, setDropdownSearch] = useState('');
@@ -52,7 +53,7 @@ function CustomDropdown({
     };
 
     return (
-        <div className="relative w-full" ref={dropdownRef}>
+        <div className={`relative w-full ${className}`} ref={dropdownRef}>
             <button 
                 type="button" 
                 onClick={() => setIsOpen(!isOpen)} 

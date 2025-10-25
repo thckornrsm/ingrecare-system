@@ -101,13 +101,13 @@ function AddCategoryModal({ isOpen, onClose, onAddCategory, existingCategories =
                     */}
                     <div>
                         <div className="flex items-center gap-4">
-                            <label htmlFor="categoryName" className="w-24 text-sm font-medium text-gray-700">ชื่อหมวดหมู่</label>
+                            <label htmlFor="categoryName" className="w-24 text-sm font-medium text-">ชื่อหมวดหมู่</label>
                             <input 
                                 type="text" 
                                 id="categoryName" 
                                 value={categoryName} 
                                 onChange={(e) => setCategoryName(e.target.value)} 
-                                className={`flex-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-green-500 focus:border-green-500'}`} 
+                                className={`flex-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm focus:ring-1 ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-[#3FA170] focus:border-[#3FA170]'}`} 
                                 required 
                             />
                         </div>

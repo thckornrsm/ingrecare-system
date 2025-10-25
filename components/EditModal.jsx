@@ -3,17 +3,15 @@
 import React, { useState, useEffect, useRef, forwardRef } from "react";
 import { X } from "lucide-react";
 import CustomDropdown from "@/components/CustomDropdown";
-
-/** ----------------------
- *  Reusable InputField
- *  ---------------------- */
+ 
+// Input field with label and error handling
 const InputField = forwardRef(({ label, isError, errorMessage, className = "", ...props }, ref) => (
   <div className={className}>
     <label className="text-sm font-medium text-gray-700 block mb-1.5">{label}</label>
     <input
       ref={ref}
       className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 transition 
-        ${isError ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#3FA170]"}
+        ${isError ? "border-1 border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#3FA170]"}
       `}
       {...props}
     />
@@ -22,21 +20,18 @@ const InputField = forwardRef(({ label, isError, errorMessage, className = "", .
 ));
 InputField.displayName = "InputField";
 
-/** Readonly look-alike input */
+// Readonly field Hook
 const ReadonlyField = ({ label, value }) => (
   <div>
     <label className="text-sm font-medium text-gray-700 block mb-1.5">{label}</label>
     <input
       value={value ?? ""}
       readOnly
-      className="w-full px-4 py-2 border rounded-md bg-gray-100 text-gray-600 cursor-not-allowed border-gray-300"
+      className="w-full px-4 py-2 border rounded-md bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#3FA170]"
     />
   </div>
 );
 
-/** ----------------------
- *  EditModal
- *  ---------------------- */
 function EditModal({
   isOpen,
   onClose,
@@ -146,59 +141,63 @@ function EditModal({
 
   const renderFormContent = () => {
     switch (formType) {
-      case "stock-out":
-  // ⛔ name / category / unit → readonly
-  return (
-    <>
-      <ReadonlyField label="ชื่อวัตถุดิบ" value={formData.name} />
+      case "all-ingredients":
+      // แก้ได้เฉพาะ: ชื่อ / หมวดหมู่ / หน่วยนับ
+      // readOnly: อายุ(วัน), จำนวนในคลัง
+      return (
+          <>
+          <InputField
+              ref={nameInputRef}
+              label="ชื่อวัตถุดิบ"
+              name="name"
+              value={formData.name || ""}
+              onChange={handleChange}
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSave())}
+              isError={isNameError}
+              errorMessage="ชื่อวัตถุดิบห้ามเว้นว่าง"
+          />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ReadonlyField label="หมวดหมู่" value={formData.category_id} />
-        <ReadonlyField label="หน่วยนับ" value={formData.unit_type} />
-      </div>
+          {/* หมวดหมู่ (แก้ได้) + อายุ(วัน) (readOnly) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1.5">หมวดหมู่</label>
+              <CustomDropdown
+                  placeholder="เลือกหมวดหมู่"
+                  categories={categories}
+                  selectedCategory={formData.category_id}
+                  onSelectCategory={(val) => handleDropdownChange("category_id", val)}
+              />
+              </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <InputField
-          onKeyDown={handleGeneralKeyDown}
-          label="วันเบิกจ่าย"
-          name="out_date"
-          type="date"
-          value={formData.out_date || ""}
-          onChange={handleChange}
-        />
-        <InputField
-          onKeyDown={handleGeneralKeyDown}
-          label="เวลาเบิกจ่าย"
-          name="out_time"
-          type="time"
-          value={formData.out_time || ""}
-          onChange={handleChange}
-        />
-        <InputField
-          onKeyDown={handleGeneralKeyDown}
-          label="จำนวน"
-          name="quantity"
-          type="text"
-          inputMode="decimal"
-          min={0}
-          value={formData.quantity || ""}
-          onChange={handleChange}
-        />
-        {/* ช่องว่างให้กริดบาลานซ์ */}
-        <div />
-      </div>
-    </>
-  );
+              {/* อายุ (readOnly) */}
+              <ReadonlyField label="อายุ (วัน)" value={formData.shelflife_day} />
+          </div>
+
+          {/* จำนวน (readOnly) + หน่วย (แก้ได้) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ReadonlyField label="จำนวนในคลัง" value={formData.quantity} />
+
+              <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1.5">หน่วยนับ</label>
+              <CustomDropdown
+                  placeholder="เลือกหน่วยนับ"
+                  categories={units}
+                  selectedCategory={formData.unit_type}
+                  onSelectCategory={(val) => handleDropdownChange("unit_type", val)}
+              />
+              </div>
+          </div>
+          </>
+      );
 
       case "stock-in":
-        // ⛔ name / category / unit → readonly
+        // name / category / unit → readonly
         return (
           <>
             <ReadonlyField label="ชื่อวัตถุดิบ" value={formData.name} />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <ReadonlyField label="หมวดหมู่" value={formData.category_id} />
-              <ReadonlyField label="หน่วยนับ" value={formData.unit_type} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -230,59 +229,53 @@ function EditModal({
                 value={formData.quantity || ""}
                 onChange={handleChange}
               />
-              {/* ช่องว่างให้กริดบาลานซ์ */}
+              <ReadonlyField label="หน่วยนับ" value={formData.unit_type} />
               <div />
             </div>
           </>
         );
-        case "all-ingredients":
-        // ✅ แก้ได้เฉพาะ: ชื่อ / หมวดหมู่ / หน่วยนับ
-        // ❌ readOnly: อายุ(วัน), จำนวนในคลัง
-        return (
-            <>
-            {/* ชื่อ (แก้ได้) */}
-            <InputField
-                ref={nameInputRef}
-                label="ชื่อวัตถุดิบ"
-                name="name"
-                value={formData.name || ""}
+
+        case "stock-out":
+        // name / category / unit → readonly
+        return ( 
+          <>
+            <ReadonlyField label="ชื่อวัตถุดิบ" value={formData.name} />
+        
+            <div className="grid grid-cols-1 gap-4">
+              <ReadonlyField label="หมวดหมู่" value={formData.category_id} />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InputField
+                onKeyDown={handleGeneralKeyDown}
+                label="วันเบิกจ่าย"
+                name="out_date"
+                type="date"
+                value={formData.out_date || ""}
                 onChange={handleChange}
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSave())}
-                isError={isNameError}
-                errorMessage="ชื่อวัตถุดิบห้ามเว้นว่าง"
-            />
-
-            {/* หมวดหมู่ (แก้ได้) + อายุ(วัน) (readOnly) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1.5">หมวดหมู่</label>
-                <CustomDropdown
-                    placeholder="เลือกหมวดหมู่"
-                    categories={categories}
-                    selectedCategory={formData.category_id}
-                    onSelectCategory={(val) => handleDropdownChange("category_id", val)}
-                />
-                </div>
-
-                {/* อายุ (readOnly) */}
-                <ReadonlyField label="อายุ (วัน)" value={formData.shelflife_day} />
+              />
+              <InputField
+                onKeyDown={handleGeneralKeyDown}
+                label="เวลาเบิกจ่าย"
+                name="out_time"
+                type="time"
+                value={formData.out_time || ""}
+                onChange={handleChange}
+              />
+              <InputField
+                onKeyDown={handleGeneralKeyDown}
+                label="จำนวน"
+                name="quantity"
+                type="text"
+                inputMode="decimal"
+                min={0}
+                value={formData.quantity || ""}
+                onChange={handleChange}
+              />
+              <ReadonlyField label="หน่วยนับ" value={formData.unit_type} />
+              <div />
             </div>
-
-            {/* จำนวน (readOnly) + หน่วย (แก้ได้) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ReadonlyField label="จำนวนในคลัง" value={formData.quantity} />
-
-                <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1.5">หน่วยนับ</label>
-                <CustomDropdown
-                    placeholder="เลือกหน่วยนับ"
-                    categories={units}
-                    selectedCategory={formData.unit_type}
-                    onSelectCategory={(val) => handleDropdownChange("unit_type", val)}
-                />
-                </div>
-            </div>
-            </>
+          </>
         );
 
       default:
@@ -354,7 +347,7 @@ function EditModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#E5E5E5]">
-          <h3 className="text-lg font-semibold text-gray-800">ID #{ingredient.id}</h3>
+          <h3 className="text-lg font-semibold text-gray-800">แก้ไข ID #{ingredient.id}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Close">
             <X size={24} />
           </button>
@@ -362,7 +355,7 @@ function EditModal({
 
         <div className="space-y-4">{renderFormContent()}</div>
 
-        <div className="flex flex-wrap justify-center gap-4 mt-8">
+        <div className="flex flex-wrap justify-end gap-4 mt-8">
           <button
             onClick={onClose}
             className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
