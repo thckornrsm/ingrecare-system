@@ -79,17 +79,23 @@ const AboutStore = () => {
   );
 };
 
-function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื่อใหม่', existingNames = [] }) {
+// 🌟 Component: EditCategoryModal ที่ถูกแก้ไขเพื่อรองรับการตรวจสอบชื่อซ้ำ
+function EditCategoryModal({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  category, 
+  label = 'ชื่อใหม่',
+  existingNames = [] // รับ prop ใหม่เข้ามา
+}) {
   const [name, setName] = useState('');
-  const [error, setError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [error, setError] = useState(''); // เปลี่ยนเป็น string เพื่อเก็บข้อความ error
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (category) {
       setName(category.name || '');
-      setError(false);
-      setErrorMessage('');
+      setError(''); // รีเซ็ต error
     }
   }, [category, isOpen]);
 
@@ -98,24 +104,29 @@ function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื�
   const handleSave = async () => {
     const trimmedName = name.trim();
     
+    // 1. ตรวจสอบว่ากรอกชื่อหรือไม่
     if (!trimmedName) {
-      setError(true);
-      setErrorMessage('กรุณากรอกชื่อ');
-      return;
+      return setError('กรุณากรอกชื่อ');
+    }
+    
+    // ตรวจสอบว่าชื่อใหม่เหมือนชื่อเดิมหรือไม่ (Case-Insensitive)
+    if (trimmedName.toLocaleLowerCase() === category.name.toLocaleLowerCase()) {
+        setError('');
+        onClose(); // ชื่อไม่เปลี่ยน ไม่ต้องเรียก API
+        return;
     }
 
-    // ตรวจสอบชื่อซ้ำ (ไม่นับชื่อเดิมของตัวเอง)
-    const isDuplicate = existingNames.some(
-      existingName => existingName.toLowerCase() === trimmedName.toLowerCase() && 
-      existingName.toLowerCase() !== category.name.toLowerCase()
-    );
+    // 2. ตรวจสอบชื่อซ้ำ (Case-Insensitive)
+    const isDuplicate = existingNames
+      .map(n => n.toLocaleLowerCase())
+      .includes(trimmedName.toLocaleLowerCase());
 
     if (isDuplicate) {
-      setError(true);
-      setErrorMessage('ชื่อนี้มีในระบบแล้ว');
-      return;
+      return setError('ชื่อนี้มีอยู่แล้ว กรุณาใช้ชื่ออื่น');
     }
-
+    
+    // ผ่านการตรวจสอบทั้งหมด
+    setError(''); 
     setSubmitting(true);
     try {
       await onSave({ id: category.id, name: trimmedName });
@@ -143,16 +154,15 @@ function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื�
             value={name}
             onChange={(e) => {
               setName(e.target.value);
-              setError(false);
-              setErrorMessage('');
+              if (error) setError('');
             }}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             autoFocus
-            className={`w-full rounded-md border px-4 py-2 outline-none transition focus:ring-2 ${
-              error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#3FA170]'
+            className={`w-full rounded-md border px-4 py-2 outline-none transition focus:ring-2 mb-1 ${
+              !!error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#3FA170]'
             }`}
           />
-          {error && <p className="text-sm text-red-500">{errorMessage}</p>}
+          {error && <p className="text-sm text-red-500">{error}</p>}
         </div>
 
         <div className="mt-8 flex justify-end gap-4">
@@ -166,7 +176,8 @@ function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื�
           <button
             onClick={handleSave}
             className="rounded-md bg-[#3FA170] px-6 py-2 text-sm font-medium text-white hover:bg-[#2F7A5E]"
-            disabled={submitting}
+            // ปิดปุ่ม 'บันทึก' ถ้ากำลังส่งข้อมูลหรือมี error
+            disabled={submitting || !!error} 
           >
             {submitting ? 'กำลังบันทึก…' : 'บันทึก'}
           </button>
@@ -182,61 +193,64 @@ const CategorySection = ({ title, items, onAddClick, onEditClick, onDeleteClick 
       <h3 className="border-l-4 border-[#3FA170] pl-3 text-xl font-semibold text-gray-800">{title}</h3>
       <button
         onClick={onAddClick}
-        className="flex items-center space-x-2 text-[#3FA170] transition-colors hover:bg-gray-100 px-4 py-2 rounded-md"
+        className="flex items-center space-x-2 text-[#3FA170] transition-colors hover:bg-gray-100 px-3 py-2 rounded-md font-medium"
       >
         <Plus size={20} />
         <span>เพิ่มหมวดหมู่</span>
       </button>
     </div>
 
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-      <div className="max-h-76 overflow-y-auto">
+    <div className="rounded-lg border border-gray-200 bg-white">
         <table className="w-full text-left text-sm text-gray-700">
-          <thead className="sticky top-0 border-b border-gray-200 bg-gray-100 text-sm text-gray-500 z-10">
+          <thead className="border-b border-gray-200 bg-gray-100 text-sm text-gray-500 sticky top-0 z-10">
             <tr>
               <th className="px-4 py-3 font-normal">ชื่อ</th>
               <th className="w-[8rem] px-4 py-3 text-center font-normal">จำนวนวัตถุดิบ</th>
               <th className="w-[6rem] px-4 py-3" />
             </tr>
           </thead>
-          <tbody>
-            {items.length > 0 ? (
-              items.map((item) => (
-                <tr
-                  key={`${item.id}-${item.name}`}
-                  className="border-b border-gray-200 bg-white last:border-b-0 hover:bg-gray-50"
-                >
-                  <td className="px-4 py-3">{item.name}</td>
-                  <td className="px-4 py-3 text-center">{item.count ?? '-'}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end space-x-2">
-                      <button
-                        onClick={() => onEditClick(item)}
-                        className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-200"
-                      >
-                        <PencilLine size={16} />
-                      </button>
-                      <button
-                        onClick={() => onDeleteClick(item)}
-                        className="rounded-md p-1.5 text-[#E15050] transition-colors hover:bg-red-100"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+        </table>
+
+        <div className="overflow-x-auto max-h-66 overflow-y-auto rounded-b-lg">
+          <table className="w-full text-left text-sm text-gray-700">
+            <tbody>
+              {items.length > 0 ? (
+                items.map((item) => (
+                  <tr
+                    key={`${item.id}-${item.name}`}
+                    className="border-b border-gray-200 bg-white last:border-b-0 hover:bg-gray-50"
+                  >
+                    <td className="px-4 py-3">{item.name}</td>
+                    <td className="px-4 py-3 w-[8rem] text-center">{item.count ?? '-'}</td>
+                    <td className="px-4 py-3 w-[6rem]">
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => onEditClick(item)}
+                          className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-200"
+                        >
+                          <PencilLine size={16} />
+                        </button>
+                        <button
+                          onClick={() => onDeleteClick(item)}
+                          className="rounded-md p-1.5 text-[#E15050] transition-colors hover:bg-red-100"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3" className="py-8 text-center text-gray-500">
+                    กำลังโหลดข้อมูล...
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="3" className="py-8 text-center text-gray-500">
-                  กำลังโหลดข้อมูล...
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
   </div>
 );
 
@@ -364,7 +378,7 @@ const ManageCategories = () => {
       await safeFetchJSON(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name: modalContext === 'material' ? { category_name: name } : { unit_name: name } }),
       });
       setIsEditModalOpen(false);
       await refreshAll();
@@ -388,6 +402,18 @@ const ManageCategories = () => {
     } catch (e) {
       toast.error(e.message || 'ลบข้อมูลไม่สำเร็จ');
     }
+  };
+  
+  // 🌟 ฟังก์ชันใหม่: สำหรับเตรียมรายชื่อที่มีอยู่ (ยกเว้นรายการที่กำลังแก้ไข)
+  const getExistingNames = () => {
+    if (!selectedItem || !modalContext) return [];
+
+    const items = modalContext === 'material' ? materialCategories : unitCategories;
+
+    // กรองรายการปัจจุบันออก แล้วดึงเฉพาะชื่อ
+    return items
+      .filter(item => item.id !== selectedItem.id)
+      .map(item => item.name);
   };
 
   return (
@@ -432,11 +458,8 @@ const ManageCategories = () => {
           onSave={handleConfirmEdit}
           category={selectedItem}
           label={modalContext === 'material' ? 'ชื่อหมวดหมู่ใหม่' : 'ชื่อหน่วยนับใหม่'}
-          existingNames={
-            modalContext === 'material'
-              ? materialCategories.map((c) => c.name)
-              : unitCategories.map((u) => u.name)
-          }
+          // 🌟 ส่งรายชื่อที่มีอยู่เข้าไปใน prop
+          existingNames={getExistingNames()} 
         />
       )}
 
@@ -492,4 +515,4 @@ export default function SettingsPage() {
       </div>
     </main>
   );
-}
+};
