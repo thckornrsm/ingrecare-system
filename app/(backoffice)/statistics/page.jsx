@@ -1,4 +1,3 @@
-// app/(backoffice)/statistics/page.jsx
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -23,14 +22,6 @@ const category_colors = {
   'อื่นๆ': { color: 'bg-gray-400' }
 };
 
-const category_colors_hex = {
-  'ทะเล': '#38bdf8',       // bg-sky-400
-  'ผัก': '#4ade80',         // bg-green-400
-  'เครื่องปรุง': '#facc15', // bg-yellow-400
-  'เนื้อสัตว์': '#f87171',   // bg-red-400
-  'อื่นๆ': '#9ca3af',        // bg-gray-400
-};
-
 // Card 1,2: Stat Summary
 const StatCard = ({ icon, title, value, unit, context }) => (
   <div className="bg-white p-6 rounded-lg border border-gray-200 flex flex-col justify-between min-h-[164px]">
@@ -42,42 +33,42 @@ const StatCard = ({ icon, title, value, unit, context }) => (
       <p className="text-3xl lg:text-4xl font-semibold text-black mt-4">
         {value} <span className="text-xl lg:text-2xl font-medium text-gray-500">{unit}</span>
       </p>
-      <p className="text-sm text-gray-400">{context}</p>
+      <p className="text-sm text-gray-400 mt-1">{context}</p>
     </div>
   </div>
 );
 
-// Card 3: Stock By Unit (รอแก้ต่อ)
-const StockByUnitCard = ({ list, selectedUnit, combinedTotal }) => {
+// Card 3: Stock By Unit
+const StockByUnitCard = ({ list, selectedUnit, combinedTotal, selectedCategory }) => {
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200 flex flex-col justify-between min-h-[164px]">
-      <div className="flex items-center gap-3 text-gray-600">
+      <div className="flex items-center gap-4 text-gray-600">
         <Archive size={20} />
         <span>คงเหลือในสต็อก</span>
       </div>
 
       <div>
-        <p className="text-3xl lg:text-4xl font-semibold text-black mt-4">
-          {selectedUnit === 'ทั้งหมด' ? combinedTotal : list.find(item => item.unit === selectedUnit)?.qty || 0}
-        </p>
-
-        <div>
-          {selectedUnit === 'ทั้งหมด' ? (
-            <span className="text-sm text-gray-400">ทั้งหมด (รวมทุกหน่วยนับ)</span>
-          ) : (
-            (!list || list.length === 0) ? (
-              <p className="text-sm text-gray-400">ไม่มีข้อมูลคงเหลือ</p>
-            ) : (
-              <ul>
-                {list.map((row) => (
-                  <li key={row.unit || '—'} className="">
-                    <span className="text-sm text-gray-400">{row.unit || '—'}</span>
-                  </li>
-                ))}
-              </ul>
-            )
-          )}
-        </div>
+        {selectedUnit === 'ทั้งหมด' ? (
+          <>
+            <p className="text-3xl lg:text-4xl font-semibold text-black mt-4">
+              {combinedTotal}
+              <span className="text-xl lg:text-2xl font-medium text-gray-500 ml-2"> </span>
+            </p>
+            <span className="text-sm text-gray-400">
+              {selectedCategory === 'ทั้งหมด' ? 'ทั้งหมด (รวมทุกหน่วยนับ)' : `${selectedCategory} (รวมทุกหน่วยนับ)`}
+            </span>
+          </>
+        ) : (
+          <>
+            <p className="text-3xl lg:text-4xl font-semibold text-black mt-4">
+              {list.find(item => item.unit === selectedUnit)?.qty || 0}
+              <span className="text-xl lg:text-2xl font-medium text-gray-500 ml-2">{selectedUnit}</span>
+            </p>
+            <span className="text-sm text-gray-400">
+              {selectedCategory === 'ทั้งหมด' ? 'ทั้งหมด (รวมทุกหมวดหมู่)' : `ในหมวด ${selectedCategory}`}
+            </span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -95,12 +86,12 @@ const KeyInsightCard = ({ insight }) => {
   }
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200 flex flex-col justify-between min-h-[164px]">
-      <div className="flex items-center gap-4 text-[#B8B8B8]">
-        <Trophy size={20} className="text-[#B8B8B8]" />
+      <div className="flex items-center gap-4 text-gray-600">
+        <Trophy size={20} className="text-gray-600" />
         <span>{insight.title}</span>
       </div>
       <div>
-        <p className="text-3xl font-bold text-[#3FA170] mt-4 truncate" title={insight.name}>
+        <p className="text-3xl font-bold text-black mt-4" title={insight.name}>
           {insight.name}
         </p>
         <p className="text-sm text-gray-400 mt-1">{insight.value}</p>
@@ -113,27 +104,34 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-md text-sm">
-        <p className="font-semibold text-gray-800">{data.name}</p>
-        <p className="text-gray-600">สัดส่วน: <span className="font-bold text-black">{Number(data.value).toFixed(1)}%</span></p>
+      <div className="bg-white px-3 py-2 border border-gray-200 rounded-lg text-sm">
+        <p className="text-gray-800 text-base">{data.name}</p>
+        <p className="text-gray-600 text-sm">สัดส่วน : <span className="text-black font-medium">{Number(data.value).toFixed(2)}%</span></p>
       </div>
     );
   }
   return null;
 };
 
-
+const getRandomColor = () => {
+  const hue = 130 + Math.floor(Math.random() * 80); // 130-210 (เขียว-ฟ้า)
+  const saturation = 40 + Math.floor(Math.random() * 30); // 40-70%
+  const lightness = 50 + Math.floor(Math.random() * 30); // 50-80%
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+};
 
 // Chart Components
 const DonutChart = ({ data }) => {
   if (!data || data.length === 0) {
     return (
       <div className="p-8 text-center text-gray-500 min-h-[300px] flex items-center justify-center">
-        ไม่มีข้อมูลสัดส่วน
+        ไม่พบข้อมูล
       </div>
     );
   }
+
   const [activeIndex, setActiveIndex] = useState(null);
+
   const onPieEnter = (_, index) => {
     setActiveIndex(index);
   };
@@ -141,80 +139,69 @@ const DonutChart = ({ data }) => {
     setActiveIndex(null);
   };
 
-  const COLORS = data.map((d) => {
-    // ดึงรหัสสี (เช่น #ef4444 จาก bg-red-400)
-    const twColorClass = category_colors[d.name]?.color || 'bg-gray-400';
-    // 💡 หากคุณใช้ Tailwind CSS และต้องการสี Hex, คุณอาจต้องสร้าง Map สีเพิ่ม
-    // แต่เพื่อความง่ายในตอนนี้ เราจะใช้สีในรูปแบบ string ตามที่คุณกำหนดไว้ใน category_colors
-    // **หมายเหตุ:** Recharts ต้องการค่าสีที่เป็น string (เช่น 'red', '#ff0000', 'rgb(255, 0, 0)') 
-    // ถ้าคุณต้องการใช้สีจาก Tailwind คุณต้องแปลงมันเป็น Hex Code หรือชื่อสีที่ Recharts เข้าใจ
-    // ในตัวอย่างนี้ ผมจะใช้สีพื้นฐานชั่วคราว หรือคุณสามารถปรับ category_colors เป็น Hex Code ได้
-    return twColorClass
-      .replace('bg-sky-400', '#38bdf8') // light blue
-      .replace('bg-green-400', '#4ade80') // light green
-      .replace('bg-yellow-400', '#facc15') // yellow
-      .replace('bg-red-400', '#f87171') // red
-      .replace('bg-gray-400', '#9ca3af'); // gray
+  const [randomColorsMap] = useState(() => {
+    return data.reduce((acc, item) => {
+      if (!acc[item.name]) {
+        acc[item.name] = getRandomColor();
+      }
+      return acc;
+    }, {});
   });
+
+  const COLORS = data.map(d => randomColorsMap[d.name]);
 
   return (
     <div className="flex flex-col md:flex-row items-center justify-center gap-x-12 gap-y-6 p-6 min-h-[300px]">
-      
-      {/* 🟢 ส่วนกราฟ Donut Chart พร้อม Tooltip และ Highlight */}
       <div className="w-full max-w-[200px] h-[200px] flex items-center justify-center">
-        {/* ใช้ ResponsiveContainer ที่ครอบ PieChart */}
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={data}
-              innerRadius={60}
-              outerRadius={80} // ฐาน
+              innerRadius={55}
+              outerRadius={80}
               paddingAngle={2}
               dataKey="value"
               nameKey="name"
               isAnimationActive={true}
-              // 2. 💡 กำหนด Event Handlers สำหรับ Tooltip/Highlight
               onMouseEnter={onPieEnter}
               onMouseLeave={onPieLeave}
             >
               {data.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
-                  fill={category_colors_hex[entry.name] || category_colors_hex['อื่นๆ']} 
-                  // 3. 💡 เงื่อนไขสำหรับ Highlight: ถ้า activeIndex ตรงกับ index ให้เพิ่ม outerRadius
-                  outerRadius={index === activeIndex ? 90 : 80}
-                  // 4. (ไม่บังคับ แต่ดี) ใช้ stroke เพื่อเพิ่มขอบเวลาไฮไลท์
-                  stroke={index === activeIndex ? '#333' : 'none'}
-                  strokeWidth={index === activeIndex ? 2 : 0}
-                  style={{ transition: 'all 0.3s ease-out' }} // เพิ่มความสวยงาม
+                  fill={COLORS[index]} 
+                  style={{ 
+                    transition: 'all 0.3s ease-out',
+                    filter: index === activeIndex ? 'brightness(0.7)' : 'none',
+                    outline: 'none'
+                  }}
                 />
               ))}
             </Pie>
-            {/* 💡 Tooltip จะทำงานเสถียรขึ้นเมื่อ PieChart ถูกควบคุมด้วย onMouseEnter/onMouseLeave */}
             <Tooltip content={<CustomTooltip />} /> 
           </PieChart>
         </ResponsiveContainer>
       </div>
       
-      {/* 🟢 ส่วน Legend ด้านข้าง พร้อม hover:bg-gray-100 */}
+      {/* Legend */}
       <div className="flex flex-col gap-1 w-full max-w-xs">
         {data.map((item, index) => (
           <div 
             key={item.name} 
-            className={`flex items-center justify-between text-sm p-2 rounded-md transition-colors cursor-default
-              ${index === activeIndex ? 'bg-gray-200' : 'hover:bg-gray-100'} 
-              // 💡 เพิ่ม focus:outline-none ที่นี่
-              focus:outline-none
+            className={`flex items-center justify-between text-sm p-2 rounded-md transition-colors cursor-default outline-none
+              ${index === activeIndex ? 'bg-gray-100' : 'hover:bg-gray-100'}
             `} 
-            // 💡 เพิ่ม tabindex=0 เพื่อให้มันเป็นองค์ประกอบที่สามารถโฟกัสได้
             tabIndex={0} 
             onMouseEnter={() => onPieEnter(null, index)}
             onMouseLeave={onPieLeave}
-            onFocus={() => onPieEnter(null, index)} // เพิ่มสำหรับ Keyboard Focus
-            onBlur={onPieLeave} // เพิ่มสำหรับ Keyboard Blur
+            onFocus={() => onPieEnter(null, index)}
+            onBlur={onPieLeave}
           >
             <div className="flex items-center gap-3">
-              <div className={`w-3 h-3 rounded-sm ${category_colors[item.name]?.color || 'bg-gray-400'}`} />
+              <div 
+                className="w-3 h-3 rounded-sm" 
+                style={{ backgroundColor: COLORS[index] }} 
+              />
               <span className="text-gray-700">{item.name}</span>
             </div>
             <span className="font-medium text-black">{Number(item.value).toFixed(1)}%</span>
@@ -225,7 +212,7 @@ const DonutChart = ({ data }) => {
   );
 };
 
-const HorizontalBarChart = ({ data, categoryName }) => {
+const HorizontalBarChart = ({ data, categoryName, selectedUnit }) => {
   if (!data || data.length === 0) {
     return (
       <div className="p-8 text-center text-gray-500 min-h-[300px] flex items-center justify-center">
@@ -236,19 +223,17 @@ const HorizontalBarChart = ({ data, categoryName }) => {
   const sortedData = [...data].sort((a, b) => b.value - a.value);
   const maxValue = Math.max(...sortedData.map((d) => d.value), 0);
   return (
-    <div className="p-6 space-y-4 min-h-auto">
-      <h3 className="font-semibold text-gray-800">
-        วัตถุดิบที่ใช้บ่อยในหมวด “{categoryName}”
-      </h3>
+    <div className="pl-6 pr-10 py-6 space-y-4 min-h-auto">
       {sortedData.map((item, idx) => (
         <div key={idx} className="flex items-center gap-3 text-sm">
           <span className="w-24 text-right text-gray-600 truncate">{item.name}</span>
           <div className="flex-1 bg-gray-200 rounded-full h-7">
             <div
-              className="bg-sky-500 h-7 rounded-full flex items-center justify-end px-2 text-white font-medium"
+              className="bg-[#3FA170]/90 h-7 rounded-full flex items-center justify-end px-4 text-white font-semibold"
               style={{ width: maxValue > 0 ? `${(item.value / maxValue) * 100}%` : '0%' }}
             >
               {item.value.toLocaleString()}
+              <span className="ml-1">{selectedUnit}</span>
             </div>
           </div>
         </div>
@@ -257,7 +242,6 @@ const HorizontalBarChart = ({ data, categoryName }) => {
   );
 };
 
-// รอแก้
 const TrendChart = ({ data }) => {
   if (!data || data.length === 0) {
     return (
@@ -266,19 +250,62 @@ const TrendChart = ({ data }) => {
       </div>
     );
   }
+
+  // คำนวณค่า max สำหรับ Y-axis
+  const maxValue = Math.max(
+    ...data.map(d => Math.max(d.นำเข้า || 0, d.เบิกจ่าย || 0)),
+    10
+  );
+  const yAxisMax = Math.ceil(maxValue * 1.2 / 10) * 10;
+
   return (
     <div className="w-full h-80 pt-4 pr-4">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+        <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-          <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 12 }} />
-          <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} />
-          <Tooltip
-            contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
+          <XAxis 
+            dataKey="date" 
+            tick={{ fill: '#6b7280', fontSize: 12 }}
+            tickMargin={8}
           />
-          <Legend wrapperStyle={{ fontSize: '14px' }} />
-          <Line type="monotone" dataKey="นำเข้า" stroke="#3FA170" strokeWidth={2} activeDot={{ r: 6 }} dot={{ r: 2 }} />
-          <Line type="monotone" dataKey="เบิกจ่าย" stroke="#EF4444" strokeWidth={2} activeDot={{ r: 6 }} dot={{ r: 2 }} />
+          <YAxis 
+            tick={{ fill: '#6b7280', fontSize: 12 }}
+            tickMargin={8}
+            domain={[0, yAxisMax]}
+            allowDecimals={false}
+          />
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: 'white', 
+              border: '1px solid #e5e7eb', 
+              borderRadius: '0.5rem',
+              padding: '8px 12px'
+            }}
+            formatter={(value, name) => [value.toLocaleString(), name]}
+            labelStyle={{ fontWeight: 'semibold', marginBottom: '4px' }}
+          />
+          <Legend 
+            wrapperStyle={{ fontSize: '14px', paddingTop: '10px' }}
+            iconType="line"
+          />
+          <Line 
+            type="monotone" 
+            dataKey="นำเข้า" 
+            stroke="#3FA170" 
+            strokeWidth={2.5} 
+            activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }} 
+            dot={{ r: 3, fill: '#3FA170', strokeWidth: 0 }}
+            name="นำเข้า"
+          />
+          <Line 
+            type="monotone" 
+            dataKey="เบิกจ่าย" 
+            stroke="#EF4444" 
+            strokeWidth={2.5} 
+            activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }} 
+            dot={{ r: 3, fill: '#EF4444', strokeWidth: 0 }}
+            name="เบิกจ่าย"
+          />
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -295,35 +322,46 @@ export default function StatisticsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [categories, setCategories] = useState([]);
-  const [monthOptions, setMonthOptions] = useState([]);
-  const [unitOptions, setUnitOptions] = useState([{ name: 'ทั้งหมด' }]);
+  const [allCategories, setAllCategories] = useState([]);
+  const [allMonthOptions, setAllMonthOptions] = useState([]);
+  const [allUnitOptions, setAllUnitOptions] = useState([]);
+  const [allInventoryData, setAllInventoryData] = useState([]);
 
   const [stockByUnitAll, setStockByUnitAll] = useState([]);
 
-  // โหลดตัวกรอง (เดือน, หมวดหมู่, หน่วยนับ)
+  // โหลดข้อมูลเริ่มต้น (categories, months, units, inventory)
   useEffect(() => {
-    const fetchFilters = async () => {
+    const fetchInitialData = async () => {
       try {
-        const [monthRes, categoryRes] = await Promise.all([
+        const [monthRes, categoryRes, invRes] = await Promise.all([
           fetch('/api/statistics/filters'),
           fetch('/api/categories'),
+          fetch('/api/inventory'),
         ]);
+        
         if (!monthRes.ok || !categoryRes.ok) throw new Error('ไม่สามารถโหลดข้อมูลตัวกรองได้');
 
-        const monthData = await monthRes.json(); // { availableMonths, unitOptions? }
+        const monthData = await monthRes.json();
         const rawCategoryData = await categoryRes.json();
+        const invData = invRes.ok ? await invRes.json() : [];
 
         const formattedCategories = [
           { name: 'ทั้งหมด' },
           ...rawCategoryData.map((c) => ({ name: c.category_name || c.name })),
         ];
 
-        setCategories(formattedCategories);
-        setMonthOptions(monthData.availableMonths || []);
-        if ((monthData.unitOptions || []).length) {
-          setUnitOptions([{ name: 'ทั้งหมด' }, ...monthData.unitOptions.map((u) => ({ name: u.name }))]);
-        }
+        setAllCategories(formattedCategories);
+        setAllMonthOptions(monthData.availableMonths || []);
+        setAllInventoryData(invData);
+
+        // สร้าง unit options จาก inventory
+        const unitSet = new Set();
+        invData.forEach(row => {
+          const unitName = row.unit?.unit_name || row.unit_name;
+          if (unitName) unitSet.add(unitName);
+        });
+        const units = [{ name: 'ทั้งหมด' }, ...Array.from(unitSet).sort((a, b) => a.localeCompare(b, 'th')).map(u => ({ name: u }))];
+        setAllUnitOptions(units);
 
         if ((monthData.availableMonths || []).length > 0) {
           setSelectedMonth(monthData.availableMonths[0].name);
@@ -335,43 +373,77 @@ export default function StatisticsPage() {
         setIsLoading(false);
       }
     };
-    fetchFilters();
+    fetchInitialData();
   }, []);
 
-  // Card 3: โหลดข้อมูลคงเหลือตามหน่วย
-  useEffect(() => {
-    const fetchInventory = async () => {
-      try {
-        const invRes = await fetch('/api/inventory');
-        if (!invRes.ok) throw new Error('โหลดข้อมูลคงเหลือไม่สำเร็จ');
-        const inv = await invRes.json();
+  // คำนวณ filtered unit options ตามหมวดหมู่ที่เลือก
+  const filteredUnitOptions = useMemo(() => {
+    if (selectedCategory === 'ทั้งหมด') return allUnitOptions;
 
-        // สรุปยอดตามหน่วย
-        const byUnit = Object.values(
-          inv.reduce((acc, row) => {
-            const unitName = row.unit?.unit_name || row.unit_name || '—';
-            const qty = Number(row.quantity || 0);
-            if (!acc[unitName]) acc[unitName] = { unit: unitName, qty: 0 };
-            acc[unitName].qty += qty;
-            return acc;
-          }, {})
-        ).sort((a, b) => a.unit.localeCompare(b.unit, 'th'));
-
-        setStockByUnitAll(byUnit);
-
-        // ถ้า unitOptions ยังไม่มี (กรณี API filters ไม่ส่งมา) → เติมจาก inventory
-        setUnitOptions((old) => {
-          if (old.length > 1) return old;
-          return [{ name: 'ทั้งหมด' }, ...byUnit.map((x) => ({ name: x.unit }))];
-        });
-      } catch (e) {
-        // ไม่ต้องฟ้อง error ที่นี่ ถ้าล้มเหลวก็แค่การ์ดคงเหลือแสดง “ไม่มีข้อมูล”
+    // กรองเฉพาะหน่วยที่มีในหมวดหมู่ที่เลือก
+    const unitSet = new Set();
+    allInventoryData.forEach(row => {
+      const catName = row.ingredient?.category?.category_name || row.category_name;
+      const unitName = row.unit?.unit_name || row.unit_name;
+      if (catName === selectedCategory && unitName) {
+        unitSet.add(unitName);
       }
-    };
-    fetchInventory();
-  }, []);
+    });
 
-  /* ---------- โหลดข้อมูลสถิติรายเดือน ---------- */
+    if (unitSet.size === 0) return [{ name: 'ทั้งหมด' }];
+    return [{ name: 'ทั้งหมด' }, ...Array.from(unitSet).sort((a, b) => a.localeCompare(b, 'th')).map(u => ({ name: u }))];
+  }, [selectedCategory, allUnitOptions, allInventoryData]);
+
+  // Reset unit เมื่อเปลี่ยนหมวดหมู่และหน่วยที่เลือกไม่มีในตัวเลือกใหม่
+  useEffect(() => {
+    const availableUnits = filteredUnitOptions.map(u => u.name);
+    if (!availableUnits.includes(selectedUnit)) {
+      setSelectedUnit('ทั้งหมด');
+    }
+  }, [selectedCategory, filteredUnitOptions]);
+
+  // คำนวณ stock by unit ตามที่กรอง
+  useEffect(() => {
+    let filteredInv = allInventoryData;
+
+    // กรณีที่ 1: เลือกหมวดหมู่อย่างเดียว (หน่วยนับ = ทั้งหมด)
+    if (selectedCategory !== 'ทั้งหมด' && selectedUnit === 'ทั้งหมด') {
+      filteredInv = filteredInv.filter(row => {
+        const catName = row.ingredient?.category?.category_name || row.category_name;
+        return catName === selectedCategory;
+      });
+    }
+    // กรณีที่ 2: เลือกหน่วยนับอย่างเดียว (หมวดหมู่ = ทั้งหมด)
+    else if (selectedCategory === 'ทั้งหมด' && selectedUnit !== 'ทั้งหมด') {
+      filteredInv = filteredInv.filter(row => {
+        const unitName = row.unit?.unit_name || row.unit_name;
+        return unitName === selectedUnit;
+      });
+    }
+    // กรณีที่ 3: เลือกทั้งหมวดหมู่และหน่วยนับ
+    else if (selectedCategory !== 'ทั้งหมด' && selectedUnit !== 'ทั้งหมด') {
+      filteredInv = filteredInv.filter(row => {
+        const catName = row.ingredient?.category?.category_name || row.category_name;
+        const unitName = row.unit?.unit_name || row.unit_name;
+        return catName === selectedCategory && unitName === selectedUnit;
+      });
+    }
+    // กรณีที่ 4: ไม่เลือกอะไรเลย (ทั้งหมดทั้งคู่) - ใช้ข้อมูลทั้งหมด
+
+    // สรุปยอดตามหน่วย
+    const byUnit = Object.values(
+      filteredInv.reduce((acc, row) => {
+        const unitName = row.unit?.unit_name || row.unit_name || '—';
+        const qty = Number(row.quantity || 0);
+        if (!acc[unitName]) acc[unitName] = { unit: unitName, qty: 0 };
+        acc[unitName].qty += qty;
+        return acc;
+      }, {})
+    ).sort((a, b) => a.unit.localeCompare(b.unit, 'th'));
+
+    setStockByUnitAll(byUnit);
+  }, [allInventoryData, selectedCategory, selectedUnit]);
+
   useEffect(() => {
     if (!selectedMonth) return;
     const [monthName, yearStr] = selectedMonth.split(' ');
@@ -383,15 +455,19 @@ export default function StatisticsPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/statistics?month=${month}&year=${year}`);
+        const params = new URLSearchParams({ month, year });
+        if (selectedCategory !== 'ทั้งหมด') params.append('category', selectedCategory);
+        if (selectedUnit !== 'ทั้งหมด') params.append('unit', selectedUnit);
+
+        const res = await fetch(`/api/statistics?${params.toString()}`);
         if (!res.ok) throw new Error((await res.json()).error || 'เกิดข้อผิดพลาด');
         const data = await res.json();
 
         const formatted = {
           summary: {
-            import: data.summary.importTotal,       // รวม “จำนวน” ที่นำเข้า (จะอ่านว่า lot ก็ได้ถ้า backend นับเป็นจำนวนล็อต)
-            dispense: data.summary.dispenseTotal,   // รวม “จำนวน” ที่เบิกจ่าย (หรือจำนวนล็อต)
-            stock: data.summary.stockTotal,         // ถ้ามีใช้ส่วนอื่นต่อได้
+            import: data.summary.importTotal,
+            dispense: data.summary.dispenseTotal,
+            stock: data.summary.stockTotal,
           },
           donut: (data.donut || []).map((d) => ({
             ...d,
@@ -412,7 +488,7 @@ export default function StatisticsPage() {
       }
     };
     fetchData();
-  }, [selectedMonth]);
+  }, [selectedMonth, selectedCategory, selectedUnit]);
 
   // Card 4: Key Insight
   const keyInsight = useMemo(() => {
@@ -435,7 +511,7 @@ export default function StatisticsPage() {
   );
 
   const stockByUnitList = useMemo(() => {
-    if (selectedUnit === 'ทั้งหมด') return stockByUnitAll; // จะไม่ถูกแสดงเป็น list ในการ์ด แต่ปล่อยไว้ได้
+    if (selectedUnit === 'ทั้งหมด') return stockByUnitAll;
     const match = stockByUnitAll.find((x) => x.unit === selectedUnit);
     return match ? [match] : [];
   }, [selectedUnit, stockByUnitAll]);
@@ -446,30 +522,28 @@ export default function StatisticsPage() {
     if (error) return <div className="p-10 text-center text-red-500">เกิดข้อผิดพลาด: {error}</div>;
     if (!currentData) return <div className="p-10 text-center text-gray-500">ไม่พบข้อมูล</div>;
 
-    /* (ถ้าต้องการ กรอง history ตามหมวดหมู่ได้ที่นี่)
-    const filteredIn = selectedCategory === 'ทั้งหมด' ? currentData.historyStockIn : currentData.historyStockIn.filter(i => i.categoryName === selectedCategory);
-    const filteredOut = selectedCategory === 'ทั้งหมด' ? currentData.historyStockOut : currentData.historyStockOut.filter(i => i.categoryName === selectedCategory);
-    */
-
     return (
       <>
         {/* cards summary */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
           <StatCard
             icon={<ArrowDownToLine size={20} />}
-            title="ปริมาณนำเข้า (Lot)"
+            title="ปริมาณนำเข้า"
             value={(currentData.summary?.import ?? 0).toLocaleString()}
+            unit="ล็อต"
             context={`ข้อมูลเดือน ${selectedMonth}`}
           />
           <StatCard
             icon={<ArrowUpFromLine size={20} />}
-            title="ปริมาณเบิกจ่าย (Lot)"
+            title="ปริมาณเบิกจ่าย"
             value={(currentData.summary?.dispense ?? 0).toLocaleString()}
+            unit="ล็อต"
             context={`ข้อมูลเดือน ${selectedMonth}`}
           />
           <StockByUnitCard
             list={stockByUnitList}
             selectedUnit={selectedUnit}
+            selectedCategory={selectedCategory}
             combinedTotal={combinedTotal}
           />
           <KeyInsightCard insight={keyInsight} />
@@ -481,7 +555,7 @@ export default function StatisticsPage() {
             <h2 className="py-3 px-4 bg-gray-100 text-sm text-gray-500 rounded-t-lg border-b border-gray-200">
               {selectedCategory === 'ทั้งหมด'
                 ? 'สัดส่วนการใช้วัตถุดิบทั้งหมด'
-                : `วัตถุดิบที่ใช้บ่อยในหมวด “${selectedCategory}”`}
+                : `วัตถุดิบที่ใช้บ่อยในหมวด "${selectedCategory}"`}
             </h2>
             {selectedCategory === 'ทั้งหมด' ? (
               <DonutChart data={currentData.donut} />
@@ -517,7 +591,7 @@ export default function StatisticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <CustomDropdown
           label="หมวดหมู่"
-          categories={categories}
+          categories={allCategories}
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
           placeholder="เลือกหมวดหมู่"
@@ -525,7 +599,7 @@ export default function StatisticsPage() {
         />
         <CustomDropdown
           label="หน่วยนับ"
-          categories={unitOptions}
+          categories={filteredUnitOptions}
           selectedCategory={selectedUnit}
           onSelectCategory={setSelectedUnit}
           placeholder="เลือกหน่วยนับ"
@@ -533,7 +607,7 @@ export default function StatisticsPage() {
         />
         <CustomDropdown
           label="เลือกเดือน"
-          categories={monthOptions}
+          categories={allMonthOptions}
           selectedCategory={selectedMonth}
           onSelectCategory={setSelectedMonth}
           placeholder="เลือกเดือน"
