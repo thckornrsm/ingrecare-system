@@ -330,6 +330,7 @@ export default function DisbursePage() {
     }
   };
 
+<<<<<<< Updated upstream
   return (
     <>
       <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
@@ -344,6 +345,95 @@ export default function DisbursePage() {
           >
             <Plus size={16} /> เพิ่มรายการวัตถุดิบ
           </button>
+=======
+        try {
+            const res = await fetch('/api/stockout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            
+            const result = await res.json();
+
+            if (!res.ok) {
+                throw new Error(result.error || 'Something went wrong');
+            }
+
+            showToast('การเบิกจ่ายวัตถุดิบสำเร็จ', 'success');
+            setTimeout(() => {
+                router.push('/dashboard');
+            }, 1500);
+
+        } catch (error) {
+            console.error("DISBURSE_ERROR", error);
+            showToast(`เกิดข้อผิดพลาด: ${error.message}`, 'error');
+        }
+    };
+
+    return (
+        <div className="flex h-screen bg-white">
+            <div className="flex-1 flex flex-col overflow-hidden">
+                <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
+                    <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
+                        <div>
+                            <h1 className="text-black text-3xl font-bold">เบิกจ่ายวัตถุดิบ</h1>
+                            <p className="text-[#979999]">เพิ่มข้อมูลการเบิกจ่ายวัตถุดิบในแต่ละล็อต</p>
+                        </div>
+                        <button
+                            onClick={handleAddItem}
+                            className="w-full sm:w-auto justify-center px-4 py-2 text-sm rounded-lg border border-[#3FA170] bg-[#3FA170] text-white font-medium flex items-center gap-2 hover:bg-[#1E7957] transition-colors"
+                        >
+                            <Plus size={16} /> เพิ่มรายการวัตถุดิบ
+                        </button>
+                    </div>
+
+                    <div className="space-y-6">
+                        {items.map((item) => (
+                            <DisburseFormRow
+                                key={item.id}
+                                item={item}
+                                onUpdate={handleUpdateItem}
+                                onRemove={handleRemoveItem}
+                                availableIngredients={availableIngredients}
+                                units={units}
+                            />
+                        ))}
+                    </div>
+                
+                    <div className="flex flex-wrap justify-end gap-4 pt-6">
+                        <button
+                            type="button"
+                            onClick={handleClearAll}
+                            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                        >
+                            ล้างข้อมูล
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSubmit}
+                            className="w-full sm:w-auto px-6 py-2 text-sm text-white bg-[#3FA170] rounded-md hover:bg-[#1E7957]"
+                        >
+                            ยืนยันข้อมูล
+                        </button>
+                    </div>
+                </main>
+            </div>
+            
+            {isModalOpen && (
+                <ConfirmationModal
+                    onClose={() => setIsModalOpen(false)}
+                    onConfirm={handleConfirmSubmit}
+                />
+            )}
+
+            {toast.show && (
+                <ToastNotification
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast({ show: false, message: '', type: '' })}
+                />
+            )}
+>>>>>>> Stashed changes
         </div>
 
         <div className="space-y-6">
