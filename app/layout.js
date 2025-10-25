@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${kanit.variable} antialiased`}>
-        <div className="min-h-screen bg-white text-[#0F2B46]">
+        <div className="bg-white text-[#0F2B46]">
           {children}
         </div>
       </body>

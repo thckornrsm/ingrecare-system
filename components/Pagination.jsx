@@ -34,9 +34,9 @@ function Pagination({
         <div className="w-full flex flex-col md:flex-row justify-between items-center text-sm text-gray-600 mt-4">
             <div className="mb-4 md:mb-0">
                 <span>แสดงรายการ </span>
-                <span className="font-semibold text-gray-800">{startItem}-{endItem}</span>
+                <span className="text-gray-800">{startItem}-{endItem}</span>
                 <span> จาก </span>
-                <span className="font-semibold text-gray-800">{totalItems}</span>
+                <span className="text-gray-800">{totalItems}</span>
             </div>
 
             <div className="flex items-center gap-4">

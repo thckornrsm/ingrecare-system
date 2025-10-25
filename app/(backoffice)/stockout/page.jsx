@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal'), { ssr: false });
 
-import { Plus, Trash2, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
 
 /* ---------- helpers: กันกรอกค่าที่ไม่ถูกต้อง ---------- */
 const blockInvalidKey = (e) => {
@@ -53,27 +54,8 @@ const isExpired = (ing) => {
   return end < new Date();
 };
 
-/* ---------- Toast Notification ---------- */
-const ToastNotification = ({ message, type, onClose }) => {
-  const isSuccess = type === 'success';
-  const bgColor = isSuccess ? 'bg-green-100' : 'bg-red-100';
-  const borderColor = isSuccess ? 'border-green-400' : 'border-red-400';
-  const textColor = isSuccess ? 'text-green-700' : 'text-red-700';
-  const Icon = isSuccess ? CheckCircle2 : AlertCircle;
-
-  return (
-    <div className={`fixed top-6 right-6 z-40 flex items-center p-4 rounded-lg border-l-4 shadow-lg ${bgColor} ${borderColor} animate-fade-in-right`}>
-      <Icon className={textColor} />
-      <div className={`ml-3 text-sm font-medium ${textColor}`}>{message}</div>
-      <button onClick={onClose} className={`ml-auto -mx-1.5 -my-1.5 p-1.5 rounded-full inline-flex h-8 w-8 ${textColor} hover:bg-opacity-20`}>
-        <X size={20} />
-      </button>
-    </div>
-  );
-};
-
 /* ---------- Disburse Form Row ---------- */
-const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units, onWarn }) => {
+const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units, showDeleteButton }) => {
   const [searchTerm, setSearchTerm] = useState(item.itemName || '');
   const [suggestions, setSuggestions] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
@@ -97,7 +79,7 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
   const handleSelectSuggestion = (ingredient) => {
     // ❌ บล็อกเลือกวัตถุดิบที่หมดอายุ
     if (isExpired(ingredient)) {
-      onWarn?.('วัตถุดิบนี้หมดอายุแล้ว ไม่สามารถเบิกได้', 'error');
+      toast.error('วัตถุดิบนี้หมดอายุแล้ว ไม่สามารถเบิกได้');
       return;
     }
     setSearchTerm(ingredient.name);
@@ -127,9 +109,16 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
 
   return (
     <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] relative">
-      <button onClick={() => onRemove(item.id)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500">
-        <Trash2 size={18} />
-      </button>
+      {/* ✅ แสดงปุ่มลบเฉพาะเมื่อ showDeleteButton = true */}
+      {onRemove && showDeleteButton && (
+        <button
+          type="button"
+          onClick={() => onRemove(item.id)}
+          className="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition-colors"
+        >
+          <Trash2 size={18} />
+        </button>
+      )}
       <form className="space-y-6">
         <div className="relative">
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -137,12 +126,12 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
           </label>
           <input
             type="text"
-            placeholder="ค้นหาชื่อวัตถุดิบในสต็อก เช่น เนื้อหมูสันนอก, ผักกาดขาว"
+            placeholder="ชื่อวัตถุดิบในสต็อก เช่น เนื้อหมูสันนอก, ผักกาดขาว"
             value={searchTerm}
             onChange={handleSearchChange}
             onFocus={() => setIsFocused(true)}
-            onBlur={() => setTimeout(() => setIsFocused(false), 200)} // เผื่อเวลาคลิก suggestion
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black"
+            onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 bg-white text-black"
           />
 
           {isFocused && suggestions.length > 0 && (
@@ -187,8 +176,8 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
               onPaste={blockInvalidPaste}
               onWheel={(e) => e.currentTarget.blur()}
               disabled={selectedIsExpired}
-              placeholder={selectedIsExpired ? 'รายการนี้หมดอายุ' : 'เช่น 2.5, 10'}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white text-black ${
+              placeholder={selectedIsExpired ? 'รายการนี้หมดอายุ' : 'ระบุค่าตัวเลข เช่น 2.5, 10'}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 bg-white text-black ${
                 selectedIsExpired ? 'bg-gray-100 cursor-not-allowed' : ''
               }`}
             />
@@ -196,26 +185,18 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              หน่วย <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={item.unit_id || ''}
-              onChange={handleUnitChange}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-[#3FA170] bg-white ${
-                !item.unit_id ? 'text-gray-400' : 'text-black'
-              } ${selectedIsExpired ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-              disabled={!item.ingredient_id || selectedIsExpired}
-            >
-              <option value="" disabled>
-                -
-              </option>
-              {units.map((unit) => (
-                <option key={unit.unit_id} value={unit.unit_id}>
-                  {unit.unit_name}
-                </option>
-              ))}
-            </select>
-          </div>
+            หน่วยนับ <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={item.unit || 'แสดงผลอัตโนมัติ เมื่อระบุชื่อวัตถุดิบ'}
+            readOnly
+            disabled={selectedIsExpired}
+            className={`w-full px-3 py-2 rounded-md focus:outline-none bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-300 focus:ring-2 focus:ring-[#3FA170] ${
+              selectedIsExpired ? 'bg-gray-100 cursor-not-allowed' : ''
+            }`}
+          />
+        </div>
         </div>
 
         {selectedIsExpired && (
@@ -242,7 +223,6 @@ export default function DisbursePage() {
   const [items, setItems] = useState([createNewItem()]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: '', type: '' });
 
   const [availableIngredients, setAvailableIngredients] = useState([]);
   const [units, setUnits] = useState([]);
@@ -256,7 +236,7 @@ export default function DisbursePage() {
         setUnits(await unitRes.json());
       } catch (error) {
         console.error('FETCH_ERROR', error);
-        showToast('ไม่สามารถโหลดข้อมูลวัตถุดิบได้', 'error');
+        toast.error('ไม่สามารถโหลดข้อมูลวัตถุดิบได้');
       }
     };
     fetchData();
@@ -267,11 +247,6 @@ export default function DisbursePage() {
     document.body.classList.toggle('overflow-hidden', isModalOpen);
     return () => document.body.classList.remove('overflow-hidden');
   }, [isModalOpen]);
-
-  const showToast = (message, type) => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
-  };
 
   const handleAddItem = () => setItems((prev) => [...prev, createNewItem()]);
   const handleRemoveItem = (id) => setItems((prev) => (prev.length > 1 ? prev.filter((i) => i.id !== id) : prev));
@@ -287,10 +262,10 @@ export default function DisbursePage() {
 
   const handleSubmit = () => {
     const isInvalid = items.some((i) => !i.ingredient_id || !i.quantity || Number(i.quantity) <= 0 || !i.unit_id);
-    if (isInvalid) return showToast('การเบิกจ่ายวัตถุดิบไม่สำเร็จ กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+    if (isInvalid) return toast.error('การเบิกจ่ายวัตถุดิบไม่สำเร็จ กรุณากรอกข้อมูลให้ครบถ้วน');
 
     if (hasExpiredInSelection()) {
-      return showToast('มีวัตถุดิบที่หมดอายุในรายการ ไม่สามารถเบิกได้', 'error');
+      return toast.error('มีวัตถุดิบที่หมดอายุในรายการ ไม่สามารถเบิกได้');
     }
 
     setIsModalOpen(true);
@@ -300,10 +275,12 @@ export default function DisbursePage() {
     // กันอีกชั้น (ป้องกันความผิดพลาดจาก state)
     if (hasExpiredInSelection()) {
       setIsModalOpen(false);
-      return showToast('มีวัตถุดิบที่หมดอายุในรายการ ไม่สามารถเบิกได้', 'error');
+      return toast.error('มีวัตถุดิบที่หมดอายุในรายการ ไม่สามารถเบิกได้');
     }
 
     setIsSubmitting(true);
+    const loadingToast = toast.loading('กำลังบันทึกข้อมูล...');
+
     try {
       const payload = {
         description: `Stock-out on ${new Date().toLocaleDateString()}`,
@@ -323,12 +300,12 @@ export default function DisbursePage() {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Something went wrong');
 
-      showToast('การเบิกจ่ายวัตถุดิบสำเร็จ', 'success');
+      toast.success('การเบิกจ่ายวัตถุดิบสำเร็จ!', { id: loadingToast });
       setIsModalOpen(false);
       setTimeout(() => router.push('/dashboard'), 1500);
     } catch (error) {
       console.error('DISBURSE_ERROR', error);
-      showToast(`เกิดข้อผิดพลาด: ${error.message}`, 'error');
+      toast.error(`เกิดข้อผิดพลาด: ${error.message}`, { id: loadingToast });
     } finally {
       setIsSubmitting(false);
     }
@@ -336,7 +313,8 @@ export default function DisbursePage() {
 
   return (
     <>
-      <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
+      <Toaster position="top-right" />
+      <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
         <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
           <div>
             <h1 className="text-black text-3xl font-bold">เบิกจ่ายวัตถุดิบ</h1>
@@ -359,7 +337,7 @@ export default function DisbursePage() {
               onRemove={handleRemoveItem}
               availableIngredients={availableIngredients}
               units={units}
-              onWarn={showToast}
+              showDeleteButton={items.length > 1} // ✅ แสดงปุ่มลบเฉพาะเมื่อมีมากกว่า 1 รายการ
             />
           ))}
         </div>
@@ -390,14 +368,6 @@ export default function DisbursePage() {
         isSubmitting={isSubmitting}
         formType="stock-out"
       />
-
-      {toast.show && (
-        <ToastNotification
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast({ show: false, message: '', type: '' })}
-        />
-      )}
     </>
   );
 }

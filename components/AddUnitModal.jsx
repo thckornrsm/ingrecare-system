@@ -58,8 +58,8 @@ function AddUnitModal({ isOpen, onClose, onAddUnit, existingUnits = [] }) {
                                 id="unitName" 
                                 value={unitName} 
                                 onChange={(e) => setUnitName(e.target.value)} 
-                                className={`flex-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-green-500 focus:border-green-500'}`} 
-                                placeholder="เช่น ชิ้น, ถุง, แกลลอน"
+                                className={`flex-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm focus:ring-1 ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-[#3FA170] focus:border-[#3FA170]'}`} 
+                                placeholder="เช่น กิโลกรัม, ถุง, แกลลอน"
                                 required 
                                 autoFocus
                             />
@@ -85,4 +85,3 @@ function AddUnitModal({ isOpen, onClose, onAddUnit, existingUnits = [] }) {
 };
 
 export default AddUnitModal;
-

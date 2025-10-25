@@ -10,7 +10,8 @@ const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal')
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useRouter } from 'next/navigation';
-import { Plus, Calendar, Trash2, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Plus, Calendar, Trash2 } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
 
 /* ---------- helpers ป้องกันการกรอกค่าที่ไม่ถูกต้อง ---------- */
 const blockInvalidKey = (e) => {
@@ -29,7 +30,7 @@ const setPositiveNumber = (raw, opts = { float: true, min: 0 }) => {
   return num < (opts.min ?? 0) ? '' : cleaned;
 };
 
-/* ---------- date helpers (ใหม่: กัน “อนาคต”) ---------- */
+/* ---------- date helpers ---------- */
 const startOfDay = (d) => {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
@@ -58,21 +59,20 @@ const IngredientFormRow = ({
   availableCategories, onAddNewCategoryClick,
   quantityUnits, onAddNewQuantityUnitClick,
   shelfLifeUnits,
-  onWarn,
 }) => {
   const handleInputChange = (field, value) => onUpdate(item.id, { [field]: value });
 
   const handleDateChange = (date) => {
     if (!date) return;
     if (isFutureDate(date)) {
-      onWarn?.('ห้ามเลือกวันที่ในอนาคต', 'error');
-      return; // ไม่อัปเดต
+      toast.error('ห้ามเลือกวันที่ในอนาคต');
+      return;
     }
     handleInputChange('received_date', date);
   };
 
   return (
-    <div className="bg-[#F6F8FA] p-6 rounded-lg border border-[#E5E5E5] relative">
+    <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] relative">
       {onRemove && (
         <button
           type="button"
@@ -95,8 +95,8 @@ const IngredientFormRow = ({
             wrapperClassName="w-full"
             customInput={<CustomDateInput placeholder="วว/ดด/ปปปป" />}
             popperClassName="z-20"
-            maxDate={new Date()}                // ✅ เลือกได้ถึง “วันนี้” สูงสุด
-            filterDate={(d) => !isFutureDate(d)}// ✅ กันไม่ให้เลือกอนาคต
+            maxDate={new Date()}
+            filterDate={(d) => !isFutureDate(d)}
           />
         </div>
 
@@ -121,7 +121,7 @@ const IngredientFormRow = ({
             categories={availableCategories}
             selectedCategory={item.category_name}
             onSelectCategory={(selectedType) => handleInputChange('category_name', selectedType)}
-            placeholder="เลือกประเภทของวัตถุดิบ"
+            placeholder="เลือกหรือเพิ่มหมวดหมู่ของวัตถุดิบ"
             onAddNewClick={onAddNewCategoryClick}
             addNewText="เพิ่มหมวดหมู่"
           />
@@ -129,7 +129,7 @@ const IngredientFormRow = ({
 
         <div>
           <label className="block text-sm font-medium text-black mb-1">
-            จำนวน <span className="text-red-500">*</span>
+            จำนวนนำเข้า <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -146,20 +146,20 @@ const IngredientFormRow = ({
             onKeyDown={blockInvalidKey}
             onPaste={blockInvalidPaste}
             onWheel={(e) => e.currentTarget.blur()}
-            placeholder="เช่น 2.5, 10"
+            placeholder="ระบุค่าตัวเลข เช่น 2.5, 10"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 bg-white text-black"
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-black mb-1">
-            หน่วย <span className="text-red-500">*</span>
+            หน่วยนับ <span className="text-red-500">*</span>
           </label>
           <CustomDropdown
             categories={quantityUnits}
             selectedCategory={item.unit_name}
             onSelectCategory={(unit) => handleInputChange('unit_name', unit)}
-            placeholder="เช่น กิโลกรัม, แพ็ค, ขวด"
+            placeholder="เลือกหรือเพิ่มหน่วยนับ"
             onAddNewClick={onAddNewQuantityUnitClick}
             addNewText="เพิ่มหน่วยนับ"
           />
@@ -184,7 +184,7 @@ const IngredientFormRow = ({
             onKeyDown={blockInvalidKey}
             onPaste={blockInvalidPaste}
             onWheel={(e) => e.currentTarget.blur()}
-            placeholder="เช่น 7, 30"
+            placeholder="ระบุค่าตัวเลข เช่น 7, 30"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#3FA170] focus:ring-2 bg-white text-black"
           />
         </div>
@@ -197,29 +197,10 @@ const IngredientFormRow = ({
             categories={shelfLifeUnits}
             selectedCategory={item.shelflife_unit_name}
             onSelectCategory={(unit) => handleInputChange('shelflife_unit_name', unit)}
-            placeholder="เช่น วัน, สัปดาห์, เดือน"
+            placeholder="เลือกหน่วยเวลา"
           />
         </div>
       </div>
-    </div>
-  );
-};
-
-/* ---------- ToastNotification ---------- */
-const ToastNotification = ({ message, type, onClose }) => {
-  const isSuccess = type === 'success';
-  const bgColor = isSuccess ? 'bg-green-100' : 'bg-red-100';
-  const borderColor = isSuccess ? 'border-green-400' : 'border-red-400';
-  const textColor = isSuccess ? 'text-green-700' : 'text-red-700';
-  const Icon = isSuccess ? CheckCircle2 : AlertCircle;
-
-  return (
-    <div className={`fixed top-6 right-6 z-40 flex items-center p-4 rounded-lg border-l-4 shadow-lg ${bgColor} ${borderColor} animate-fade-in-right`}>
-      <Icon className={textColor} />
-      <div className={`ml-3 text-sm font-medium ${textColor}`}>{message}</div>
-      <button onClick={onClose} className={`ml-auto -mx-1.5 -my-1.5 p-1.5 rounded-full inline-flex h-8 w-8 ${textColor} hover:bg-opacity-20`}>
-        <X size={20} />
-      </button>
     </div>
   );
 };
@@ -249,7 +230,6 @@ export default function StockInPage() {
   const [isConfirmModalOpen, setConfirmModalOpen] = useState(false);
   const [isAddCategoryModalOpen, setAddCategoryModalOpen] = useState(false);
   const [isAddUnitModalOpen, setAddUnitModalOpen] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: '', type: '' });
 
   const fetchDropdownData = async () => {
     try {
@@ -266,7 +246,7 @@ export default function StockInPage() {
       setAvailableUnits(units.map(u => ({ name: u.unit_name })));
       setAvailableTimeUnits(timeUnits.map(tu => ({ name: tu.unit_name })));
     } catch (error) {
-      showToast('ไม่สามารถโหลดข้อมูลพื้นฐานได้', 'error');
+      toast.error('ไม่สามารถโหลดข้อมูลพื้นฐานได้');
       console.error('Failed to fetch dropdown data', error);
     } finally {
       setIsLoading(false);
@@ -275,17 +255,11 @@ export default function StockInPage() {
 
   useEffect(() => { fetchDropdownData(); }, []);
 
-  // ล็อกสกรีนเมื่อมี modal ใด ๆ เปิด
   useEffect(() => {
     const anyOpen = isConfirmModalOpen || isAddCategoryModalOpen || isAddUnitModalOpen;
     document.body.classList.toggle('overflow-hidden', anyOpen);
     return () => document.body.classList.remove('overflow-hidden');
   }, [isConfirmModalOpen, isAddCategoryModalOpen, isAddUnitModalOpen]);
-
-  const showToast = (message, type) => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: '', type: '' }), 4000);
-  };
 
   const handleUpdateItem = (id, updatedValues) => {
     setItems(items.map(item => item.id === id ? { ...item, ...updatedValues } : item));
@@ -297,10 +271,9 @@ export default function StockInPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // ✅ ดักวันที่อนาคต (ทุกแถว)
     const hasFuture = items.some(it => !it.received_date || isFutureDate(it.received_date));
     if (hasFuture) {
-      showToast('ห้ามนำเข้าด้วยวันที่ในอนาคต กรุณาเลือกวันที่วันนี้หรืิอย้อนหลัง', 'error');
+      toast.error('ห้ามนำเข้าด้วยวันที่ในอนาคต กรุณาเลือกวันที่วันนี้หรือย้อนหลัง');
       return;
     }
 
@@ -311,7 +284,7 @@ export default function StockInPage() {
     );
 
     if (isInvalid) {
-      showToast('กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน', 'error');
+      toast.error('กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน');
     } else {
       setAddCategoryModalOpen(false);
       setAddUnitModalOpen(false);
@@ -328,10 +301,10 @@ export default function StockInPage() {
       });
       if (!res.ok) throw new Error((await res.json()).error || 'Failed to add category');
 
-      showToast('เพิ่มหมวดหมู่ใหม่สำเร็จ!', 'success');
+      toast.success('เพิ่มหมวดหมู่ใหม่สำเร็จ!');
       fetchDropdownData();
     } catch (error) {
-      showToast(`เกิดข้อผิดพลาด: ${error.message}`, 'error');
+      toast.error(`เกิดข้อผิดพลาด: ${error.message}`);
     }
   };
 
@@ -344,15 +317,17 @@ export default function StockInPage() {
       });
       if (!res.ok) throw new Error((await res.json()).error || 'Failed to add unit');
 
-      showToast('เพิ่มหน่วยนับใหม่สำเร็จ!', 'success');
+      toast.success('เพิ่มหน่วยนับใหม่สำเร็จ!');
       fetchDropdownData();
     } catch (error) {
-      showToast(`เกิดข้อผิดพลาด: ${error.message}`, 'error');
+      toast.error(`เกิดข้อผิดพลาด: ${error.message}`);
     }
   };
 
   const handleConfirmSubmit = async () => {
     setIsSubmitting(true);
+    const loadingToast = toast.loading('กำลังบันทึกข้อมูล...');
+    
     const payload = {
       items: items.map(item => ({
         name: item.name,
@@ -373,10 +348,10 @@ export default function StockInPage() {
       });
       if (!res.ok) throw new Error((await res.json()).error || 'Something went wrong');
 
-      showToast('บันทึกข้อมูลการนำเข้าสำเร็จ', 'success');
+      toast.success('บันทึกข้อมูลการนำเข้าสำเร็จ!', { id: loadingToast });
       setTimeout(() => { router.push('/dashboard'); }, 1500);
     } catch (error) {
-      showToast(`เกิดข้อผิดพลาด: ${error.message}`, 'error');
+      toast.error(`เกิดข้อผิดพลาด: ${error.message}`, { id: loadingToast });
     } finally {
       setIsSubmitting(false);
       setConfirmModalOpen(false);
@@ -385,9 +360,10 @@ export default function StockInPage() {
 
   return (
     <>
-      <main className="flex-1 overflow-y-auto py-9 px-10 sm:px-14 md:px-25">
+      <Toaster position="top-right" />
+      <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
         <form onSubmit={handleSubmit}>
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
             <div>
               <h1 className="text-3xl font-bold text-black">นำเข้าวัตถุดิบ</h1>
               <p className="text-[#979999]">เพิ่มข้อมูลการนำเข้าของวัตถุดิบในแต่ละล็อต</p>
@@ -397,42 +373,37 @@ export default function StockInPage() {
               onClick={handleAddItem}
               className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#3FA170] bg-[#3FA170] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1E7957] sm:w-auto"
             >
-              <Plus size={16} /> เพิ่มรายการ
+              <Plus size={16} /> เพิ่มรายการวัตถุดิบ
             </button>
           </div>
 
-          {isLoading ? (
-            <p className="text-center text-gray-500">กำลังโหลดฟอร์ม...</p>
-          ) : (
-            <div className="space-y-6">
-              {items.map(item => (
-                <IngredientFormRow
-                  key={item.id}
-                  item={item}
-                  onUpdate={handleUpdateItem}
-                  onRemove={items.length > 1 ? handleRemoveItem : null}
-                  availableCategories={availableCategories}
-                  onAddNewCategoryClick={() => setAddCategoryModalOpen(true)}
-                  quantityUnits={availableUnits}
-                  onAddNewQuantityUnitClick={() => setAddUnitModalOpen(true)}
-                  shelfLifeUnits={availableTimeUnits}
-                  onWarn={showToast}
-                />
-              ))}
-            </div>
-          )}
+          <div className="space-y-6">
+            {items.map(item => (
+              <IngredientFormRow
+                key={item.id}
+                item={item}
+                onUpdate={handleUpdateItem}
+                onRemove={items.length > 1 ? handleRemoveItem : null}
+                availableCategories={availableCategories}
+                onAddNewCategoryClick={() => setAddCategoryModalOpen(true)}
+                quantityUnits={availableUnits}
+                onAddNewQuantityUnitClick={() => setAddUnitModalOpen(true)}
+                shelfLifeUnits={availableTimeUnits}
+              />
+            ))}
+          </div>
 
           <div className="flex flex-wrap justify-end gap-4 pt-6">
             <button
               type="button"
               onClick={handleClearAll}
-              className="w-full rounded-md bg-gray-200 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 sm:w-auto"
+              className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
             >
               ล้างข้อมูล
             </button>
             <button
               type="submit"
-              className="w-full rounded-md bg-[#3FA170] px-6 py-2 text-sm font-medium text-white hover:bg-[#1E7957] sm:w-auto"
+              className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-white bg-[#3FA170] rounded-md hover:bg-[#1E7957]"
             >
               ยืนยันข้อมูล
             </button>
@@ -461,14 +432,6 @@ export default function StockInPage() {
         onAddUnit={handleAddUnit}
         existingUnits={availableUnits.map(u => ({ name: u.name }))}
       />
-
-      {toast.show && (
-        <ToastNotification
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast({ show: false, message: '', type: '' })}
-        />
-      )}
     </>
   );
 }

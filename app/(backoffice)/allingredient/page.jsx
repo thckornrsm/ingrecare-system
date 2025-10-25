@@ -3,8 +3,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import CustomDropdown from "@/components/CustomDropdown";
 import Pagination from "@/components/Pagination";
 import toast, { Toaster } from "react-hot-toast";
-import { Icon } from "@iconify/react";
-import { Search, ChevronsUpDown, ChevronUp, ChevronDown } from "lucide-react";
+import { Search, ChevronsUpDown, ChevronUp, ChevronDown, Trash2, PencilLine } from "lucide-react";
 
 /* โมดัลที่ใช้ร่วมกัน */
 import EditModal from "@/components/EditModal";
@@ -18,26 +17,34 @@ const ExpiryStatus = ({ date, days }) => {
     month: "2-digit",
     day: "2-digit",
   });
-  if (days < 1) {
+  if (days < 0) {
     return (
       <div className="flex flex-col">
-        <span className="font-medium text-red-600">{formattedDate}</span>
-        <span className="text-xs text-red-500">หมดอายุแล้ว</span>
+        <span className="font-medium">{formattedDate}</span>
+        <span className="inline-block w-fit text-xs text-red-500 bg-red-50 rounded-md px-2">หมดอายุแล้ว</span>
       </div>
     );
   }
-  if (days <= 7) {
+  if (days === 0) {
     return (
       <div className="flex flex-col">
-        <span className="font-medium text-amber-600">{formattedDate}</span>
-        <span className="text-xs text-amber-500">เหลือ {days} วัน</span>
+        <span className="font-medium text-red-600">{formattedDate}</span>
+        <span className="text-xs text-red-500">หมดอายุวันนี้</span>
+      </div>
+    );
+  }
+  if (days <= 3) {
+    return (
+      <div className="flex flex-col">
+        <span className="font-medium">{formattedDate}</span>
+        <span className="inline-block w-fit text-xs text-amber-500 bg-[#FBBF24]/10 rounded-md px-2">เหลือ {days} วัน</span>
       </div>
     );
   }
   return (
     <div className="flex flex-col">
-      <span className="font-medium text-gray-700">{formattedDate}</span>
-      <span className="text-xs text-gray-500">เหลือ {days} วัน</span>
+      <span className="font-medium">{formattedDate}</span>
+      <span className="inline-block w-fit text-xs text-[#3FA170] bg-[#3FA170]/10 rounded-md px-2">เหลือ {days} วัน</span>
     </div>
   );
 };
@@ -62,10 +69,7 @@ export default function AllIngredientsPage() {
   const [category, setCategory] = useState("ทั้งหมด");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortConfig, setSortConfig] = useState({
-    key: "id",
-    direction: "descending",
-  });
+  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "descending" });
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // state สำหรับโมดัล
@@ -76,7 +80,7 @@ export default function AllIngredientsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // ⭐️ เพิ่ม /api/units เพื่อดึง “หน่วยนับทั้งหมด”
+        // ⭐️ เพิ่ม /api/units เพื่อดึง "หน่วยนับทั้งหมด"
         const [inventoryRes, stockinRes, categoriesRes, unitsRes] = await Promise.all([
           fetch("/api/inventory", { cache: "no-store" }),
           fetch("/api/stockin", { cache: "no-store" }),
@@ -96,7 +100,7 @@ export default function AllIngredientsPage() {
 
         const allStockins = stockinBatches.flatMap((b) => b.stockins);
 
-        // 1) หา “ล็อตล่าสุด” ต่อวัตถุดิบ
+        // 1) หา "ล็อตล่าสุด" ต่อวัตถุดิบ
         const latestBatchByIng = allStockins.reduce((acc, s) => {
           if (!s.ingredient?.ingredient_id) return acc;
           const id = s.ingredient.ingredient_id;
@@ -111,7 +115,7 @@ export default function AllIngredientsPage() {
         // 2) shelflife (วัน) จากล็อตล่าสุด
         const shelfLifeMap = Object.fromEntries(
           Object.entries(latestBatchByIng).map(([id, { received, expiry }]) => {
-            const diff = Math.ceil((expiry - received) / (1000 * 60 * 60 * 24));
+            const diff = Math.floor((expiry - received) / (1000 * 60 * 60 * 24));
             return [id, diff];
           })
         );
@@ -136,7 +140,7 @@ export default function AllIngredientsPage() {
             let daysLeft = Infinity;
             if (latestEx) {
               const diffTime = latestEx - today;
-              daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              daysLeft = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             }
             return {
               id,
@@ -310,7 +314,7 @@ export default function AllIngredientsPage() {
   };
 
   return (
-    <main className="flex-1 overflow-y-auto py-9 px-6 sm:px-8 lg:px-10">
+    <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
       <Toaster position="top-right" />
 
       {/* ลบ */}
@@ -321,7 +325,7 @@ export default function AllIngredientsPage() {
         onClose={() => setItemToDelete(null)}
       />
 
-      {/* แก้ไข: ตอนนี้ units คือ “ทุกหน่วยทั้งหมด” จาก /api/units */}
+      {/* แก้ไข: ตอนนี้ units คือ "ทุกหน่วยทั้งหมด" จาก /api/units */}
       <EditModal
         isOpen={!!editItem}
         onClose={() => setEditItem(null)}
@@ -334,20 +338,17 @@ export default function AllIngredientsPage() {
 
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-black">วัตถุดิบทั้งหมดในสต็อก</h1>
-          <p className="text-gray-500">ตารางข้อมูลเกี่ยวกับวัตถุดิบทั้งหมดในสต็อก</p>
+          <h1 className="text-black text-3xl font-bold">วัตถุดิบทั้งหมดในสต็อก</h1>
+          <p className="text-[#979999]">ตารางข้อมูลเกี่ยวกับวัตถุดิบทั้งหมดในสต็อก</p>
         </div>
 
         {/* Controls */}
-        <div className="mb-6 flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
           <CustomDropdown
             label="หมวดหมู่"
             categories={categoryOptions}
             selectedCategory={category}
-            onSelectCategory={(val) => {
-              setCategory(val);
-              setCurrentPage(1);
-            }}
+            onSelectCategory={(val) => { setCategory(val); setCurrentPage(1); }}
           />
           <div className="relative w-full">
             <input
@@ -358,26 +359,26 @@ export default function AllIngredientsPage() {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]"
             />
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
         </div>
 
         {/* Table */}
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-700">
-              <thead className="border-b border-gray-200 bg-gray-50 text-sm text-gray-500 uppercase">
-                <tr>
-                  <SortableHeader label="ID" columnKey="id" />
-                  <SortableHeader label="ชื่อวัตถุดิบ" columnKey="name" />
-                  <SortableHeader label="วันหมดอายุล่าสุด" columnKey="daysLeft" />
-                  <SortableHeader label="หมวดหมู่" columnKey="category_id" />
-                  <SortableHeader label="จำนวนคงเหลือ" columnKey="quantity" />
-                  <SortableHeader label="หน่วยนับ" columnKey="unit_type" />
-                  <th scope="col" className="px-4 py-3" />
-                </tr>
+            <table className="w-full text-sm text-left text-gray-700">
+                <thead className="text-sm text-gray-500 capitalize bg-gray-100 border-b border-gray-200">
+                  <tr>
+                    <SortableHeader label="ID" columnKey="id" />
+                    <SortableHeader label="ชื่อวัตถุดิบ" columnKey="name" />
+                    <SortableHeader label="หมวดหมู่" columnKey="category_id" />
+                    <SortableHeader label="วันหมดอายุ" columnKey="daysLeft" />
+                    <SortableHeader label="จำนวนคงเหลือ" columnKey="quantity" />
+                    <SortableHeader label="หน่วยนับ" columnKey="unit_type" />
+                    <th scope="col" className="px-4 py-3" />
+                  </tr>
               </thead>
               <tbody>
                 {isLoading ? (
@@ -390,30 +391,28 @@ export default function AllIngredientsPage() {
                   </tr>
                 ) : sortedAndPaginatedIngredients.length > 0 ? (
                   sortedAndPaginatedIngredients.map((ing) => (
-                    <tr key={ing.id} className="border-b border-gray-200 bg-white last:border-b-0 transition-colors hover:bg-gray-50">
-                      <td className="px-4 py-3 text-gray-500">{ing.id}</td>
-                      <td className="px-4 py-3 font-medium text-gray-900">{ing.name}</td>
-                      <td className="px-4 py-2">
-                        <ExpiryStatus date={ing.expiryDate} days={ing.daysLeft} />
-                      </td>
-                      <td className="px-4 py-3">{ing.category_id}</td>
-                      <td className="px-4 py-3">{Number(ing.quantity).toFixed(2)}</td>
-                      <td className="px-4 py-3">{ing.unit_type}</td>
-                      <td className="py-3">
-                        <div className="flex justify-center space-x-1">
+                    <tr key={ing.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+                      <td className="py-3 px-4 text-gray-500">{ing.id}</td>
+                      <td className="py-3 px-4 font-medium text-gray-900">{ing.name}</td>
+                      <td className="py-3 px-4">{ing.category_id}</td>
+                      <td className="py-2 px-4"><ExpiryStatus date={ing.expiryDate} days={ing.daysLeft} /></td>
+                      <td className="py-3 px-4">{Number(ing.quantity).toFixed(2)}</td>
+                      <td className="py-3 px-4">{ing.unit_type}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex justify-end space-x-1">
                           <button
-                            onClick={() => setEditItem(ing)}
-                            className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-800"
+                            onClick={() => openEdit(ing)}
+                            className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 transition-colors"
                             title="แก้ไข"
                           >
-                            <Icon icon="mynaui:edit" className="h-4 w-4" />
+                            <PencilLine size={16} />
                           </button>
                           <button
                             onClick={() => openDelete(ing)}
-                            className="rounded-md p-1.5 text-red-500 transition-colors hover:bg-red-100"
+                            className="p-1.5 rounded-md text-[#E15050] hover:bg-red-100 transition-colors"
                             title="ลบ"
                           >
-                            <Icon icon="fluent:delete-20-regular" className="h-4 w-4" />
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
@@ -421,7 +420,7 @@ export default function AllIngredientsPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="p-8 text-center text-gray-500">ไม่พบข้อมูลวัตถุดิบในสต็อก</td>
+                    <td colSpan="7" className="p-8 text-center text-gray-500">ไม่พบข้อมูล</td>
                   </tr>
                 )}
               </tbody>

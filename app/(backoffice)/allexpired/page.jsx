@@ -6,7 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import CustomDropdown from "@/components/CustomDropdown";
 import Pagination from "@/components/Pagination";
 import { Icon } from '@iconify/react';
-import Swal from 'sweetalert2'; // Added missing import for Swal
+import Swal from 'sweetalert2';
 
 import { 
     Search, ChevronsUpDown, ChevronUp, ChevronDown,
@@ -23,6 +23,16 @@ const categoryIconMap = {
     'อื่นๆ': <MoreHorizontal size={16} className="text-gray-500"/>,
 };
 
+// ฟังก์ชันแปลงวันที่ให้ปลอดภัยจาก timezone
+const toLocalDateString = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 // --- Main Expired Ingredients Page ---
 export default function ExpiredPage() {
     // --- States ---
@@ -35,7 +45,7 @@ export default function ExpiredPage() {
     const [category, setCategory] = useState('ทั้งหมด');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [sortConfig, setSortConfig] = useState({ key: 'expiry_date', direction: 'ascending' });
+    const [sortConfig, setSortConfig] = useState({ key: 'batch_id', direction: 'descending' });
     const [itemsPerPage, setItemsPerPage] = useState(20);
 
     // --- Data Fetching Effect ---
@@ -57,32 +67,45 @@ export default function ExpiredPage() {
                         const expiryDate = new Date(stockin.expiry_date);
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
-                        
+                        expiryDate.setHours(0, 0, 0, 0);
+
                         const diffTime = expiryDate - today;
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                        let status = 'good';
+                        let daysLeft = diffDays;
+
+                        if (diffDays < 0) {
+                            status = 'expired';
+                            daysLeft = diffDays; // เก็บค่าติดลบ
+                        } else if (diffDays === 0) {
+                            status = 'expired'; // หมดอายุวันนี้
+                            daysLeft = 0;
+                        } else if (diffDays <= 1) {
+                            status = 'critical';
+                        } else if (diffDays <= 3) {
+                            status = 'warning';
+                        }
 
                         return {
                             id: `${batch.batch_id}-${stockin.ingredient.name}`,
                             batch_id: batch.batch_id,
                             name: stockin.ingredient.name,
-                            expiry_date: expiryDate.toISOString().split('T')[0],
-                            daysLeft: diffDays,
+                            expiry_date: toLocalDateString(stockin.expiry_date), // ใช้ฟังก์ชันแปลงวันที่ที่ปลอดภัย
+                            daysLeft: daysLeft,
                             category_id: stockin.ingredient.category.category_name,
                             quantity: stockin.quantity,
                             unit_type: stockin.unit.unit_name,
                         };
                     })
-                ).filter(item => item.daysLeft <= 0);
+                ).filter(item => item.daysLeft <= 0); // แสดงเฉพาะรายการที่หมดอายุแล้ว
 
                 setAllExpiredItems(processedAndExpired);
 
-                // MODIFIED: Standardized category fetching as per prototype
                 const dbCategories = await categoriesRes.json();
                 const formattedCategories = [
                     { name: 'ทั้งหมด' },
-                    ...dbCategories.map(cat => ({
-                        name: cat.category_name,
-                    }))
+                    ...dbCategories.map(cat => ({ name: cat.category_name }))
                 ];
                 setCategoryOptions(formattedCategories);
 
@@ -159,7 +182,6 @@ export default function ExpiredPage() {
         setCurrentPage(1);
     };
     
-    // NEW: Handlers for filtering and searching (as per prototype)
     const handleSelectCategory = (selected) => {
         setCategory(selected);
         setCurrentPage(1);
@@ -201,93 +223,92 @@ export default function ExpiredPage() {
 
     // --- Render ---
     return (
+        <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
+            <div className="mb-8">
+                <h1 className="text-black text-3xl font-bold">วัตถุดิบหมดอายุ</h1>
+                <p className="text-[#979999]">ตารางข้อมูลเกี่ยวกับล็อตวัตถุดิบที่หมดอายุแล้ว</p>
+            </div>
 
-                <main className="flex-1 overflow-y-auto py-9 px-25">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="mb-8">
-                            <h1 className="text-black text-3xl font-bold">วัตถุดิบหมดอายุ</h1>
-                            <p className="text-gray-500">ตารางข้อมูลเกี่ยวกับล็อตวัตถุดิบที่หมดอายุแล้ว</p>
-                        </div>
+            {/* Filter and Search */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
+                <CustomDropdown 
+                    label="หมวดหมู่" 
+                    categories={categoryOptions} 
+                    selectedCategory={category} 
+                    onSelectCategory={handleSelectCategory} 
+                />
+                <div className="relative w-full">
+                    <input 
+                        type="text" 
+                        placeholder="ค้นหาจากชื่อวัตถุดิบ..." 
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]" 
+                    />
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                </div>
+            </div>
 
-                        {/* MODIFIED: Filter and Search Controls (as per prototype) */}
-                        <div className="flex items-center gap-4 mb-6">
-                            <CustomDropdown 
-                                label="หมวดหมู่" 
-                                categories={categoryOptions} 
-                                selectedCategory={category} 
-                                onSelectCategory={handleSelectCategory} 
-                            />
-                            <div className="relative w-full">
-                                <input 
-                                    type="text" 
-                                    placeholder="ค้นหาจากชื่อวัตถุดิบ..." 
-                                    value={searchTerm}
-                                    onChange={handleSearchChange}
-                                    className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-green-500" 
-                                />
-                                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left text-gray-700">
-                                    <thead className="text-sm text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
-                                        <tr>
-                                            <SortableHeader label="ID" columnKey="batch_id" />
-                                            <SortableHeader label="ชื่อวัตถุดิบ" columnKey="name" />
-                                            <SortableHeader label="วันที่หมดอายุ" columnKey="expiry_date" />
-                                            <SortableHeader label="หมวดหมู่" columnKey="category_id" />
-                                            <SortableHeader label="จำนวน" columnKey="quantity" />
-                                            <SortableHeader label="หน่วยนับ" columnKey="unit_type" />
-                                            <th scope="col" className="py-3 px-4"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {isLoading ? (
-                                            <tr><td colSpan="7" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
-                                        ) : error ? (
-                                            <tr><td colSpan="7" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
-                                        ) : sortedAndPaginatedItems.length > 0 ? (
-                                            sortedAndPaginatedItems.map((item) => (
-                                                <tr key={item.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
-                                                    <td className="py-3 px-4">{item.batch_id}</td>
-                                                    <td className="py-3 px-4">{item.name}</td>
-                                                    <td className="py-3 px-4">{formatDate(item.expiry_date)}</td>
-                                                    <td className="py-3 px-4">{item.category_id}</td>
-                                                    <td className="py-3 px-4">{item.quantity.toFixed(2)}</td>
-                                                    <td className="py-3 px-4">{item.unit_type}</td>
-                                                    <td className="py-3">
-                                                        <div className="flex justify-start space-x-1">
-                                                            <button onClick={() => handleEdit(item)} className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors">
-                                                                <Icon icon="mynaui:edit" className="w-4 h-4" />
-                                                            </button>
-                                                            <button onClick={() => handleDelete(item)} className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition-colors">
-                                                                <Icon icon="fluent:delete-20-regular" className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr><td colSpan="7" className="text-center p-8 text-gray-500">ไม่พบข้อมูลวัตถุดิบที่หมดอายุ</td></tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        {totalPages > 0 && !isLoading && !error && (
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={setCurrentPage}
-                                itemsPerPage={itemsPerPage}
-                                onItemsPerPageChange={handleItemsPerPageChange}
-                                totalItems={filteredItems.length}
-                            />
-                        )}
-                    </div>
-                </main>
-
+            {/* Table */}
+            <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-gray-700">
+                        <thead className="text-sm text-gray-500 capitalize bg-gray-100 border-b border-gray-200">
+                            <tr>
+                                <SortableHeader label="ID" columnKey="batch_id" />
+                                <SortableHeader label="ชื่อวัตถุดิบ" columnKey="name" />
+                                <SortableHeader label="หมวดหมู่" columnKey="category_id" />
+                                <SortableHeader label="วันที่หมดอายุ" columnKey="expiry_date" />
+                                <SortableHeader label="จำนวนคงเหลือ" columnKey="quantity" />
+                                <SortableHeader label="หน่วยนับ" columnKey="unit_type" />
+                                <th scope="col" className="py-3 px-4"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {isLoading ? (
+                                <tr><td colSpan="7" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
+                            ) : error ? (
+                                <tr><td colSpan="7" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
+                            ) : sortedAndPaginatedItems.length > 0 ? (
+                                sortedAndPaginatedItems.map((item) => (
+                                    <tr key={item.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+                                        <td className="py-3 px-4">{item.batch_id}</td>
+                                        <td className="py-3 px-4">{item.name}</td>
+                                        <td className="py-3 px-4">{item.category_id}</td>
+                                        <td className="py-3 px-4">{formatDate(item.expiry_date)}</td>
+                                        <td className="py-3 px-4">{item.quantity.toFixed(2)}</td>
+                                        <td className="py-3 px-4">{item.unit_type}</td>
+                                        <td className="py-3">
+                                            <div className="flex justify-start space-x-1">
+                                                <button onClick={() => handleEdit(item)} className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors">
+                                                    <Icon icon="mynaui:edit" className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={() => handleDelete(item)} className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition-colors">
+                                                    <Icon icon="fluent:delete-20-regular" className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="7" className="p-8 text-center text-gray-500">ไม่พบข้อมูล</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {totalPages > 0 && !isLoading && !error && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    itemsPerPage={itemsPerPage}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                    totalItems={filteredItems.length}
+                />
+            )}
+        </main>
     );
 }

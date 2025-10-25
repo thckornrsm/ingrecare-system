@@ -5,12 +5,11 @@ import toast, { Toaster } from "react-hot-toast";
 import CustomDropdown from "@/components/CustomDropdown";
 import Pagination from "@/components/Pagination";
 import EditModal from "@/components/EditModal";
-// ⬇️ เปลี่ยนมาใช้ DeletedModal
 import DeletedModal from "@/components/DeletedModal";
 import { Icon } from "@iconify/react";
-import { Search, ChevronsUpDown, ChevronUp, ChevronDown } from "lucide-react";
+import { Search, ChevronsUpDown, ChevronUp, ChevronDown, Trash2, PencilLine } from "lucide-react";
 
-/* ========= helpers ========= */
+/* ========= helpers ========= */ 
 const pad2 = (n) => String(n).padStart(2, "0");
 const toInputDate = (d) => {
   if (!(d instanceof Date) || isNaN(d.getTime())) return "";
@@ -284,96 +283,90 @@ export default function AllStockout() {
   };
 
   return (
-    <main className="flex-1 overflow-y-auto py-9 px-6 sm:px-8">
+    <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
       <Toaster position="top-right" />
-      <div className="max-w-7xl mx-auto">
+      <DeletedModal
+        isOpen={isDeleteOpen}
+        onConfirm={handleConfirmDelete}
+        itemToDelete={deletingItem}
+        onClose={() => { setIsDeleteOpen(false); setDeletingItem(null); }}
+      />
+      <EditModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        onSave={handleSaveEdit}
+        ingredient={editingItem}
+        categories={categoryOptions.filter((c) => c.name !== "ทั้งหมด").map((c) => c.name)}
+        units={unitOptions.map((u) => u.name)}
+        formType="stock-out"
+      />
         <div className="mb-8">
           <h1 className="text-black text-3xl font-bold">ประวัติการเบิกจ่าย</h1>
           <p className="text-gray-500">ตารางข้อมูลเกี่ยวกับการเบิกจ่ายวัตถุดิบทั้งหมดในระบบ</p>
         </div>
 
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
           <CustomDropdown
             label="หมวดหมู่"
             categories={categoryOptions.map((c) => ({ name: c.name }))}
             selectedCategory={category}
-            onSelectCategory={(selected) => {
-              setCategory(selected);
-              setCurrentPage(1);
-            }}
+            onSelectCategory={(selected) => { setCategory(selected); setCurrentPage(1); }}
           />
-          <div className="relative wเต็ม">
+          <div className="relative w-full">
             <input
               type="text"
               placeholder="ค้นหาจากชื่อวัตถุดิบ..."
               value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-green-500"
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]"
             />
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+        {/* Table */}
+        <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left text-gray-700">
               <thead className="text-sm text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
                 <tr>
                   <SortableHeader label="ID" columnKey="id" />
                   <SortableHeader label="ชื่อวัตถุดิบ" columnKey="name" />
-                  <SortableHeader label="วันและเวลาที่เบิกจ่าย" columnKey="_out_datetime_raw" />
                   <SortableHeader label="หมวดหมู่" columnKey="category_id" />
+                  <SortableHeader label="วันและเวลาที่เบิกจ่าย" columnKey="_out_datetime_raw" />
                   <SortableHeader label="จำนวน" columnKey="quantity" />
                   <SortableHeader label="หน่วยนับ" columnKey="unit_type" />
-                  <th scope="col" className="py-3 px-4"></th>
+                  <th scope="col" className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr>
-                    <td colSpan="7" className="text-center p-8 text-gray-500">
-                      กำลังโหลดข้อมูล...
-                    </td>
-                  </tr>
+                  <tr><td colSpan="7" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
                 ) : error ? (
-                  <tr>
-                    <td colSpan="7" className="text-center p-8 text-red-500">
-                      เกิดข้อผิดพลาด: {error}
-                    </td>
-                  </tr>
+                  <tr><td colSpan="7" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
                 ) : sortedAndPaginatedItems.length > 0 ? (
                   sortedAndPaginatedItems.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors"
-                    >
+                    <tr key={item.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+
                       <td className="py-3 px-4">{item.id}</td>
-                      <td className="py-3 px-4 font-medium">{item.name}</td>
-                      <td className="py-3 px-4">{item.out_datetime_display}</td>
+                      <td className="py-3 px-4">{item.name}</td>
                       <td className="py-3 px-4">{item.category_id}</td>
+                      <td className="py-3 px-4">{item.out_datetime_display}</td>
                       <td className="py-3 px-4">{Number(item.quantity).toFixed(2)}</td>
                       <td className="py-3 px-4">{item.unit_type}</td>
-                      <td className="py-3">
-                        <div className="flex justify-start space-x-1">
+                      <td className="py-3 px-4">
+                        <div className="flex justify-end space-x-1">
                           <button
                             onClick={() => openEdit(item)}
-                            className="p-1.5 rounded-md text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition-colors"
-                            title="แก้ไข"
+                            className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 transition-colors"
                           >
-                            <Icon icon="mynaui:edit" className="w-4 h-4" />
+                            <PencilLine size={16} />
                           </button>
                           <button
                             onClick={() => openDelete(item)}
-                            className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition-colors"
-                            title="ลบ"
+                            className="p-1.5 rounded-md text-[#E15050] hover:bg-red-100 transition-colors"
                           >
-                            <Icon icon="fluent:delete-20-regular" className="w-4 h-4" />
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
@@ -404,32 +397,7 @@ export default function AllStockout() {
             totalItems={filteredItems.length}
           />
         )}
-      </div>
-
-      {isEditOpen && editingItem && (
-        <EditModal
-          isOpen={isEditOpen}
-          onClose={() => setIsEditOpen(false)}
-          onSave={handleSaveEdit}
-          ingredient={editingItem}
-          categories={categoryOptions.filter((c) => c.name !== "ทั้งหมด").map((c) => c.name)}
-          units={unitOptions.map((u) => u.name)}
-          formType="stock-out"
-        />
-      )}
-
-      {/* ⬇️ เปลี่ยนมาใช้ DeletedModal */}
-      {isDeleteOpen && deletingItem && (
-        <DeletedModal
-          isOpen={isDeleteOpen}
-          onConfirm={handleConfirmDelete}
-          itemToDelete={deletingItem}
-          onClose={() => {
-            setIsDeleteOpen(false);
-            setDeletingItem(null);
-          }}
-        />
-      )}
+      
     </main>
   );
 }

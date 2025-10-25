@@ -26,7 +26,7 @@ const categoryIconMap = {
 
 export default function AllStockin() {
   const [stockinHistory, setStockinHistory] = useState([]);
-  const [allCategories, setAllCategories] = useState([]); // <-- State ใหม่สำหรับเก็บหมวดหมู่ทั้งหมด
+  const [allCategories, setAllCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [category, setCategory] = useState("ทั้งหมด");
@@ -42,7 +42,6 @@ export default function AllStockin() {
       setIsLoading(true);
       setError(null);
       try {
-        // **แก้ไข:** ดึงข้อมูลหมวดหมู่ทั้งหมดมาด้วย
         const [stockinRes, categoriesRes] = await Promise.all([
             fetch("/api/stockin"),
             fetch("/api/categories")
@@ -66,7 +65,7 @@ export default function AllStockin() {
           }))
         );
         setStockinHistory(formattedHistory);
-        setAllCategories(dbCategories); // <-- บันทึกข้อมูลหมวดหมู่ทั้งหมด
+        setAllCategories(dbCategories);
 
       } catch (err) {
         setError(err.message);
@@ -78,18 +77,14 @@ export default function AllStockin() {
   }, []);
 
   const categoryOptions = useMemo(() => {
-    // **แก้ไข:** สร้างตัวเลือกจาก state ของหมวดหมู่ทั้งหมด
-    const options = allCategories.map(cat => ({
-        name: cat.category_name,
-        icon: categoryIconMap[cat.category_name] || <MoreHorizontal size={16} className="text-gray-500" />
-    }));
-    return [{ name: "ทั้งหมด", icon: categoryIconMap["ทั้งหมด"] }, ...options];
-  }, [allCategories]); // <-- เปลี่ยน dependency เป็น allCategories
+    const options = allCategories.map(cat => ({ name: cat.category_name }));
+    return [{ name: "ทั้งหมด" }, ...options];
+  }, [allCategories]);
 
   const unitOptions = useMemo(() => {
-    if (stockinHistory.length === 0) return [{ name: "—", icon: <Utensils size={16} className="text-gray-500" /> }];
+    if (stockinHistory.length === 0) return [{ name: "—" }];
     const unique = [...new Set(stockinHistory.map((i) => i.unit))];
-    return unique.map((u) => ({ name: u, icon: <Utensils size={16} className="text-gray-500" /> }));
+    return unique.map((u) => ({ name: u }));
   }, [stockinHistory]);
 
   const filteredIngredients = useMemo(() => {
@@ -121,23 +116,31 @@ export default function AllStockin() {
   };
 
   const handleEditClick = (item) => {
-    const received = new Date(item.received_date);
-    const expiry = new Date(item.expiry_date);
-    const diffDays = Math.ceil(Math.abs(expiry - received) / (1000 * 60 * 60 * 24));
+    // แปลง UTC date เป็น local date โดยไม่ให้เกิดปัญหา timezone shift
+    const receivedDate = new Date(item.received_date);
+    const expiryDate = new Date(item.expiry_date);
+    
+    // ใช้ getFullYear, getMonth, getDate แทน split เพื่อให้ได้วันที่ local ที่ถูกต้อง
+    const receivedDateStr = `${receivedDate.getFullYear()}-${String(receivedDate.getMonth() + 1).padStart(2, '0')}-${String(receivedDate.getDate()).padStart(2, '0')}`;
+    const expiryDateStr = `${expiryDate.getFullYear()}-${String(expiryDate.getMonth() + 1).padStart(2, '0')}-${String(expiryDate.getDate()).padStart(2, '0')}`;
+    
+    // คำนวณจำนวนวันระหว่างวันที่
+    const diffTime = Math.abs(expiryDate - receivedDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     setItemToEdit({
       ...item,
       category_id: item.category,
       unit_type: item.unit,
       shelflife_day: diffDays,
-      received_date: received.toISOString().split("T")[0],
+      received_date: receivedDateStr,
     });
   };
   
   const handleDeleteClick = (item) => {
     setItemToDelete({
         ...item,
-        count: 0, // ตั้งค่า count เป็น 0 เพื่อให้ DeletedModal แสดงปุ่มลบ
+        count: 0,
     });
   };
 
@@ -221,7 +224,7 @@ export default function AllStockin() {
   };
 
   return (
-    <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-6 lg:px-8">
+    <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
       <Toaster position="top-right" />
       <DeletedModal
         isOpen={!!itemToDelete}
@@ -239,91 +242,102 @@ export default function AllStockin() {
         formType="stock-in"
       />
 
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-black text-3xl font-bold">ประวัติการนำเข้า</h1>
-          <p className="text-gray-500">ตารางข้อมูลเกี่ยวกับการนำเข้าวัตถุดิบในระบบ</p>
-        </div>
-
-        <div className="flex items-center gap-4 mb-6">
-          <CustomDropdown
-            categories={categoryOptions}
-            selectedCategory={category}
-            onSelectCategory={(cat) => { setCategory(cat); setCurrentPage(1); }}
-          />
-          <div className="relative w-full">
-            <input
-              type="text"
-              placeholder="ค้นหาจากชื่อวัตถุดิบ..."
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-700">
-              <thead className="text-sm text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <SortableHeader label="ID" columnKey="id" />
-                  <SortableHeader label="ชื่อ" columnKey="name" />
-                  <SortableHeader label="วันที่นำเข้า" columnKey="received_date" />
-                  <SortableHeader label="วันหมดอายุ" columnKey="expiry_date" />
-                  <SortableHeader label="หมวดหมู่" columnKey="category" />
-                  <SortableHeader label="จำนวน" columnKey="quantity" />
-                  <SortableHeader label="หน่วย" columnKey="unit" />
-                  <th scope="col" className="py-3 px-4"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  <tr><td colSpan="8" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
-                ) : error ? (
-                  <tr><td colSpan="8" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
-                ) : sortedAndPaginatedIngredients.length > 0 ? (
-                  sortedAndPaginatedIngredients.map((item) => (
-                    <tr key={item.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
-                      <td className="py-3 px-4 text-gray-600">{item.id}</td>
-                      <td className="py-3 px-4 font-medium text-gray-800">{item.name}</td>
-                      <td className="py-3 px-4 text-gray-600">{formatDate(item.received_date)}</td>
-                      <td className="py-3 px-4 text-gray-600">{formatDate(item.expiry_date)}</td>
-                      <td className="py-3 px-4 text-gray-600">{item.category}</td>
-                      <td className="py-3 px-4 text-gray-600">{Number(item.quantity).toFixed(2)}</td>
-                      <td className="py-3 px-4 text-gray-600">{item.unit}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex justify-start space-x-1">
-                          <button onClick={() => handleEditClick(item)} className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors">
-                            <Icon icon="mynaui:edit" className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDeleteClick(item)} className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition-colors">
-                            <Icon icon="fluent:delete-20-regular" className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr><td colSpan="8" className="text-center p-8 text-gray-500">ไม่พบข้อมูล</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {!isLoading && !error && filteredIngredients.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={(val) => { setItemsPerPage(Number(val)); setCurrentPage(1); }}
-            totalItems={filteredIngredients.length}
-          />
-        )}
+      <div className="mb-8">
+        <h1 className="text-black text-3xl font-bold">ประวัติการนำเข้า</h1>
+        <p className="text-[#979999]">ตารางข้อมูลเกี่ยวกับการนำเข้าวัตถุดิบในระบบ</p>
       </div>
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
+        <CustomDropdown
+          label="หมวดหมู่"
+          categories={categoryOptions}
+          selectedCategory={category}
+          onSelectCategory={(cat) => { setCategory(cat); setCurrentPage(1); }}
+        />
+        <div className="relative w-full">
+          <input
+            type="text"
+            placeholder="ค้นหาจากชื่อวัตถุดิบ..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]"
+          />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left text-gray-700">
+            <thead className="text-sm text-gray-500 capitalize bg-gray-100 border-b border-gray-200">
+              <tr>
+                <SortableHeader label="ID" columnKey="id" />
+                <SortableHeader label="ชื่อ" columnKey="name" />
+                <SortableHeader label="หมวดหมู่" columnKey="category" />
+                <SortableHeader label="วันที่นำเข้า" columnKey="received_date" />
+                <SortableHeader label="วันหมดอายุ" columnKey="expiry_date" />
+                <SortableHeader label="จำนวน" columnKey="quantity" />
+                <SortableHeader label="หน่วยนับ" columnKey="unit" />
+                <th scope="col" className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr><td colSpan="8" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
+              ) : error ? (
+                <tr><td colSpan="8" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
+              ) : sortedAndPaginatedIngredients.length > 0 ? (
+                sortedAndPaginatedIngredients.map((item) => (
+                  <tr key={item.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+                    <td className="py-3 px-4">{item.id}</td>
+                    <td className="py-3 px-4">{item.name}</td>
+                    <td className="py-3 px-4">{item.category}</td>
+                    <td className="py-3 px-4">{formatDate(item.received_date)}</td>
+                    <td className="py-3 px-4">{formatDate(item.expiry_date)}</td>
+                    <td className="py-3 px-4">{Number(item.quantity).toFixed(2)}</td>
+                    <td className="py-3 px-4">{item.unit}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex justify-end space-x-1">
+                        <button 
+                          onClick={() => handleEditClick(item)} 
+                          className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 transition-colors"
+                        >
+                          <Icon icon="mynaui:edit" className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteClick(item)} 
+                          className="p-1.5 rounded-md text-[#E15050] hover:bg-red-100 transition-colors"
+                        >
+                          <Icon icon="fluent:delete-20-regular" className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="p-8 text-center text-gray-500">ไม่พบข้อมูล</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {!isLoading && !error && filteredIngredients.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          onItemsPerPageChange={(val) => { 
+            setItemsPerPage(Number(val));
+            setCurrentPage(1);
+          }}
+          totalItems={filteredIngredients.length}
+        />
+      )}
     </main>
   );
 }
