@@ -10,7 +10,6 @@ import { X, PencilLine, Trash2, Plus } from 'lucide-react';
 import { safeFetchJSON } from '@/utils/safeFetchJSON';
 import toast, { Toaster } from 'react-hot-toast';
 
-/* ========== Reusable display field ========== */
 const DataDisplayField = ({ label, value, span, type }) => (
   <div className={span}>
     <p className="mb-1 text-xs tracking-wider text-gray-500">{label}</p>
@@ -26,7 +25,7 @@ const DataDisplayField = ({ label, value, span, type }) => (
   </div>
 );
 
-/* ========== Tab: บัญชีร้านค้า ========== */
+// Tab: บัญชีร้านค้า
 const AboutStore = () => {
   const me = useSession();
 
@@ -80,26 +79,46 @@ const AboutStore = () => {
   );
 };
 
-/* ========== Modal: แก้ชื่อรายการ (หมวด/หน่วย) ========== */
-function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื่อใหม่' }) {
+function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื่อใหม่', existingNames = [] }) {
   const [name, setName] = useState('');
   const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (category) {
       setName(category.name || '');
       setError(false);
+      setErrorMessage('');
     }
   }, [category, isOpen]);
 
   if (!isOpen || !category) return null;
 
   const handleSave = async () => {
-    if (!name.trim()) return setError(true);
+    const trimmedName = name.trim();
+    
+    if (!trimmedName) {
+      setError(true);
+      setErrorMessage('กรุณากรอกชื่อ');
+      return;
+    }
+
+    // ตรวจสอบชื่อซ้ำ (ไม่นับชื่อเดิมของตัวเอง)
+    const isDuplicate = existingNames.some(
+      existingName => existingName.toLowerCase() === trimmedName.toLowerCase() && 
+      existingName.toLowerCase() !== category.name.toLowerCase()
+    );
+
+    if (isDuplicate) {
+      setError(true);
+      setErrorMessage('ชื่อนี้มีในระบบแล้ว');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await onSave({ id: category.id, name: name.trim() });
+      await onSave({ id: category.id, name: trimmedName });
     } finally {
       setSubmitting(false);
     }
@@ -125,6 +144,7 @@ function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื�
             onChange={(e) => {
               setName(e.target.value);
               setError(false);
+              setErrorMessage('');
             }}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             autoFocus
@@ -132,7 +152,7 @@ function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื�
               error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#3FA170]'
             }`}
           />
-          {error && <p className="text-sm text-red-500">กรุณากรอกชื่อ</p>}
+          {error && <p className="text-sm text-red-500">{errorMessage}</p>}
         </div>
 
         <div className="mt-8 flex justify-end gap-4">
@@ -156,24 +176,23 @@ function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื�
   );
 }
 
-/* ========== ตารางรายการ (หมวด/หน่วย) ========== */
 const CategorySection = ({ title, items, onAddClick, onEditClick, onDeleteClick }) => (
   <div>
     <div className="mb-6 flex flex-wrap items-center justify-between">
       <h3 className="border-l-4 border-[#3FA170] pl-3 text-xl font-semibold text-gray-800">{title}</h3>
       <button
         onClick={onAddClick}
-        className="flex items-center space-x-2 text-[#3FA170] transition-colors hover:text-[#2F7A5E]"
+        className="flex items-center space-x-2 text-[#3FA170] transition-colors hover:bg-gray-100 px-4 py-2 rounded-md"
       >
         <Plus size={20} />
-        <span>เพิ่ม</span>
+        <span>เพิ่มหมวดหมู่</span>
       </button>
     </div>
 
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-      <div className="overflow-x-auto">
+      <div className="max-h-76 overflow-y-auto">
         <table className="w-full text-left text-sm text-gray-700">
-          <thead className="border-b border-gray-200 bg-gray-100 text-sm text-gray-500">
+          <thead className="sticky top-0 border-b border-gray-200 bg-gray-100 text-sm text-gray-500 z-10">
             <tr>
               <th className="px-4 py-3 font-normal">ชื่อ</th>
               <th className="w-[8rem] px-4 py-3 text-center font-normal">จำนวนวัตถุดิบ</th>
@@ -210,7 +229,7 @@ const CategorySection = ({ title, items, onAddClick, onEditClick, onDeleteClick 
             ) : (
               <tr>
                 <td colSpan="3" className="py-8 text-center text-gray-500">
-                  ไม่มีข้อมูล
+                  กำลังโหลดข้อมูล...
                 </td>
               </tr>
             )}
@@ -221,23 +240,20 @@ const CategorySection = ({ title, items, onAddClick, onEditClick, onDeleteClick 
   </div>
 );
 
-/* ========== Tab: จัดการหมวดหมู่/หน่วยนับ (นับจำนวนวัตถุดิบให้ด้วย) ========== */
+// Tab: แก้ไขหมวดหมู่/หน่วยนับ
 const ManageCategories = () => {
   const [materialCategories, setMaterialCategories] = useState([]);
   const [unitCategories, setUnitCategories] = useState([]);
 
-  // แยกโมดัล “เพิ่มหมวดหมู่” และ “เพิ่มหน่วยนับ”
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [isAddUnitOpen, setIsAddUnitOpen] = useState(false);
 
-  // แก้ไข/ลบ
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeletedModalOpen, setIsDeletedModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [modalContext, setModalContext] = useState(''); // 'material' | 'unit'
+  const [modalContext, setModalContext] = useState('');
   const [error, setError] = useState('');
 
-  // รวม count ที่ client เป็น fallback ถ้า API ไม่ส่งมา
   const buildCountsFromIngredients = (ingredients) => {
     const byCat = new Map();
     const byUnit = new Map();
@@ -299,11 +315,9 @@ const ManageCategories = () => {
     refreshAll();
   }, []);
 
-  // เปิดโมดัลตามส่วน
   const handleOpenAddCategory = () => setIsAddCategoryOpen(true);
   const handleOpenAddUnit = () => setIsAddUnitOpen(true);
 
-  // แก้ไข/ลบ
   const handleOpenEdit = (item, type) => {
     setModalContext(type);
     setSelectedItem(item);
@@ -315,7 +329,6 @@ const ManageCategories = () => {
     setIsDeletedModalOpen(true);
   };
 
-  // สร้างใหม่
   const handleCreateCategory = async ({ name }) => {
     try {
       await safeFetchJSON('/api/categories', {
@@ -345,7 +358,6 @@ const ManageCategories = () => {
     }
   };
 
-  // อัปเดต (PUT ใช้ { name } ตาม API ที่คุณให้มา) — มี toast เฉพาะตอนจบ
   const handleConfirmEdit = async ({ id, name }) => {
     const url = modalContext === 'material' ? `/api/categories/${id}` : `/api/units/${id}`;
     try {
@@ -362,7 +374,6 @@ const ManageCategories = () => {
     }
   };
 
-  // ลบ — มี toast เฉพาะตอนจบ
   const handleConfirmDelete = async () => {
     if (!selectedItem) return;
     const url =
@@ -381,9 +392,7 @@ const ManageCategories = () => {
 
   return (
     <div className="space-y-10">
-      {/* Toaster แสดงเฉพาะตอนอยู่แท็บนี้ */}
       <Toaster position="top-right" />
-
       {error && <p className="text-red-600">{error}</p>}
 
       <CategorySection
@@ -402,7 +411,6 @@ const ManageCategories = () => {
         onDeleteClick={(item) => handleOpenDelete(item, 'unit')}
       />
 
-      {/* โมดัลเพิ่ม “หมวดหมู่” */}
       <AddCategoryModal
         isOpen={isAddCategoryOpen}
         onClose={() => setIsAddCategoryOpen(false)}
@@ -410,7 +418,6 @@ const ManageCategories = () => {
         existingCategories={materialCategories.map((c) => ({ name: c.name }))}
       />
 
-      {/* โมดัลเพิ่ม “หน่วยนับ” */}
       <AddUnitModal
         isOpen={isAddUnitOpen}
         onClose={() => setIsAddUnitOpen(false)}
@@ -418,7 +425,6 @@ const ManageCategories = () => {
         existingUnits={unitCategories.map((u) => ({ name: u.name }))}
       />
 
-      {/* แก้ไข */}
       {selectedItem && (
         <EditCategoryModal
           isOpen={isEditModalOpen}
@@ -426,10 +432,14 @@ const ManageCategories = () => {
           onSave={handleConfirmEdit}
           category={selectedItem}
           label={modalContext === 'material' ? 'ชื่อหมวดหมู่ใหม่' : 'ชื่อหน่วยนับใหม่'}
+          existingNames={
+            modalContext === 'material'
+              ? materialCategories.map((c) => c.name)
+              : unitCategories.map((u) => u.name)
+          }
         />
       )}
 
-      {/* ลบ */}
       {selectedItem && (
         <DeletedModal
           isOpen={isDeletedModalOpen}
@@ -442,7 +452,7 @@ const ManageCategories = () => {
   );
 };
 
-/* ========== Settings Page ========== */
+// Main Page
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('about');
   const tabs = [
@@ -464,7 +474,7 @@ export default function SettingsPage() {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
+              className={`whitespace-nowrap border-b-2 py-2 px-1 border-b-2 text-sm font-medium transition-colors ${
                 activeTab === t.id
                   ? 'border-[#3FA170] text-[#3FA170]'
                   : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'

@@ -2,15 +2,12 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import Sidebar from '@/components/Sidebar';
 import CustomDropdown from "@/components/CustomDropdown";
 import Pagination from "@/components/Pagination";
-import { Icon } from '@iconify/react';
-import Swal from 'sweetalert2';
 
 import { 
     Search, ChevronsUpDown, ChevronUp, ChevronDown,
-    Utensils, Leaf, Beef, Fish, Apple, SprayCan, MoreHorizontal 
+    Leaf, Beef, Fish, Apple, SprayCan, MoreHorizontal 
 } from 'lucide-react';
 
 // --- Icon Mapping (remains for potential future use) ---
@@ -77,9 +74,9 @@ export default function ExpiredPage() {
 
                         if (diffDays < 0) {
                             status = 'expired';
-                            daysLeft = diffDays; // เก็บค่าติดลบ
+                            daysLeft = diffDays;
                         } else if (diffDays === 0) {
-                            status = 'expired'; // หมดอายุวันนี้
+                            status = 'expired';
                             daysLeft = 0;
                         } else if (diffDays <= 1) {
                             status = 'critical';
@@ -91,14 +88,14 @@ export default function ExpiredPage() {
                             id: `${batch.batch_id}-${stockin.ingredient.name}`,
                             batch_id: batch.batch_id,
                             name: stockin.ingredient.name,
-                            expiry_date: toLocalDateString(stockin.expiry_date), // ใช้ฟังก์ชันแปลงวันที่ที่ปลอดภัย
+                            expiry_date: toLocalDateString(stockin.expiry_date),
                             daysLeft: daysLeft,
                             category_id: stockin.ingredient.category.category_name,
                             quantity: stockin.quantity,
                             unit_type: stockin.unit.unit_name,
                         };
                     })
-                ).filter(item => item.daysLeft <= 0); // แสดงเฉพาะรายการที่หมดอายุแล้ว
+                ).filter(item => item.daysLeft <= 0);
 
                 setAllExpiredItems(processedAndExpired);
 
@@ -118,34 +115,6 @@ export default function ExpiredPage() {
 
         fetchData();
     }, []);
-
-    // --- SweetAlert2 Handlers ---
-    const handleEdit = (item) => {
-        Swal.fire({
-            title: `แก้ไข (ตัวอย่าง): ${item.name}`,
-            text: "ฟังก์ชันนี้เป็นเพียงตัวอย่าง ยังไม่มีการบันทึกข้อมูลลงฐานข้อมูลจริง",
-            icon: 'info',
-            confirmButtonText: 'รับทราบ',
-        });
-    };
-
-    const handleDelete = (itemToDelete) => {
-        Swal.fire({
-            title: 'คุณแน่ใจหรือไม่?',
-            text: `คุณต้องการลบ "${itemToDelete.name}" (Batch: ${itemToDelete.batch_id}) ใช่หรือไม่?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: 'rgba(203, 87, 87, 1)',
-            cancelButtonColor: '#3F855A',
-            confirmButtonText: 'ใช่, ลบเลย!',
-            cancelButtonText: 'ยกเลิก'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                setAllExpiredItems(prevItems => prevItems.filter(item => item.id !== itemToDelete.id));
-                Swal.fire('ลบแล้ว!', 'รายการถูกลบออกจากหน้าแสดงผลแล้ว (ตัวอย่าง)', 'success');
-            }
-        });
-    };
     
     // --- Filtering and Sorting Logic using useMemo ---
     const filteredItems = useMemo(() => {
@@ -212,7 +181,7 @@ export default function ExpiredPage() {
     const SortableHeader = ({ label, columnKey, className }) => {
         const isActive = sortConfig.key === columnKey;
         return (
-            <th scope="col" className={`py-3 px-4 font-medium select-none ${className}`}>
+            <th scope="col" className={`py-3 px-4 font-medium select-none ${className || ''}`}>
                 <button onClick={() => requestSort(columnKey)} className="flex items-center gap-2 group w-full text-left">
                     <span>{label}</span>
                     <SortIndicator direction={sortConfig.direction} isActive={isActive} />
@@ -261,14 +230,13 @@ export default function ExpiredPage() {
                                 <SortableHeader label="วันที่หมดอายุ" columnKey="expiry_date" />
                                 <SortableHeader label="จำนวนคงเหลือ" columnKey="quantity" />
                                 <SortableHeader label="หน่วยนับ" columnKey="unit_type" />
-                                <th scope="col" className="py-3 px-4"></th>
                             </tr>
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan="7" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
+                                <tr><td colSpan="6" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
                             ) : error ? (
-                                <tr><td colSpan="7" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
+                                <tr><td colSpan="6" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
                             ) : sortedAndPaginatedItems.length > 0 ? (
                                 sortedAndPaginatedItems.map((item) => (
                                     <tr key={item.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
@@ -276,23 +244,13 @@ export default function ExpiredPage() {
                                         <td className="py-3 px-4">{item.name}</td>
                                         <td className="py-3 px-4">{item.category_id}</td>
                                         <td className="py-3 px-4">{formatDate(item.expiry_date)}</td>
-                                        <td className="py-3 px-4">{item.quantity.toFixed(2)}</td>
+                                        <td className="py-3 px-4">{Number(item.quantity).toFixed(2)}</td>
                                         <td className="py-3 px-4">{item.unit_type}</td>
-                                        <td className="py-3">
-                                            <div className="flex justify-start space-x-1">
-                                                <button onClick={() => handleEdit(item)} className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors">
-                                                    <Icon icon="mynaui:edit" className="w-4 h-4" />
-                                                </button>
-                                                <button onClick={() => handleDelete(item)} className="p-1.5 rounded-md text-red-500 hover:bg-red-100 transition-colors">
-                                                    <Icon icon="fluent:delete-20-regular" className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="7" className="p-8 text-center text-gray-500">ไม่พบข้อมูล</td>
+                                    <td colSpan="6" className="p-8 text-center text-gray-500">ไม่พบข้อมูล</td>
                                 </tr>
                             )}
                         </tbody>
