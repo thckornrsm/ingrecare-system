@@ -1,9 +1,10 @@
+// components/EditModal.jsx
 "use client";
 
 import React, { useState, useEffect, useRef, forwardRef } from "react";
 import { X } from "lucide-react";
 import CustomDropdown from "@/components/CustomDropdown";
- 
+
 // Input field with label and error handling
 const InputField = forwardRef(({ label, isError, errorMessage, className = "", ...props }, ref) => (
   <div className={className}>

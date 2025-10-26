@@ -88,7 +88,7 @@ export default function Sidebar({storeName, userEmail}) {
     { href: "/settings", label: "การตั้งค่า", iconString: "material-symbols:settings-outline" },
     // Logout item will be handled separately as a button
   ];
- 
+
   const SectionHeader = ({ label }) => (
     <>
       <p className="text-sm text-gray-400 font-light mb-2 max-lg:hidden">
@@ -189,7 +189,6 @@ export default function Sidebar({storeName, userEmail}) {
               </button>
           </div>
         </section>
-  
       </nav>
     </aside>
   );

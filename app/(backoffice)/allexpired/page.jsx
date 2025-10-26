@@ -1,26 +1,11 @@
-// app/(backoffice)/expired/page.jsx
+// app/(backoffice)/allexpired/page.jsx
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import CustomDropdown from "@/components/CustomDropdown";
 import Pagination from "@/components/Pagination";
+import { Search, ChevronsUpDown, ChevronUp, ChevronDown, Trash2, PencilLine } from "lucide-react";
 
-import { 
-    Search, ChevronsUpDown, ChevronUp, ChevronDown,
-    Leaf, Beef, Fish, Apple, SprayCan, MoreHorizontal 
-} from 'lucide-react';
-
-// --- Icon Mapping (remains for potential future use) ---
-const categoryIconMap = {
-    'เนื้อสัตว์': <Beef size={16} className="text-gray-500"/>,
-    'ผัก': <Leaf size={16} className="text-gray-500"/>,
-    'ทะเล': <Fish size={16} className="text-gray-500"/>,
-    'ผลไม้': <Apple size={16} className="text-gray-500"/>,
-    'เครื่องปรุง': <SprayCan size={16} className="text-gray-500"/>,
-    'อื่นๆ': <MoreHorizontal size={16} className="text-gray-500"/>,
-};
-
-// ฟังก์ชันแปลงวันที่ให้ปลอดภัยจาก timezone
 const toLocalDateString = (dateStr) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
@@ -30,7 +15,7 @@ const toLocalDateString = (dateStr) => {
     return `${year}-${month}-${day}`;
 };
 
-// --- Main Expired Ingredients Page ---
+// Main Page
 export default function ExpiredPage() {
     // --- States ---
     const [allExpiredItems, setAllExpiredItems] = useState([]);
@@ -45,7 +30,6 @@ export default function ExpiredPage() {
     const [sortConfig, setSortConfig] = useState({ key: 'batch_id', direction: 'descending' });
     const [itemsPerPage, setItemsPerPage] = useState(20);
 
-    // --- Data Fetching Effect ---
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -116,7 +100,6 @@ export default function ExpiredPage() {
         fetchData();
     }, []);
     
-    // --- Filtering and Sorting Logic using useMemo ---
     const filteredItems = useMemo(() => {
         return allExpiredItems
             .filter(item => category === 'ทั้งหมด' || item.category_id === category)
@@ -136,7 +119,6 @@ export default function ExpiredPage() {
         return sortedData.slice(startIndex, startIndex + itemsPerPage);
     }, [filteredItems, sortConfig, currentPage, itemsPerPage]);
 
-    // --- Helper Functions ---
     const requestSort = (key) => {
         let direction = 'ascending';
         if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -190,7 +172,6 @@ export default function ExpiredPage() {
         );
     };
 
-    // --- Render ---
     return (
         <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
             <div className="mb-8">
@@ -234,9 +215,9 @@ export default function ExpiredPage() {
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan="6" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
+                                <tr><td colSpan="7" className="text-center p-8 text-gray-500"><span className="loading loading-spinner loading-xl"></span></td></tr>
                             ) : error ? (
-                                <tr><td colSpan="6" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
+                                <tr><td colSpan="7" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
                             ) : sortedAndPaginatedItems.length > 0 ? (
                                 sortedAndPaginatedItems.map((item) => (
                                     <tr key={item.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
@@ -250,7 +231,7 @@ export default function ExpiredPage() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="6" className="p-8 text-center text-gray-500">ไม่พบข้อมูล</td>
+                                    <td colSpan="7" className="p-8 text-center text-gray-500">ไม่พบข้อมูล</td>
                                 </tr>
                             )}
                         </tbody>

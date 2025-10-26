@@ -1,3 +1,4 @@
+// app/(backoffice)/dashboard/page.jsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,9 +10,9 @@ import { Icon } from '@iconify/react';
 
 // Color status styles
 const statusStyles = {
-    critical: { bg: 'bg-[#E15050]' },
-    warning: { bg: 'bg-[#F9BF22]' },
-    good: { bg: 'bg-[#3FA170]' },
+    critical: { bg: 'bg-[#E15050]' }, // Red
+    warning: { bg: 'bg-[#F9BF22]' }, // Yellow
+    good: { bg: 'bg-[#3FA170]' }, // Green
 };
 
 // Detail Modal Component
@@ -88,8 +89,7 @@ const ItemCard = ({ item, onSelect }) => {
     return (
         <button 
             onClick={onSelect}
-            className="bg-white rounded-lg flex items-stretch overflow-hidden shadow-sm text-left 
-                       hover:shadow-md hover:ring-1 hover:ring-[#E5E5E5] transition-all cursor-pointer"
+            className="bg-white rounded-lg flex items-stretch overflow-hidden shadow-sm text-left hover:shadow-md hover:ring-1 hover:ring-[#E5E5E5] transition-all cursor-pointer"
         >
             <div className={`flex-shrink-0 w-24 p-2 flex flex-col items-center justify-center text-white ${styles.bg}`}>
                 <span className="text-4xl font-bold">{item.daysLeft < 0 ? 'EXP' : item.daysLeft}</span>
@@ -97,7 +97,7 @@ const ItemCard = ({ item, onSelect }) => {
             </div>
             <div className="flex-grow px-5 py-3">
                 <h3 className="font-semibold text-gray-800 mb-2">{item.name}</h3>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-[#B8B8B8]">
                     <span className="text-sm text-gray-400">ล็อต</span>
                     <span className="text-sm text-black text-right font-normal">{item.lot_number}</span>
                     <span className="text-sm text-gray-400">วันที่นำเข้า</span>
@@ -110,7 +110,7 @@ const ItemCard = ({ item, onSelect }) => {
     );
 };
 
-// Main Dashboard Page
+// Main Page
 export default function DashboardPage() {
     const router = useRouter();
 
@@ -238,7 +238,7 @@ export default function DashboardPage() {
 
     // Render Content
     const renderContent = () => {
-        if (isLoading) return <p className="text-center text-gray-500 py-10">กำลังโหลดข้อมูล...</p>;
+        if (isLoading) return <p className="text-center text-gray-500 py-10"><span className="loading loading-spinner loading-xl"></span></p>;
         if (error) return <p className="text-center text-red-500 py-10">เกิดข้อผิดพลาด: {error}</p>;
         if (paginatedItems.length === 0) return <p className="text-center text-gray-500 py-10">ไม่พบรายการวัตถุดิบ</p>;
         

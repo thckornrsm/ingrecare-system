@@ -1,4 +1,4 @@
-/* รายงานการเบิกจ่ายวัตถุดิบ */
+// app/(backoffice)/stockout/page.jsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -54,7 +54,7 @@ const isExpired = (ing) => {
   return end < new Date();
 };
 
-/* ---------- Disburse Form Row ---------- */
+// Form Row Component
 const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units, showDeleteButton }) => {
   const [searchTerm, setSearchTerm] = useState(item.itemName || '');
   const [suggestions, setSuggestions] = useState([]);
@@ -77,7 +77,7 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
   };
 
   const handleSelectSuggestion = (ingredient) => {
-    // ❌ บล็อกเลือกวัตถุดิบที่หมดอายุ
+    // บล็อกเลือกวัตถุดิบที่หมดอายุ
     if (isExpired(ingredient)) {
       toast.error('วัตถุดิบนี้หมดอายุแล้ว ไม่สามารถเบิกได้');
       return;
@@ -109,7 +109,7 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
 
   return (
     <div className="bg-[#F6F8FA] p-9 rounded-lg border border-[#E5E5E5] relative">
-      {/* ✅ แสดงปุ่มลบเฉพาะเมื่อ showDeleteButton = true */}
+      {/* แสดงปุ่มลบเฉพาะเมื่อ showDeleteButton = true */}
       {onRemove && showDeleteButton && (
         <button
           type="button"
@@ -207,7 +207,7 @@ const DisburseFormRow = ({ item, onUpdate, onRemove, availableIngredients, units
   );
 };
 
-/* ---------- Main DisbursePage ---------- */
+// Main Page
 export default function DisbursePage() {
   const router = useRouter();
 
@@ -242,7 +242,7 @@ export default function DisbursePage() {
     fetchData();
   }, []);
 
-  // 🔒 ล็อกสกรีนเมื่อเปิดโมดัล (กัน scroll พื้นหลัง)
+  // ล็อกสกรีนเมื่อเปิดโมดัล (กัน scroll พื้นหลัง)
   useEffect(() => {
     document.body.classList.toggle('overflow-hidden', isModalOpen);
     return () => document.body.classList.remove('overflow-hidden');
@@ -253,7 +253,7 @@ export default function DisbursePage() {
   const handleUpdateItem = (id, updated) => setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...updated } : i)));
   const handleClearAll = () => setItems((prev) => prev.map((i) => ({ ...createNewItem(), id: i.id })));
 
-  // ✅ ตรวจว่ามีรายการหมดอายุใน selection ไหม
+  // ตรวจรายการหมดอายุใน selection
   const hasExpiredInSelection = () =>
     items.some((it) => {
       const ing = availableIngredients.find((a) => a.ingredient_id === it.ingredient_id);
@@ -272,7 +272,6 @@ export default function DisbursePage() {
   };
 
   const handleConfirmSubmit = async () => {
-    // กันอีกชั้น (ป้องกันความผิดพลาดจาก state)
     if (hasExpiredInSelection()) {
       setIsModalOpen(false);
       return toast.error('มีวัตถุดิบที่หมดอายุในรายการ ไม่สามารถเบิกได้');
@@ -313,8 +312,15 @@ export default function DisbursePage() {
 
   return (
     <>
-      <Toaster position="top-right" />
       <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
+        <Toaster position="top-right" />
+        <ConfirmationModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onConfirm={handleConfirmSubmit}
+          isSubmitting={isSubmitting}
+          formType="stock-out"
+        />
         <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
           <div>
             <h1 className="text-black text-3xl font-bold">เบิกจ่ายวัตถุดิบ</h1>
@@ -337,7 +343,7 @@ export default function DisbursePage() {
               onRemove={handleRemoveItem}
               availableIngredients={availableIngredients}
               units={units}
-              showDeleteButton={items.length > 1} // ✅ แสดงปุ่มลบเฉพาะเมื่อมีมากกว่า 1 รายการ
+              showDeleteButton={items.length > 1}
             />
           ))}
         </div>
@@ -359,15 +365,6 @@ export default function DisbursePage() {
           </button>
         </div>
       </main>
-
-      {/* ✅ ใช้ ConfirmationModal ที่แชร์กับหน้า stockin */}
-      <ConfirmationModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onConfirm={handleConfirmSubmit}
-        isSubmitting={isSubmitting}
-        formType="stock-out"
-      />
     </>
   );
 }

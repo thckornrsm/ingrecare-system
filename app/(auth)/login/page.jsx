@@ -6,8 +6,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
-import Navbar from "@/components/Navbar"; // Assuming you have this component
-import Footer from "@/components/Footer";   // Assuming you have this component
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export default function LoginPage() {
   const router = useRouter();

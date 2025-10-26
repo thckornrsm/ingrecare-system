@@ -1,29 +1,15 @@
+// app/(backoffice)/allstockin/page.jsx
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  Search, ChevronsUpDown, ChevronUp, ChevronDown,
-  Utensils, Leaf, Beef, Fish, Apple, SprayCan, MoreHorizontal
-} from "lucide-react";
-import { Icon } from "@iconify/react";
-import toast, { Toaster } from "react-hot-toast";
-
-// Import components from external files
 import CustomDropdown from "@/components/CustomDropdown";
 import Pagination from "@/components/Pagination";
 import DeletedModal from "@/components/DeletedModal";
 import EditModal from "@/components/EditModal";
+import toast, { Toaster } from "react-hot-toast";
+import { Search, ChevronsUpDown, ChevronUp, ChevronDown, Trash2, PencilLine } from "lucide-react";
 
-const categoryIconMap = {
-  "เนื้อสัตว์": <Beef size={16} className="text-gray-500" />,
-  "ผัก": <Leaf size={16} className="text-gray-500" />,
-  "ทะเล": <Fish size={16} className="text-gray-500" />,
-  "ผลไม้": <Apple size={16} className="text-gray-500" />,
-  "เครื่องปรุง": <SprayCan size={16} className="text-gray-500" />,
-  "อื่นๆ": <MoreHorizontal size={16} className="text-gray-500" />,
-  "ทั้งหมด": <Utensils size={16} className="text-gray-500" />
-};
-
+// Main Page
 export default function AllStockin() {
   const [stockinHistory, setStockinHistory] = useState([]);
   const [allCategories, setAllCategories] = useState([]);
@@ -116,15 +102,12 @@ export default function AllStockin() {
   };
 
   const handleEditClick = (item) => {
-    // แปลง UTC date เป็น local date โดยไม่ให้เกิดปัญหา timezone shift
     const receivedDate = new Date(item.received_date);
     const expiryDate = new Date(item.expiry_date);
     
-    // ใช้ getFullYear, getMonth, getDate แทน split เพื่อให้ได้วันที่ local ที่ถูกต้อง
     const receivedDateStr = `${receivedDate.getFullYear()}-${String(receivedDate.getMonth() + 1).padStart(2, '0')}-${String(receivedDate.getDate()).padStart(2, '0')}`;
     const expiryDateStr = `${expiryDate.getFullYear()}-${String(expiryDate.getMonth() + 1).padStart(2, '0')}-${String(expiryDate.getDate()).padStart(2, '0')}`;
     
-    // คำนวณจำนวนวันระหว่างวันที่
     const diffTime = Math.abs(expiryDate - receivedDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
@@ -273,10 +256,10 @@ export default function AllStockin() {
             <thead className="text-sm text-gray-500 capitalize bg-gray-100 border-b border-gray-200">
               <tr>
                 <SortableHeader label="ID" columnKey="id" />
-                <SortableHeader label="ชื่อ" columnKey="name" />
+                <SortableHeader label="ชื่อวัตถุดิบ" columnKey="name" />
                 <SortableHeader label="หมวดหมู่" columnKey="category" />
                 <SortableHeader label="วันที่นำเข้า" columnKey="received_date" />
-                <SortableHeader label="วันหมดอายุ" columnKey="expiry_date" />
+                <SortableHeader label="วันที่หมดอายุ" columnKey="expiry_date" />
                 <SortableHeader label="จำนวน" columnKey="quantity" />
                 <SortableHeader label="หน่วยนับ" columnKey="unit" />
                 <th scope="col" className="px-4 py-3"></th>
@@ -284,9 +267,9 @@ export default function AllStockin() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan="8" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
+                <tr><td colSpan="7" className="text-center p-8 text-gray-500"><span className="loading loading-spinner loading-xl"></span></td></tr>
               ) : error ? (
-                <tr><td colSpan="8" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
+                <tr><td colSpan="7" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
               ) : sortedAndPaginatedIngredients.length > 0 ? (
                 sortedAndPaginatedIngredients.map((item) => (
                   <tr key={item.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
@@ -303,13 +286,13 @@ export default function AllStockin() {
                           onClick={() => handleEditClick(item)} 
                           className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 transition-colors"
                         >
-                          <Icon icon="mynaui:edit" className="w-4 h-4" />
+                          <PencilLine size={16} />
                         </button>
                         <button 
                           onClick={() => handleDeleteClick(item)} 
                           className="p-1.5 rounded-md text-[#E15050] hover:bg-red-100 transition-colors"
                         >
-                          <Icon icon="fluent:delete-20-regular" className="w-4 h-4" />
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -317,14 +300,14 @@ export default function AllStockin() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="p-8 text-center text-gray-500">ไม่พบข้อมูล</td>
+                  <td colSpan="7" className="p-8 text-center text-gray-500">ไม่พบข้อมูล</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
-
+      
       {!isLoading && !error && filteredIngredients.length > 0 && (
         <Pagination
           currentPage={currentPage}

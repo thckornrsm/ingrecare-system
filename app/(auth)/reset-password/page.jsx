@@ -1,10 +1,11 @@
+// app/(auth)/reset-password/page.jsx
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Eye, EyeOff } from 'lucide-react'; // 1. Import ไอคอนรูปตา
+import { Eye, EyeOff } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 

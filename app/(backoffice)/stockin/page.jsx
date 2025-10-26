@@ -1,19 +1,21 @@
+// app/(backoffice)/stockin/page.jsx
 'use client';
 
 import React, { useState, useEffect, forwardRef } from 'react';
 import CustomDropdown from '@/components/CustomDropdown';
 import AddCategoryModal from '@/components/AddCategoryModal';
 import AddUnitModal from '@/components/AddUnitModal';
+import { Plus, Calendar, Trash2, CheckCircle2, AlertCircle, X } from 'lucide-react';
+
 import dynamic from 'next/dynamic';
 const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal'), { ssr: false });
 
+import toast, { Toaster } from 'react-hot-toast';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useRouter } from 'next/navigation';
-import { Plus, Calendar, Trash2 } from 'lucide-react';
-import toast, { Toaster } from 'react-hot-toast';
 
-/* ---------- helpers ป้องกันการกรอกค่าที่ไม่ถูกต้อง ---------- */
+// validate
 const blockInvalidKey = (e) => {
   if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault();
 };
@@ -30,7 +32,7 @@ const setPositiveNumber = (raw, opts = { float: true, min: 0 }) => {
   return num < (opts.min ?? 0) ? '' : cleaned;
 };
 
-/* ---------- date helpers ---------- */
+// date validation ไม่ให้เลือกวันที่ในอนาคต
 const startOfDay = (d) => {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
@@ -38,7 +40,6 @@ const startOfDay = (d) => {
 };
 const isFutureDate = (d) => startOfDay(d) > startOfDay(new Date());
 
-/* ---------- CustomDateInput ---------- */
 const CustomDateInput = forwardRef(({ value, onClick, placeholder }, ref) => (
   <div className="relative w-full cursor-pointer" onClick={onClick} ref={ref}>
     <input
@@ -53,7 +54,7 @@ const CustomDateInput = forwardRef(({ value, onClick, placeholder }, ref) => (
 ));
 CustomDateInput.displayName = 'CustomDateInput';
 
-/* ---------- IngredientFormRow ---------- */
+// Form Row Component
 const IngredientFormRow = ({
   item, onUpdate, onRemove,
   availableCategories, onAddNewCategoryClick,
@@ -115,7 +116,7 @@ const IngredientFormRow = ({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            ประเภทของวัตถุดิบ <span className="text-red-500">*</span>
+            หมวดหมู่ของวัตถุดิบ <span className="text-red-500">*</span>
           </label>
           <CustomDropdown
             categories={availableCategories}
@@ -205,7 +206,7 @@ const IngredientFormRow = ({
   );
 };
 
-/* ---------- Main: StockInPage ---------- */
+// Main Page
 export default function StockInPage() {
   const router = useRouter();
 
@@ -360,8 +361,29 @@ export default function StockInPage() {
 
   return (
     <>
-      <Toaster position="top-right" />
       <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
+        <Toaster position="top-right" />
+        <ConfirmationModal
+          isOpen={isConfirmModalOpen}
+          onClose={() => setConfirmModalOpen(false)}
+          onConfirm={handleConfirmSubmit}
+          isSubmitting={isSubmitting}
+          formType="stock-in"
+        />
+  
+        <AddCategoryModal
+          isOpen={isAddCategoryModalOpen}
+          onClose={() => setAddCategoryModalOpen(false)}
+          onAddCategory={handleAddCategory}
+          existingCategories={availableCategories.map(c => ({ name: c.name }))}
+        />
+  
+        <AddUnitModal
+          isOpen={isAddUnitModalOpen}
+          onClose={() => setAddUnitModalOpen(false)}
+          onAddUnit={handleAddUnit}
+          existingUnits={availableUnits.map(u => ({ name: u.name }))}
+        />
         <form onSubmit={handleSubmit}>
           <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
             <div>
@@ -410,28 +432,6 @@ export default function StockInPage() {
           </div>
         </form>
       </main>
-
-      <ConfirmationModal
-        isOpen={isConfirmModalOpen}
-        onClose={() => setConfirmModalOpen(false)}
-        onConfirm={handleConfirmSubmit}
-        isSubmitting={isSubmitting}
-        formType="stock-in"
-      />
-
-      <AddCategoryModal
-        isOpen={isAddCategoryModalOpen}
-        onClose={() => setAddCategoryModalOpen(false)}
-        onAddCategory={handleAddCategory}
-        existingCategories={availableCategories.map(c => ({ name: c.name }))}
-      />
-
-      <AddUnitModal
-        isOpen={isAddUnitModalOpen}
-        onClose={() => setAddUnitModalOpen(false)}
-        onAddUnit={handleAddUnit}
-        existingUnits={availableUnits.map(u => ({ name: u.name }))}
-      />
     </>
   );
 }

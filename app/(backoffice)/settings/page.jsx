@@ -29,7 +29,7 @@ const DataDisplayField = ({ label, value, span, type }) => (
 const AboutStore = () => {
   const me = useSession();
 
-  if (!me) return <p className="text-gray-500">กำลังโหลดข้อมูลผู้ใช้...</p>;
+  if (!me) return <p className="text-gray-500"><span className="loading loading-spinner loading-xl"></span></p>;
   if (!me.store) return <p className="text-red-600">ไม่พบข้อมูลร้านที่ผูกกับบัญชีผู้ใช้</p>;
 
   const store = me.store;
@@ -100,7 +100,7 @@ function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื�
     
     if (!trimmedName) {
       setError(true);
-      setErrorMessage('กรุณากรอกชื่อ');
+      setErrorMessage('ระบุชื่อหมวดหมู่');
       return;
     }
 
@@ -112,7 +112,7 @@ function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื�
 
     if (isDuplicate) {
       setError(true);
-      setErrorMessage('ชื่อนี้มีในระบบแล้ว');
+      setErrorMessage('ชื่อหมวดหมู่นี้มีอยู่แล้ว');
       return;
     }
 
@@ -148,9 +148,8 @@ function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื�
             }}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             autoFocus
-            className={`w-full rounded-md border px-4 py-2 outline-none transition focus:ring-2 ${
-              error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#3FA170]'
-            }`}
+            className={`flex-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm focus:ring-2 ${
+              error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-[#3FA170] focus:border-[#3FA170]'}`}
           />
           {error && <p className="text-sm text-red-500">{errorMessage}</p>}
         </div>
@@ -229,7 +228,7 @@ const CategorySection = ({ title, items, onAddClick, onEditClick, onDeleteClick 
             ) : (
               <tr>
                 <td colSpan="3" className="py-8 text-center text-gray-500">
-                  กำลังโหลดข้อมูล...
+                  <span className="loading loading-spinner loading-xl"></span>
                 </td>
               </tr>
             )}

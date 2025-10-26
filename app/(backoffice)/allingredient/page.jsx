@@ -1,15 +1,15 @@
+// app/(backoffice)/allingredient/page.jsx
 "use client";
+
 import React, { useState, useMemo, useEffect } from "react";
 import CustomDropdown from "@/components/CustomDropdown";
 import Pagination from "@/components/Pagination";
+import EditModal from "@/components/EditModal";
+import DeletedModal from "@/components/DeletedModal";
 import toast, { Toaster } from "react-hot-toast";
 import { Search, ChevronsUpDown, ChevronUp, ChevronDown, Trash2, PencilLine } from "lucide-react";
 
-/* โมดัลที่ใช้ร่วมกัน */
-import EditModal from "@/components/EditModal";
-import DeletedModal from "@/components/DeletedModal";
-
-/* ============= Helpers ============= */
+// ExpiryStatus component
 const ExpiryStatus = ({ date, days }) => {
   if (!date || days === Infinity) return <span className="text-gray-500">N/A</span>;
   const formattedDate = new Date(date).toLocaleDateString("th-TH", {
@@ -17,19 +17,11 @@ const ExpiryStatus = ({ date, days }) => {
     month: "2-digit",
     day: "2-digit",
   });
-  if (days < 0) {
+  if (days <= 0) {
     return (
       <div className="flex flex-col">
         <span className="font-medium">{formattedDate}</span>
         <span className="inline-block w-fit text-xs text-red-500 bg-red-50 rounded-md px-2">หมดอายุแล้ว</span>
-      </div>
-    );
-  }
-  if (days === 0) {
-    return (
-      <div className="flex flex-col">
-        <span className="font-medium text-red-600">{formattedDate}</span>
-        <span className="text-xs text-red-500">หมดอายุวันนี้</span>
       </div>
     );
   }
@@ -49,7 +41,6 @@ const ExpiryStatus = ({ date, days }) => {
   );
 };
 
-// แจ้งหน้าอื่นๆ (เช่น stockin/stockout) ให้รีเฟรชเมื่อ ingredient เปลี่ยน
 const broadcastChange = (type, payload = {}) => {
   try {
     localStorage.setItem(
@@ -59,6 +50,7 @@ const broadcastChange = (type, payload = {}) => {
   } catch {}
 };
 
+// Main Page
 export default function AllIngredientsPage() {
   const [ingredients, setIngredients] = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
@@ -316,16 +308,12 @@ export default function AllIngredientsPage() {
   return (
     <main className="flex-1 overflow-y-auto py-9 px-4 sm:px-8 lg:px-16 xl:px-25">
       <Toaster position="top-right" />
-
-      {/* ลบ */}
       <DeletedModal
         isOpen={!!itemToDelete}
         onConfirm={handleConfirmDelete}
         itemToDelete={itemToDelete}
         onClose={() => setItemToDelete(null)}
       />
-
-      {/* แก้ไข: ตอนนี้ units คือ "ทุกหน่วยทั้งหมด" จาก /api/units */}
       <EditModal
         isOpen={!!editItem}
         onClose={() => setEditItem(null)}
@@ -336,13 +324,11 @@ export default function AllIngredientsPage() {
         formType="all-ingredients"
       />
 
-      <div className="mx-auto max-w-7xl">
         <div className="mb-8">
-          <h1 className="text-black text-3xl font-bold">วัตถุดิบทั้งหมดในสต็อก</h1>
-          <p className="text-[#979999]">ตารางข้อมูลเกี่ยวกับวัตถุดิบทั้งหมดในสต็อก</p>
+          <h1 className="text-black text-3xl font-bold">วัตถุดิบคงเหลือทั้งหมด</h1>
+          <p className="text-[#979999]">ตารางข้อมูลเกี่ยวกับวัตถุดิบทั้งหมดที่คงเหลือในสต็อก</p>
         </div>
 
-        {/* Controls */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
           <CustomDropdown
             label="หมวดหมู่"
@@ -383,7 +369,7 @@ export default function AllIngredientsPage() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan="7" className="p-8 text-center text-gray-500">กำลังโหลดข้อมูล...</td>
+                    <td colSpan="7" className="p-8 text-center text-gray-500"><span className="loading loading-spinner loading-xl"></span></td>
                   </tr>
                 ) : error ? (
                   <tr>
@@ -403,14 +389,12 @@ export default function AllIngredientsPage() {
                           <button
                             onClick={() => openEdit(ing)}
                             className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 transition-colors"
-                            title="แก้ไข"
                           >
                             <PencilLine size={16} />
                           </button>
                           <button
                             onClick={() => openDelete(ing)}
                             className="p-1.5 rounded-md text-[#E15050] hover:bg-red-100 transition-colors"
-                            title="ลบ"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -428,7 +412,6 @@ export default function AllIngredientsPage() {
           </div>
         </div>
 
-        {/* Pagination */}
         {(() => {
           const totalPages = Math.ceil(filteredIngredients.length / itemsPerPage);
           return totalPages > 0 && !isLoading && !error ? (
@@ -445,7 +428,6 @@ export default function AllIngredientsPage() {
             />
           ) : null;
         })()}
-      </div>
     </main>
   );
 }

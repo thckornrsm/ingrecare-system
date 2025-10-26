@@ -1,3 +1,4 @@
+// app/components/AddCategoryModal.jsx
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -71,13 +72,15 @@ function AddCategoryModal({ isOpen, onClose, onAddCategory, existingCategories =
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-                <div className="flex justify-between items-center p-4 border-b border-gray-200">
-                    <h3 className="text-lg font-bold">เพิ่มหมวดหมู่</h3>
-                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600"> <X size={20} /> </button>
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+            <div className="bg-white rounded-lg shadow-sm p-6 w-full max-w-sm mx-4">
+                <div className="mb-6 flex items-center justify-between border-b border-[#E5E5E5] pb-4">
+                    <h3 className="text-lg font-semibold text-gray-800">เพิ่มหมวดหมู่</h3>
+                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
+                        <X size={24} />
+                    </button>
                 </div>
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     {/*
                     <div className="flex items-center gap-4">
                         <label className="w-24 text-sm font-medium text-gray-700">เลือกไอคอน</label>
@@ -100,28 +103,26 @@ function AddCategoryModal({ isOpen, onClose, onAddCategory, existingCategories =
                     </div>
                     */}
                     <div>
-                        <div className="flex items-center gap-4">
-                            <label htmlFor="categoryName" className="w-24 text-sm font-medium text-">ชื่อหมวดหมู่</label>
-                            <input 
-                                type="text" 
-                                id="categoryName" 
-                                value={categoryName} 
-                                onChange={(e) => setCategoryName(e.target.value)} 
-                                className={`flex-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm focus:ring-1 ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-[#3FA170] focus:border-[#3FA170]'}`} 
-                                required 
-                            />
-                        </div>
+                        <label htmlFor="categoryName" className="mb-1.5 block text-sm font-medium text-gray-700">ชื่อหมวดหมู่</label>
+                        <input
+                            type="text"
+                            id="categoryName"
+                            value={categoryName}
+                            onChange={(e) => setCategoryName(e.target.value)} 
+                            className={`flex-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm focus:ring-2 ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-[#3FA170] focus:border-[#3FA170]'}`}
+                            required
+                            autoFocus
+                            placeholder="เช่น เนื้อสัตว์, ผัก, เครื่องปรุง"
+                        />
                         {error && (
-                            <p className="text-sm text-red-500 mt-1 ml-[calc(6rem+1rem)]">
-                                {error}
-                            </p>
+                            <p className="text-sm text-red-500 mt-1 ml-[calc(6rem+1rem)]">{error}</p>
                         )}
                     </div>
                     <div className="flex justify-end pt-4">
                         <button 
                             type="submit" 
                             disabled={!categoryName.trim() || !!error}
-                            className="px-6 py-2 bg-[#3FA170] text-white font-medium rounded-lg hover:bg-[#358a60] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            className="rounded-md bg-[#3FA170] px-6 py-2 text-sm font-medium text-white hover:bg-[#2F7A5E] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
                             เพิ่มหมวดหมู่
                         </button> 
