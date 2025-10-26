@@ -13,6 +13,9 @@ import { useRouter } from 'next/navigation';
 import { Plus, Calendar, Trash2 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
+// Import time units
+import { TIME_UNITS } from '@/app/constants/timeUnits';
+
 /* ---------- helpers ป้องกันการกรอกค่าที่ไม่ถูกต้อง ---------- */
 const blockInvalidKey = (e) => {
   if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault();
@@ -223,7 +226,7 @@ export default function StockInPage() {
   const [items, setItems] = useState([createNewItem()]);
   const [availableCategories, setAvailableCategories] = useState([]);
   const [availableUnits, setAvailableUnits] = useState([]);
-  const [availableTimeUnits, setAvailableTimeUnits] = useState([]);
+  const [availableTimeUnits, setAvailableTimeUnits] = useState(TIME_UNITS); // ใช้ TIME_UNITS จาก constants
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -233,18 +236,17 @@ export default function StockInPage() {
 
   const fetchDropdownData = async () => {
     try {
-      const [catRes, unitRes, timeUnitRes] = await Promise.all([
+      const [catRes, unitRes] = await Promise.all([
         fetch('/api/categories'),
         fetch('/api/units'),
-        fetch('/api/time_units')
+        // ลบ fetch time_units ออก
       ]);
       const categories = await catRes.json();
       const units = await unitRes.json();
-      const timeUnits = await timeUnitRes.json();
 
       setAvailableCategories(categories.map(c => ({ name: c.category_name })));
       setAvailableUnits(units.map(u => ({ name: u.unit_name })));
-      setAvailableTimeUnits(timeUnits.map(tu => ({ name: tu.unit_name })));
+      // availableTimeUnits ถูกตั้งค่าไว้แล้วตอน initialize state
     } catch (error) {
       toast.error('ไม่สามารถโหลดข้อมูลพื้นฐานได้');
       console.error('Failed to fetch dropdown data', error);
