@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
 
 /**
- * ✨ แก้ไขตรงนี้: รับ payload เป็น object { uid, sid }
+ * แก้ไขตรงนี้: รับ payload เป็น object { uid, sid }
  */
 export async function createSession(payload) {
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -18,7 +18,7 @@ export async function createSession(payload) {
 }
 
 /**
- * ✨ แก้ไขตรงนี้: เพื่อให้คืนค่า payload ทั้งหมด
+ * แก้ไขตรงนี้: เพื่อให้คืนค่า payload ทั้งหมด
  */
 export async function verifySession(token) {
   if (!token) return null;

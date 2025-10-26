@@ -1,3 +1,4 @@
+// components/ConfirmationModal.jsx
 "use client";
 
 import React from "react";
@@ -17,23 +18,23 @@ function ConfirmationModal({
       case "stock-in":
         return (
           <>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              คุณต้องการยืนยันการนำเข้าวัตถุดิบ
+            <h3 className="text-xl font-medium text-gray-800 mb-2">
+              ยืนยันการนำเข้าวัตถุดิบ
             </h3>
             <p className="text-gray-500 mb-6">
-              บันทึกข้อมูลการนำเข้าทั้งหมดใช่หรือไม่?
+              คุณต้องการบันทึกข้อมูลการนำเข้าทั้งหมดใช่หรือไม่?
             </p>
             <div className="flex flex-wrap justify-center gap-4 mt-8">
               <button
                 onClick={onClose}
-                className="px-6 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors"
+                className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={onConfirm}
                 disabled={isSubmitting}
-                className="px-6 py-2 text-sm font-medium text-white bg-[#3FA170] rounded-md hover:bg-[#1E7957] transition-colors disabled:bg-green-300"
+                className="px-6 py-2 text-sm font-medium text-white bg-[#3FA170] rounded-md hover:bg-[#2F7A5E] transition-colors"
               >
                 {isSubmitting ? "กำลังบันทึก..." : "ยืนยัน"}
               </button>
@@ -43,22 +44,22 @@ function ConfirmationModal({
       case "stock-out":
         return (
           <>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              คุณต้องการยืนยันการเบิกจ่ายวัตถุดิบ
+            <h3 className="text-xl font-medium text-gray-800 mb-2">
+              ยืนยันการเบิกจ่ายวัตถุดิบ
             </h3>
             <p className="text-gray-500 mb-6">
-              ยืนยันการเบิกจ่ายวัตถุดิบนี้ใช่หรือไม่?
+              คุณต้องการยืนยันการเบิกจ่ายวัตถุดิบนี้ใช่หรือไม่?
             </p>
             <div className="flex flex-wrap justify-center gap-4 mt-8">
               <button
                 onClick={onClose}
-                className="px-6 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors"
+                className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={onConfirm}
-                className="px-6 py-2 text-sm font-medium text-white bg-[#3FA170] rounded-md hover:bg-[#1E7957] transition-colors"
+                className="px-6 py-2 text-sm font-medium text-white bg-[#3FA170] rounded-md hover:bg-[#2F7A5E] transition-colors"
               >
                 ยืนยัน
               </button>
@@ -75,7 +76,6 @@ function ConfirmationModal({
       className="fixed inset-0 bg-black/40 flex justify-center items-center z-50"
       onClick={onClose}
     >
-      {/* ✅ การ์ดชั้นเดียวพอ ไม่ซ้อน */}
       <div
         className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md mx-4 text-center"
         onClick={(e) => e.stopPropagation()}

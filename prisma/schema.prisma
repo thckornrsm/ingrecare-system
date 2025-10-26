@@ -77,7 +77,6 @@ model store {
   @@index([subdistrictId])
 }
 
-
 model user {
   user_id   Int       @id @default(autoincrement())
   email     String    @db.VarChar(100) @unique
@@ -104,13 +103,7 @@ model units {
   inventories     ingredient_now[]
 }
 
-// ✅  เพิ่ม Model ใหม่สำหรับหน่วยเวลา
-model time_units {
-  unit_id   Int           @id @default(autoincrement())
-  unit_name String        @db.VarChar(50) @unique
-  
-  ingredients ingredients[]
-}
+// ❌ ลบ model time_units ออกทั้งหมด (ไม่ต้องใช้แล้ว)
 
 model categories {
   category_id   Int           @id @default(autoincrement())
@@ -124,15 +117,15 @@ model ingredients {
   category_id   Int
   name          String @db.VarChar(100)
   
-  // ✅  ปรับปรุงฟิลด์ shelflife
-  shelflife_value   Int    // เก็บค่าเป็นตัวเลข เช่น 7
-  shelflife_unit_id Int    // FK ไปยังตาราง time_units
+  // ✅ เปลี่ยนจาก FK เป็น String
+  shelflife_value      Int    // เก็บค่าเป็นตัวเลข เช่น 7
+  shelflife_unit_name  String @db.VarChar(50) // เก็บเป็น string เช่น "วัน", "สัปดาห์", "เดือน", "ปี"
   
   unit_id       Int
 
   category       categories @relation(fields: [category_id], references: [category_id])
   unit           units      @relation(fields: [unit_id], references: [unit_id])
-  shelflife_unit time_units @relation(fields: [shelflife_unit_id], references: [unit_id]) // ✅ เพิ่ม relation
+  // ❌ ลบ relation shelflife_unit ออก
 
   stockins      stockin[]
   stockouts     stockout[]
@@ -219,4 +212,3 @@ model expiry_tack {
   batch      batch       @relation(fields: [batch_id], references: [batch_id])
   ingredient ingredients @relation(fields: [ingredient_id], references: [ingredient_id])
 }
-

@@ -3,20 +3,18 @@
 
 import { createContext, useContext } from 'react';
 
-// 1. สร้าง Context
+// Context
 const SessionContext = createContext(null);
-
-// 2. สร้าง Provider (ตัวหุ้ม)
+// Provider
 export function SessionProvider({ user, children }) {
-  return (
-    <SessionContext.Provider value={user}>
-      {children}
-    </SessionContext.Provider>
-  );
+    return (
+        <SessionContext.Provider value={user}>
+            {children}
+        </SessionContext.Provider>
+    );
 }
-
-// 3. สร้าง Hook (ตัวดึงข้อมูล)
+// Hook
 export function useSession() {
-  const context = useContext(SessionContext);
-  return context;
+    const context = useContext(SessionContext);
+    return context;
 }

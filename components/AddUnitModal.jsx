@@ -1,3 +1,4 @@
+// components/AddUnitModal.jsx
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -43,37 +44,37 @@ function AddUnitModal({ isOpen, onClose, onAddUnit, existingUnits = [] }) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-                <div className="flex justify-between items-center p-4 border-b border-gray-200">
-                    <h3 className="text-lg font-bold text-gray-800">เพิ่มหน่วยนับ</h3>
-                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600"> <X size={20} /> </button>
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+            <div className="bg-white rounded-lg shadow-sm p-6 w-full max-w-sm mx-4">
+                <div className="mb-6 flex items-center justify-between border-b border-[#E5E5E5] pb-4">
+                    <h3 className="text-lg font-semibold text-gray-800">เพิ่มหน่วยนับ</h3>
+                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
+                        <X size={20} /> 
+                    </button>
                 </div>
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <div className="flex items-center gap-4">
-                            <label htmlFor="unitName" className="w-24 text-sm font-medium text-gray-700">ชื่อหน่วยนับ</label>
-                            <input 
-                                type="text" 
-                                id="unitName" 
-                                value={unitName} 
-                                onChange={(e) => setUnitName(e.target.value)} 
-                                className={`flex-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm focus:ring-1 ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-[#3FA170] focus:border-[#3FA170]'}`} 
-                                placeholder="เช่น กิโลกรัม, ถุง, แกลลอน"
-                                required 
-                                autoFocus
-                            />
-                        </div>
+                        <label htmlFor="unitName" className="mb-1.5 block text-sm font-medium text-gray-700">ชื่อหน่วยนับ</label>
+                        <input 
+                            type="text" 
+                            id="unitName" 
+                            value={unitName} 
+                            onChange={(e) => setUnitName(e.target.value)} 
+                            className={`flex-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm focus:ring-2 ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-[#3FA170] focus:border-[#3FA170]'}`} 
+                            placeholder="เช่น กิโลกรัม, ถุง, แกลลอน"
+                            required 
+                            autoFocus
+                        />
                         {error && (
                             <p className="text-sm text-red-500 mt-1 ml-[calc(6rem+1rem)]">{error}</p>
                         )}
                     </div>
-                    <div className="flex justify-end pt-4 gap-3">
+                    <div className="flex justify-end pt-4">
                     
                         <button 
                             type="submit" 
                             disabled={!unitName.trim() || !!error}
-                            className="px-6 py-2 bg-[#3FA170] text-white font-medium rounded-lg hover:bg-[#358a60] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            className="rounded-md bg-[#3FA170] px-6 py-2 text-sm font-medium text-white hover:bg-[#2F7A5E] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
                             เพิ่มหน่วยนับ
                         </button> 

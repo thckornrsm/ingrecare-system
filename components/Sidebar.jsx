@@ -1,3 +1,4 @@
+// components/Sidebar.jsx
 "use client";
 
 import React from "react";
@@ -22,10 +23,10 @@ function NavItem({ href, label, iconString, active, isLogout = false }) {
         "max-lg:justify-center",
         "lg:shadow-sm",
         isLogout
-          ? "bg-white text-black hover:bg-red-50 max-lg:bg-transparent"
+          ? "bg-white shadow-sm text-black hover:bg-red-50 max-lg:bg-transparent"
           : active
           ? "bg-[#3FA170] text-white"
-          : "bg-white text-black hover:bg-gray-100 max-lg:bg-transparent"
+          : "bg-white shadow-sm text-black hover:bg-gray-100 max-lg:bg-transparent"
       )}
     >
       <Icon
@@ -86,22 +87,21 @@ export default function Sidebar({storeName, userEmail}) {
 
   const generalMenu = [
     { href: "/settings", label: "การตั้งค่า", iconString: "material-symbols:settings-outline" },
-    // Logout item will be handled separately as a button
   ];
- 
+
   const SectionHeader = ({ label }) => (
     <>
       <p className="text-sm text-gray-400 font-light mb-2 max-lg:hidden">
         {label}
       </p>
-      <div className="h-px w-8 mx-auto my-2 bg-gray-200 lg:hidden"></div>
+      <div className="h-px w-8 mx-auto my-4 bg-gray-200 lg:hidden"></div>
     </>
   );
 
   return (
     <aside className="max-w-75 w-full h-screen bg-[#F8FAFB] flex flex-col border-none shadow-md sticky top-0 max-lg:w-13">
-      <div className="p-4 max-lg:p-2">
-        <div className="bg-white px-3 py-4 border-n shadow-sm flex flex-col rounded-lg">
+      <div className="px-4 py-4">
+        <div className="pt-4 lg:px-3 lg:pt-3 border-n flex flex-col rounded-lg">
           <div className="flex items-center gap-3 max-lg:justify-center">
             <Image src="/logo.svg" alt="IngreCare Logo" width={48} height={48} />
             <div className="max-lg:hidden">
@@ -112,7 +112,7 @@ export default function Sidebar({storeName, userEmail}) {
         </div>
       </div>
 
-      <nav className="flex-grow p-4 space-y-4 overflow-y-auto max-lg:p-2 max-lg:space-y-2 flex flex-col">
+      <nav className="flex flex-col flex-grow px-7 pb-7 space-y-4 overflow-y-auto max-lg:p-2 max-lg:space-y-2 max-lg:*:last:mb-0">
         <section>
           <SectionHeader label="หน้าหลัก" />
           <div className="space-y-2">
@@ -178,7 +178,7 @@ export default function Sidebar({storeName, userEmail}) {
                   "active:translate-y-[1px]",
                   "max-lg:justify-center",
                   "lg:shadow-sm",
-                  "bg-white text-black hover:bg-red-50 max-lg:bg-transparent"
+                  "bg-white text-black hover:bg-red-50 max-lg:bg-transparent shadow-sm"
                 )}
               >
                 <Icon
@@ -189,7 +189,6 @@ export default function Sidebar({storeName, userEmail}) {
               </button>
           </div>
         </section>
-  
       </nav>
     </aside>
   );

@@ -1,3 +1,4 @@
+// app/(backoffice)/allstockout/page.jsx
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -6,10 +7,8 @@ import CustomDropdown from "@/components/CustomDropdown";
 import Pagination from "@/components/Pagination";
 import EditModal from "@/components/EditModal";
 import DeletedModal from "@/components/DeletedModal";
-import { Icon } from "@iconify/react";
 import { Search, ChevronsUpDown, ChevronUp, ChevronDown, Trash2, PencilLine } from "lucide-react";
 
-/* ========= helpers ========= */ 
 const pad2 = (n) => String(n).padStart(2, "0");
 const toInputDate = (d) => {
   if (!(d instanceof Date) || isNaN(d.getTime())) return "";
@@ -21,7 +20,6 @@ const toInputTime = (d) => {
 };
 const isNumericLike = (v) => /^-?\d+(\.\d+)?$/.test(String(v ?? ""));
 
-// ✅ util เล็กๆ สำหรับ broadcast ไปหน้าอื่น
 const broadcastInventoryChange = (type, ingredient_id, inventory_total) => {
   try {
     localStorage.setItem(
@@ -36,7 +34,7 @@ const broadcastInventoryChange = (type, ingredient_id, inventory_total) => {
   } catch {}
 };
 
-/* ========= หน้าประวัติการเบิกจ่าย ========= */
+// Main Page
 export default function AllStockout() {
   // Data states
   const [stockoutHistory, setStockoutHistory] = useState([]);
@@ -58,7 +56,7 @@ export default function AllStockout() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deletingItem, setDeletingItem] = useState(null);
 
-  /* ---------------- Fetch data ---------------- */
+  // Fetch data
   const fetchData = async () => {
     setIsLoading(true);
     setError(null);
@@ -117,7 +115,7 @@ export default function AllStockout() {
     fetchData();
   }, []);
 
-  /* ---------------- Filters / Sort / Paging ---------------- */
+  // Filtered, sorted, paginated data
   const filteredItems = stockoutHistory
     .filter((item) => category === "ทั้งหมด" || item.category_id === category)
     .filter((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -146,7 +144,7 @@ export default function AllStockout() {
     setSortConfig({ key, direction });
   };
 
-  /* ---------------- Edit / Delete handlers ---------------- */
+  // Edit/Delete handlers
   const openEdit = (row) => {
     const d = toInputDate(row._out_datetime_raw);
     const t = toInputTime(row._out_datetime_raw);
@@ -254,7 +252,6 @@ export default function AllStockout() {
     }
   };
 
-  /* ---------------- UI Components ---------------- */
   const SortIndicator = ({ direction, isActive }) => {
     if (!isActive)
       return (
@@ -300,104 +297,102 @@ export default function AllStockout() {
         units={unitOptions.map((u) => u.name)}
         formType="stock-out"
       />
-        <div className="mb-8">
-          <h1 className="text-black text-3xl font-bold">ประวัติการเบิกจ่าย</h1>
-          <p className="text-gray-500">ตารางข้อมูลเกี่ยวกับการเบิกจ่ายวัตถุดิบทั้งหมดในระบบ</p>
-        </div>
+      
+      <div className="mb-8">
+        <h1 className="text-black text-3xl font-bold">ประวัติการเบิกจ่าย</h1>
+        <p className="text-gray-500">ตารางข้อมูลเกี่ยวกับการเบิกจ่ายวัตถุดิบทั้งหมดในระบบ</p>
+      </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
-          <CustomDropdown
-            label="หมวดหมู่"
-            categories={categoryOptions.map((c) => ({ name: c.name }))}
-            selectedCategory={category}
-            onSelectCategory={(selected) => { setCategory(selected); setCurrentPage(1); }}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
+        <CustomDropdown
+          label="หมวดหมู่"
+          categories={categoryOptions.map((c) => ({ name: c.name }))}
+          selectedCategory={category}
+          onSelectCategory={(selected) => { setCategory(selected); setCurrentPage(1); }}
+        />
+        <div className="relative w-full">
+          <input
+            type="text"
+            placeholder="ค้นหาจากชื่อวัตถุดิบ..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]"
           />
-          <div className="relative w-full">
-            <input
-              type="text"
-              placeholder="ค้นหาจากชื่อวัตถุดิบ..."
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              className="bg-white border border-gray-300 rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-[#3FA170]"
-            />
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          </div>
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         </div>
+      </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-700">
-              <thead className="text-sm text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <SortableHeader label="ID" columnKey="id" />
-                  <SortableHeader label="ชื่อวัตถุดิบ" columnKey="name" />
-                  <SortableHeader label="หมวดหมู่" columnKey="category_id" />
-                  <SortableHeader label="วันและเวลาที่เบิกจ่าย" columnKey="_out_datetime_raw" />
-                  <SortableHeader label="จำนวน" columnKey="quantity" />
-                  <SortableHeader label="หน่วยนับ" columnKey="unit_type" />
-                  <th scope="col" className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  <tr><td colSpan="7" className="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>
-                ) : error ? (
-                  <tr><td colSpan="7" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
-                ) : sortedAndPaginatedItems.length > 0 ? (
-                  sortedAndPaginatedItems.map((item) => (
-                    <tr key={item.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
-
-                      <td className="py-3 px-4">{item.id}</td>
-                      <td className="py-3 px-4">{item.name}</td>
-                      <td className="py-3 px-4">{item.category_id}</td>
-                      <td className="py-3 px-4">{item.out_datetime_display}</td>
-                      <td className="py-3 px-4">{Number(item.quantity).toFixed(2)}</td>
-                      <td className="py-3 px-4">{item.unit_type}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex justify-end space-x-1">
-                          <button
-                            onClick={() => openEdit(item)}
-                            className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 transition-colors"
-                          >
-                            <PencilLine size={16} />
-                          </button>
-                          <button
-                            onClick={() => openDelete(item)}
-                            className="p-1.5 rounded-md text-[#E15050] hover:bg-red-100 transition-colors"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="7" className="text-center p-8 text-gray-500">
-                      ไม่พบข้อมูล
+      {/* Table */}
+      <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left text-gray-700">
+            <thead className="text-sm text-gray-500 capitalize bg-gray-100 border-b border-gray-200">
+              <tr>
+                <SortableHeader label="ID" columnKey="id" />
+                <SortableHeader label="ชื่อวัตถุดิบ" columnKey="name" />
+                <SortableHeader label="หมวดหมู่" columnKey="category_id" />
+                <SortableHeader label="วันและเวลาที่เบิกจ่าย" columnKey="_out_datetime_raw" />
+                <SortableHeader label="จำนวน" columnKey="quantity" />
+                <SortableHeader label="หน่วยนับ" columnKey="unit_type" />
+                <th scope="col" className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr><td colSpan="7" className="text-center p-8 text-gray-500"><span className="loading loading-spinner loading-xl"></span></td></tr>
+              ) : error ? (
+                <tr><td colSpan="7" className="text-center p-8 text-red-500">เกิดข้อผิดพลาด: {error}</td></tr>
+              ) : sortedAndPaginatedItems.length > 0 ? (
+                sortedAndPaginatedItems.map((item) => (
+                  <tr key={item.id} className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+                    <td className="py-3 px-4">{item.id}</td>
+                    <td className="py-3 px-4">{item.name}</td>
+                    <td className="py-3 px-4">{item.category_id}</td>
+                    <td className="py-3 px-4">{item.out_datetime_display}</td>
+                    <td className="py-3 px-4">{Number(item.quantity).toFixed(2)}</td>
+                    <td className="py-3 px-4">{item.unit_type}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex justify-end space-x-1">
+                        <button
+                          onClick={() => openEdit(item)}
+                          className="p-1.5 rounded-md text-gray-500 hover:bg-gray-200 transition-colors"
+                        >
+                          <PencilLine size={16} />
+                        </button>
+                        <button
+                          onClick={() => openDelete(item)}
+                          className="p-1.5 rounded-md text-[#E15050] hover:bg-red-100 transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="text-center p-8 text-gray-500">
+                    ไม่พบข้อมูล
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-
-        {!isLoading && !error && filteredItems.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={(val) => {
-              setItemsPerPage(Number(val));
-              setCurrentPage(1);
-            }}
-            totalItems={filteredItems.length}
-          />
-        )}
-      
+      </div>
+      {!isLoading && !error && filteredItems.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          onItemsPerPageChange={(val) => {
+            setItemsPerPage(Number(val));
+            setCurrentPage(1);
+          }}
+          totalItems={filteredItems.length}
+        />
+      )}
     </main>
   );
 }

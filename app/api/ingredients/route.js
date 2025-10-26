@@ -9,13 +9,14 @@ export async function GET(req) {
     const categoryId = searchParams.get('categoryId');
     const whereClause = categoryId ? { category_id: parseInt(categoryId, 10) } : {};
 
-    // 1) ดึงข้อมูลวัตถุดิบพื้นฐาน + หน่วย + หน่วยเวลา shelf life
+    // ✅ ลบ shelflife_unit ออกจาก include
     const ingredients = await prisma.ingredients.findMany({
       where: whereClause,
       include: {
         category: { select: { category_name: true } },
         unit: { select: { unit_name: true } },
-        shelflife_unit: { select: { unit_name: true } },
+        // ❌ ลบบรรทัดนี้ออก
+        // shelflife_unit: { select: { unit_name: true } },
       },
       orderBy: { ingredient_id: 'asc' },
     });
@@ -72,11 +73,12 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const { name, category_id, unit_id, shelflife_value, shelflife_unit_id } = await req.json();
+    // ✅ เปลี่ยนจาก shelflife_unit_id เป็น shelflife_unit_name
+    const { name, category_id, unit_id, shelflife_value, shelflife_unit_name } = await req.json();
 
-    if (!name || !category_id || !unit_id || shelflife_value === undefined || !shelflife_unit_id) {
+    if (!name || !category_id || !unit_id || shelflife_value === undefined || !shelflife_unit_name) {
       return NextResponse.json(
-        { error: 'กรุณากรอกข้อมูลให้ครบ: name, category_id, unit_id, shelflife_value, shelflife_unit_id' },
+        { error: 'กรุณากรอกข้อมูลให้ครบ: name, category_id, unit_id, shelflife_value, shelflife_unit_name' },
         { status: 400 }
       );
     }
@@ -87,7 +89,7 @@ export async function POST(req) {
         category_id: parseInt(category_id, 10),
         unit_id: parseInt(unit_id, 10),
         shelflife_value: parseInt(shelflife_value, 10),
-        shelflife_unit_id: parseInt(shelflife_unit_id, 10),
+        shelflife_unit_name: shelflife_unit_name, // ✅ ใช้ string แทน FK
       },
     });
 
