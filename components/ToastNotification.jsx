@@ -1,3 +1,4 @@
+// components/ToastNotification.jsx
 import React from 'react';
 import { CheckCircle2, AlertCircle, X } from 'lucide-react';
 

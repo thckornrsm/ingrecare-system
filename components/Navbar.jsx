@@ -1,4 +1,4 @@
-// apps/comp/Navbar.jsx
+// components/Navbar.jsx
 "use client";
 
 import React, { useState } from 'react';

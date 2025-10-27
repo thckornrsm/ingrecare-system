@@ -66,7 +66,7 @@ function AddUnitModal({ isOpen, onClose, onAddUnit, existingUnits = [] }) {
                             autoFocus
                         />
                         {error && (
-                            <p className="text-sm text-red-500 mt-1 ml-[calc(6rem+1rem)]">{error}</p>
+                            <p className="text-sm text-red-500 mt-1">{error}</p>
                         )}
                     </div>
                     <div className="flex justify-end pt-4">

@@ -1,3 +1,4 @@
+// components/FilterTabs.jsx
 import React from 'react';
 import { Utensils, Beef, Carrot, Apple, Fish, CookingPot, Ellipsis } from 'lucide-react';
 

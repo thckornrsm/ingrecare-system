@@ -148,7 +148,7 @@ function EditCategoryModal({ isOpen, onClose, onSave, category, label = 'ชื�
             }}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             autoFocus
-            className={`flex-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm focus:ring-2 ${
+            className={`flex-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm focus:ring-2 mb-1.5 ${
               error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-[#3FA170] focus:border-[#3FA170]'}`}
           />
           {error && <p className="text-sm text-red-500">{errorMessage}</p>}

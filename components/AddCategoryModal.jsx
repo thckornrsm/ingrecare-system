@@ -1,4 +1,4 @@
-// app/components/AddCategoryModal.jsx
+// components/AddCategoryModal.jsx
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -115,7 +115,7 @@ function AddCategoryModal({ isOpen, onClose, onAddCategory, existingCategories =
                             placeholder="เช่น เนื้อสัตว์, ผัก, เครื่องปรุง"
                         />
                         {error && (
-                            <p className="text-sm text-red-500 mt-1 ml-[calc(6rem+1rem)]">{error}</p>
+                            <p className="text-sm text-red-500 mt-1">{error}</p>
                         )}
                     </div>
                     <div className="flex justify-end pt-4">
