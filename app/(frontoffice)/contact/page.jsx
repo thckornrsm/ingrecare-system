@@ -3,7 +3,7 @@ import React, { useState, useEffect, forwardRef } from "react";
 import { Icon } from '@iconify/react';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { CheckCircle2, AlertCircle, X } from 'lucide-react'; // Import icons for toast
+import { CheckCircle2, AlertCircle, X } from 'lucide-react';
 
 // ========= ToastNotification Component =========
 const ToastNotification = ({ message, type, onClose }) => {
@@ -41,6 +41,10 @@ export default function ContactPage() {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: '' });
+    
+    // ✅ Validation errors
+    const [emailError, setEmailError] = useState('');
+    const [phoneError, setPhoneError] = useState('');
 
     // State for address dropdowns
     const [provinces, setProvinces] = useState([]);
@@ -50,6 +54,17 @@ export default function ContactPage() {
     const showToast = (message, type) => {
         setToast({ show: true, message, type });
         setTimeout(() => setToast({ show: false, message: '', type: '' }), 4000);
+    };
+
+    // ✅ Email validation
+    const validateEmail = (email) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.(com|th|net|org|co\.th|ac\.th|go\.th)$/i;
+        return emailRegex.test(email);
+    };
+
+    // ✅ Phone validation (10 digits only)
+    const validatePhone = (phone) => {
+        return /^[0-9]{10}$/.test(phone);
     };
 
     // Fetch provinces on component mount
@@ -113,6 +128,31 @@ export default function ContactPage() {
     
     const handleInputChange = (e) => {
         const { id, value } = e.target;
+
+        // ✅ Phone validation - only numbers, max 10 digits
+        if (id === 'phone') {
+            const cleaned = value.replace(/[^0-9]/g, '').slice(0, 10);
+            setFormData(prev => ({ ...prev, [id]: cleaned }));
+            
+            if (cleaned.length > 0 && cleaned.length !== 10) {
+                setPhoneError('เบอร์โทรศัพท์ต้องมี 10 หลัก');
+            } else {
+                setPhoneError('');
+            }
+            return;
+        }
+
+        // ✅ Email validation
+        if (id === 'email') {
+            setFormData(prev => ({ ...prev, [id]: value }));
+            if (value && !validateEmail(value)) {
+                setEmailError('อีเมลต้องจบด้วย .com, .th, .net, .org, .co.th, .ac.th หรือ .go.th');
+            } else {
+                setEmailError('');
+            }
+            return;
+        }
+
         setFormData(prev => ({ ...prev, [id]: value }));
 
         if (id === 'subdistrictId') {
@@ -125,6 +165,17 @@ export default function ContactPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // ✅ Validation before submit
+        if (!validateEmail(formData.email)) {
+            showToast('กรุณากรอกอีเมลให้ถูกต้อง', 'error');
+            return;
+        }
+
+        if (formData.phone && !validatePhone(formData.phone)) {
+            showToast('เบอร์โทรศัพท์ต้องมี 10 หลัก', 'error');
+            return;
+        }
         
         if (!termsAccepted) {
             showToast('กรุณายอมรับข้อตกลงและเงื่อนไข', 'error');
@@ -154,7 +205,7 @@ export default function ContactPage() {
                 throw new Error(result.error || 'Something went wrong');
             }
 
-            setIsSubmitted(true); // Show success message screen
+            setIsSubmitted(true);
 
         } catch (err) {
             console.error(err);
@@ -181,48 +232,115 @@ export default function ContactPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="col-span-1 md:col-span-2">
                                     <label htmlFor="companyName" className="block text-gray-700 mb-1">ชื่อร้านค้า (Company Name) <span className="text-red-500">*</span></label>
-                                    <input type="text" id="companyName" value={formData.companyName} onChange={handleInputChange} placeholder="กรอกชื่อร้านค้าของคุณ" required className="w-full p-3 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170]"/>
+                                    <input 
+                                        type="text" 
+                                        id="companyName" 
+                                        value={formData.companyName} 
+                                        onChange={handleInputChange} 
+                                        placeholder="กรอกชื่อร้านค้าของคุณ" 
+                                        required 
+                                        className="w-full p-3 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170]"
+                                    />
                                 </div>
                                 <div>
                                     <label htmlFor="email" className="block text-gray-700 mb-1">อีเมล (Email) <span className="text-red-500">*</span></label>
-                                    <input type="email" id="email" value={formData.email} onChange={handleInputChange} placeholder="example@email.com" required className="w-full p-3 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170]"/>
+                                    <input 
+                                        type="email" 
+                                        id="email" 
+                                        value={formData.email} 
+                                        onChange={handleInputChange} 
+                                        placeholder="example@email.com" 
+                                        required 
+                                        className={`w-full p-3 bg-gray-50 border rounded focus:outline-none focus:border-[#3FA170] ${
+                                            emailError ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                    />
+                                    {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
                                 </div>
                                 <div>
                                     <label htmlFor="phone" className="block text-gray-700 mb-1">เบอร์โทรศัพท์</label>
-                                    <input type="tel" id="phone" value={formData.phone} onChange={handleInputChange} placeholder="08xxxxxxxx" className="w-full p-3 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170]"/>
+                                    <input 
+                                        type="tel" 
+                                        id="phone" 
+                                        value={formData.phone} 
+                                        onChange={handleInputChange} 
+                                        placeholder="08xxxxxxxx"
+                                        maxLength="10"
+                                        inputMode="numeric"
+                                        className={`w-full p-3 bg-gray-50 border rounded focus:outline-none focus:border-[#3FA170] ${
+                                            phoneError ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                    />
+                                    {phoneError && <p className="text-red-500 text-sm mt-1">{phoneError}</p>}
                                 </div>
                                 <div className="col-span-1 md:col-span-2">
                                     <label htmlFor="address" className="block text-gray-700 mb-1">ที่อยู่ (Address)</label>
-                                    <input type="text" id="address" value={formData.address} onChange={handleInputChange} placeholder="บ้านเลขที่, หมู่, ถนน" className="w-full p-3 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170]"/>
+                                    <input 
+                                        type="text" 
+                                        id="address" 
+                                        value={formData.address} 
+                                        onChange={handleInputChange} 
+                                        placeholder="บ้านเลขที่, หมู่, ถนน" 
+                                        className="w-full p-3 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170]"
+                                    />
                                 </div>
                                 <div>
                                     <label htmlFor="provinceId" className="block text-gray-700 mb-1">จังหวัด</label>
-                                    <select id="provinceId" value={formData.provinceId} onChange={handleInputChange} className="w-full p-3 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170]">
+                                    <select 
+                                        id="provinceId" 
+                                        value={formData.provinceId} 
+                                        onChange={handleInputChange} 
+                                        className="w-full p-3 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170]"
+                                    >
                                         <option value="">เลือกจังหวัด</option>
                                         {provinces.map(p => <option key={p.id} value={p.id}>{p.name_th}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label htmlFor="districtId" className="block text-gray-700 mb-1">อำเภอ</label>
-                                    <select id="districtId" value={formData.districtId} onChange={handleInputChange} disabled={!formData.provinceId} className="w-full p-3 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170] disabled:bg-gray-200">
+                                    <select 
+                                        id="districtId" 
+                                        value={formData.districtId} 
+                                        onChange={handleInputChange} 
+                                        disabled={!formData.provinceId} 
+                                        className="w-full p-3 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170] disabled:bg-gray-200"
+                                    >
                                         <option value="">เลือกอำเภอ</option>
                                         {districts.map(d => <option key={d.id} value={d.id}>{d.name_th}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label htmlFor="subdistrictId" className="block text-gray-700 mb-1">ตำบล</label>
-                                    <select id="subdistrictId" value={formData.subdistrictId} onChange={handleInputChange} disabled={!formData.districtId} className="w-full p-3 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170] disabled:bg-gray-200">
+                                    <select 
+                                        id="subdistrictId" 
+                                        value={formData.subdistrictId} 
+                                        onChange={handleInputChange} 
+                                        disabled={!formData.districtId} 
+                                        className="w-full p-3 bg-gray-50 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170] disabled:bg-gray-200"
+                                    >
                                         <option value="">เลือกตำบล</option>
                                         {subdistricts.map(s => <option key={s.id} value={s.id}>{s.name_th}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label htmlFor="zipcode" className="block text-gray-700 mb-1">รหัสไปรษณีย์</label>
-                                    <input type="text" id="zipcode" value={formData.zipcode} readOnly className="w-full p-3 bg-gray-200 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170]"/>
+                                    <input 
+                                        type="text" 
+                                        id="zipcode" 
+                                        value={formData.zipcode} 
+                                        readOnly 
+                                        className="w-full p-3 bg-gray-200 border border-gray-300 rounded focus:outline-none focus:border-[#3FA170]"
+                                    />
                                 </div>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <input type="checkbox" id="terms" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="form-checkbox h-4 w-4 text-green-600 rounded"/>
+                                <input 
+                                    type="checkbox" 
+                                    id="terms" 
+                                    checked={termsAccepted} 
+                                    onChange={(e) => setTermsAccepted(e.target.checked)} 
+                                    className="form-checkbox h-4 w-4 text-green-600 rounded"
+                                />
                                 <label htmlFor="terms" className="text-sm text-gray-600">
                                     ฉันยอมรับข้อตกลงในการใช้งานและ <a href="#" className="text-green-600 hover:underline">นโยบายความเป็นส่วนตัว</a>
                                 </label>
@@ -230,7 +348,7 @@ export default function ContactPage() {
                             
                             <button
                                 type="submit"
-                                disabled={isLoading}
+                                disabled={isLoading || emailError || phoneError}
                                 className="w-full bg-[#3FA170] text-white py-3 rounded-lg font-bold text-lg hover:bg-green-700 transition duration-300 disabled:bg-gray-400"
                             >
                                 {isLoading ? 'กำลังส่งข้อมูล...' : 'ให้เจ้าหน้าที่ติดต่อกลับ'}
@@ -251,4 +369,3 @@ export default function ContactPage() {
         </div>
     );
 }
-
