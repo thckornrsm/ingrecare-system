@@ -72,7 +72,7 @@ const ResetPasswordForm = () => {
     };
 
     return (
-        <div className="w-full md:w-[640px] md:h-[800px] md:flex-shrink-0 bg-white flex items-center justify-center p-8 sm:p-12 lg:p-16">
+        <div className="w-full md:w-160 md:h-229 md:flex-shrink-0 bg-white flex items-center justify-center p-8 sm:p-12 lg:p-16 max-md:py-28">
             <div className="w-full max-w-md">
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
                     ตั้งรหัสผ่านใหม่
@@ -110,7 +110,7 @@ const ResetPasswordForm = () => {
                         <label htmlFor="confirmPassword" className="block text-base md:text-lg font-medium text-gray-700 mb-1">
                             ยืนยันรหัสผ่านใหม่ (Confirm Password)
                         </label>
-                         <div className="relative">
+                        <div className="relative">
                             <input
                                 type={showConfirmPassword ? 'text' : 'password'}
                                 id="confirmPassword"
@@ -141,7 +141,7 @@ const ResetPasswordForm = () => {
                         {isLoading ? 'กำลังบันทึก...' : 'บันทึกรหัสผ่านใหม่'}
                     </button>
                     {message && (
-                         <Link
+                        <Link
                             href="/login"
                             className="w-full block text-center py-3 rounded-md border border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-colors duration-300"
                         >

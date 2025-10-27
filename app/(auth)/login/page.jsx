@@ -50,7 +50,7 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen bg-white md:bg-gray-800">
       <Navbar />
-      <main className="w-full flex-grow flex flex-col md:flex-row">
+      <main className="w-full flex-grow flex flex-col md:flex-row justify-center">
         {/* Background Image: จะแสดงเฉพาะบนจอขนาดกลางขึ้นไป (md:) */}
         <div className="hidden md:flex flex-1 relative">
           <Image
@@ -62,7 +62,7 @@ export default function LoginPage() {
           />
         </div>
         {/* Form Section */}
-        <div className="w-full md:w-[640px] md:h-[916px] md:flex-shrink-0 bg-white flex items-center justify-center p-8 sm:p-12 lg:p-16">
+        <div className="w-full md:w-160 md:h-229 md:flex-shrink-0 bg-white flex items-center justify-center p-8 sm:p-12 lg:p-16 max-md:py-28">
           <div className="w-full max-w-md">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6">
               เข้าสู่ระบบ
