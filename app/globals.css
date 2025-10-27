@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "daisyui" { themes: light --default };
 
 :root {
   --background: #ffffff;
@@ -8,19 +9,50 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-inter: 'Inter', sans-serif;
+  --font-kanit: 'Kanit', sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --primary-main: #3FA170;
+    --primary-light: #48A78D;
+    --primary-dark: #2F7A5E;
+    --primary-contrast: #ffffff;
+    --secondary-main: #F59E0B;
+    --secondary-light: #FBBF24;
+    --secondary-dark: #B45309;
+    --secondary-contrast: #ffffff;
+    --error-main: #EF4444;
+    --error-light: #F87171;
+    --error-dark: #B91C1C;
+    --error-contrast: #ffffff;
+
+    /*text color*/
+    --text-primary: #ffffff;
+    --text-secondary: #9ca3af;
+    --text-placeholder: #6b7280;
+    --text-disabled: #374151;
+    --text-link: #3FA170;
+    --text-link-hover: #48A78D;
+    --text-error: #ef4444;
+
+    /*background color*/
+    --background: #0F172A;
+    --foreground: #f1f5f9;
+    --background-secondary: #1e293b;
+    --background-tertiary: #334155;
+
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Kanit', sans-serif;
+}
+
+::selection {
+  background-color: #000000;
+  color: #ffffff;
 }
