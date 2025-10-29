@@ -139,11 +139,11 @@ function Hero() {
                 {/* Screen Content */}
                 <div className="relative">
                   <Image 
-                    src="../mockup01.svg" //picture here kub
+                    src="../example-page.svg" //picture here kub
                     alt="IngreCare Dashboard" 
                     width={706} 
                     height={400} 
-                    className="w-full h-auto"
+                    className="w-full h-auto display-block object-cover blur-[0.7px] select-none pointer-events-none"
                   />
                   {/* Overlay Glow Effect */}
                   <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-white/10 pointer-events-none"></div>
@@ -312,7 +312,7 @@ export default function Home() {
               icon="mage:lock-fill"
               title="ปลอดภัยและใช้งานง่าย"
               lines={[
-                "กำหนดสิทธิ์การเข้าถึงข้อมูลป้องกันข้อมูลรั่วไหล",
+                "กำหนดสิทธิ์การเข้าถึงข้อมูล ป้องกันข้อมูลรั่วไหล",
                 "ให้คุณมั่นใจในความปลอดภัยทุกครั้งที่ใช้งาน",
               ]}
               index={0}
@@ -322,8 +322,8 @@ export default function Home() {
               icon="el:idea"
               title="จัดการวัตถุดิบอย่างแม่นยำ"
               lines={[
-                "พร้อมเครื่องมือบันทึก/ปรับยอดแบบละเอียด",
-                "ช่วยป้องกันของขาด/ของเสีย ด้วยการเตือนอัตโนมัติ",
+                "ช่วยแยกประเภทและจัดการวันหมดอายุให้อัตโนมัติ ",
+                "ติดตามการใช้และจัดการได้อย่างมืออาชีพ",
               ]}
               index={1}
             />
@@ -332,8 +332,8 @@ export default function Home() {
               icon="tdesign:file-add-filled"
               title="นับวัตถุดิบแบบ Realtime"
               lines={[
-                "สต๊อกอัปเดตทันทีที่รับเข้า/เบิกออก",
-                "รองรับบาร์โค้ด/QR เพื่อความรวดเร็ว",
+                "แค่เลือกชนิดและจำนวน ระบบจะอัปเดตข้อมูลให้ทันที",
+                "แสดงปริมาณที่เหลือเพื่อให้คุณวางแผนการใช้งานได้ดียิ่งขึ้น",
               ]}
               index={2}
             />
@@ -342,8 +342,8 @@ export default function Home() {
               icon="icomoon-free:stats-bars"
               title="ดูสถิติการใช้วัตถุดิบได้"
               lines={[
-                "ดูแนวโน้มการใช้/การสั่งซื้อเพื่อวางแผน",
-                "ควบคุมต้นทุนและลดของเสียได้ดีขึ้น",
+                "คุณจะรู้ว่าวัตถุดิบใดที่ถูกใช้มากที่สุด ช่วยให้คุณสามารถตัดสินใจ",
+                "นำเข้าวัตถุดิบในรอบถัดไปได้อย่างมีประสิทธิภาพ",
               ]}
               index={3}
             />
