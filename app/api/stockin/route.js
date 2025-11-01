@@ -108,7 +108,10 @@ export async function POST(req) {
       }
     }
 
+    console.log('🚀 Starting transaction for', items.length, 'items');
+
     const newBatch = await prisma.$transaction(async (tx) => {
+      console.log('✅ Transaction started');
       
       const lastStockinBatch = await tx.batch.findFirst({
         where: {
@@ -131,7 +134,11 @@ export async function POST(req) {
         },
       });
 
+      console.log('📦 Batch created:', batch.batch_id);
+
       for (const item of items) {
+        console.log(`🔄 Processing: ${item.name}`);
+        
         // ✅ ใช้ tx แทน prisma ทุกจุด
         const category = await tx.categories.findFirst({
           where: { category_name: item.category_name },
@@ -238,14 +245,19 @@ export async function POST(req) {
             expiry_date: expiryDate,
           },
         });
+
+        console.log(`✅ Item processed: ${item.name}`);
       }
 
+      console.log('🟢 All items processed successfully');
       return batch;
     }, {
-      maxWait: 5000, // ✅ เพิ่ม timeout settings
-      timeout: 10000,
-      isolationLevel: 'Serializable'
+      maxWait: 5000,   // ✅ รอ acquire connection สูงสุด 5 วินาที
+      timeout: 20000,  // ✅ เพิ่มเป็น 20 วินาที (สำหรับหลาย items)
+      isolationLevel: 'ReadCommitted' // ✅ เปลี่ยนเป็น ReadCommitted (เบากว่า Serializable)
     });
+
+    console.log('✨ Transaction completed successfully');
 
     return NextResponse.json(
       { 
@@ -257,7 +269,11 @@ export async function POST(req) {
     );
 
   } catch (e) {
-    console.error('--- FULL STOCKIN ERROR OBJECT ---', e);
+    console.error('❌ FULL STOCKIN ERROR:', e);
+    console.error('Error name:', e.name);
+    console.error('Error message:', e.message);
+    console.error('Error stack:', e.stack);
+    
     return NextResponse.json(
       { error: e.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' },
       { status: 500 }
