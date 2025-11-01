@@ -103,135 +103,134 @@ export async function DELETE(request, { params }) {
 /**
  * @description อัปเดตรายการ Stock In และปรับปรุงสต็อก/ข้อมูลหลัก
  */
-import { prisma } from '@/lib/prisma';
-import { verifySession } from '@/utils/auth';
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers'; // ต้อง import cookies
-
-/**
- * @description แก้ไขข้อมูล Stockin (PUT)
- * ✅ แก้ไข: ดึง Read ออกมานอก Transaction เพื่อป้องกัน P2028 (Timeout)
- */
 export async function PUT(request, { params }) {
-  try {
-    const token = cookies().get('token')?.value;
-    const session = await verifySession(token);
-    if (!session) {
-      return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
-    }
-
-    const stockinId = parseInt(params.id);
-    if (isNaN(stockinId)) {
-      return NextResponse.json({ error: 'ID ไม่ถูกต้อง' }, { status: 400 });
-    }
-
-    const { name, quantity, received_date, expiry_date, category, unit } = await request.json();
-    const updatedQuantity = parseFloat(quantity);
-
-    if (!name || isNaN(updatedQuantity) || updatedQuantity <= 0 || !received_date || !expiry_date) {
-      return NextResponse.json({ error: 'ข้อมูลไม่ครบถ้วนหรือไม่ถูกต้อง' }, { status: 400 });
-    }
-
-    // --- ✅ Step 1: ทำ "Read" และ "Validate" (นอก Transaction) ---
-    // ใช้ 'prisma' (ตัวหลัก)
-
-    const oldStockin = await prisma.stockin.findUnique({
-      where: { stockin_id: stockinId },
-      include: { ingredient: true }
-    });
-
-    if (!oldStockin) {
-      throw new Error('ไม่พบรายการนำเข้าที่ต้องการแก้ไข');
-    }
-
-    const ingredientUpdates = {};
-    const stockinUpdates = {};
-
-    if (name.trim() !== oldStockin.ingredient.name) {
-      ingredientUpdates.name = name.trim();
-    }
-
-    if (category) {
-      const foundCategory = await prisma.categories.findFirst({
-        where: { category_name: category },
-      });
-      if (!foundCategory) {
-        throw new Error(`ไม่พบหมวดหมู่ที่ชื่อว่า '${category}'`);
-      }
-      ingredientUpdates.category_id = foundCategory.category_id;
-    }
-
-    if (unit) {
-      const foundUnit = await prisma.units.findFirst({
-        where: { unit_name: unit },
-      });
-      if (!foundUnit) {
-        throw new Error(`ไม่พบหน่วยนับที่ชื่อว่า '${unit}'`);
-      }
-      stockinUpdates.unit_id = foundUnit.unit_id;
-      ingredientUpdates.unit_id = foundUnit.unit_id;
-    }
-
-    const quantityDifference = updatedQuantity - oldStockin.quantity;
-
-    // --- ✅ Step 2: ทำ "Write" (ใน Transaction) ---
-    // ใช้ 'tx'
-    const result = await prisma.$transaction(async (tx) => {
-      
-      // Write 1: อัปเดต Ingredient (ถ้ามีการเปลี่ยนแปลง)
-      if (Object.keys(ingredientUpdates).length > 0) {
-        await tx.ingredients.update({
-          where: { ingredient_id: oldStockin.ingredient_id },
-          data: ingredientUpdates,
-        });
-      }
-
-      // Write 2: อัปเดต Inventory (ถ้ามีการเปลี่ยนแปลง)
-      if (quantityDifference !== 0) {
-        await tx.ingredient_now.updateMany({
-          where: { ingredient_id: oldStockin.ingredient_id },
-          data: { quantity: { increment: quantityDifference } },
-        });
-      }
-
-      // Write 3: อัปเดต Stockin (ตัวหลัก)
-      const updatedStockin = await tx.stockin.update({
-        where: { stockin_id: stockinId },
-        data: {
-          quantity: updatedQuantity,
-          received_date: new Date(received_date),
-          expiry_date: new Date(expiry_date),
-          ...stockinUpdates,
-        },
-        include: {
-          ingredient: { include: { category: true } },
-          unit: true
+    try {
+        const token = cookies().get('token')?.value;
+        const session = await verifySession(token);
+        if (!session) {
+            return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
         }
-      });
-      
-      return updatedStockin;
-    }); // <-- Transaction จบ (สั้นและเร็ว)
 
-    // --- Step 3: ส่ง Response ---
-    const formattedResult = {
-      id: result.stockin_id,
-      name: result.ingredient.name,
-      received_date: result.received_date,
-      expiry_date: result.expiry_date,
-      category: result.ingredient.category.category_name,
-      quantity: result.quantity,
-      unit: result.unit.unit_name,
-    };
+        const stockinId = parseInt(params.id);
+        if (isNaN(stockinId)) {
+            return NextResponse.json({ error: 'ID ไม่ถูกต้อง' }, { status: 400 });
+        }
 
-    return NextResponse.json({ message: `อัปเดตรายการ #${formattedResult.id} สำเร็จ`, updatedItem: formattedResult });
+        const { name, quantity, received_date, expiry_date, category, unit } = await request.json();
+        const updatedQuantity = parseFloat(quantity);
 
-  } catch (e) {
-    if (e.message.startsWith('ไม่พบหมวดหมู่') || e.message.startsWith('ไม่พบหน่วยนับ') || e.message.startsWith('ไม่พบรายการ')) {
-      return NextResponse.json({ error: e.message }, { status: 404 });
+        if (!name || isNaN(updatedQuantity) || updatedQuantity <= 0 || !received_date || !expiry_date) {
+            return NextResponse.json({ error: 'ข้อมูลไม่ครบถ้วนหรือไม่ถูกต้อง' }, { status: 400 });
+        }
+
+        const result = await prisma.$transaction(async (tx) => {
+            // ดึงข้อมูลเก่า
+            const oldStockin = await tx.stockin.findUnique({
+                where: { stockin_id: stockinId },
+                include: { ingredient: true }
+            });
+
+            if (!oldStockin) {
+                throw new Error('ไม่พบรายการนำเข้าที่ต้องการแก้ไข');
+            }
+
+            const ingredientUpdates = {};
+            const stockinUpdates = {};
+
+            // ตรวจสอบและเตรียมข้อมูล category
+            if (category) {
+                const foundCategory = await tx.categories.findFirst({
+                    where: { category_name: category },
+                });
+                if (!foundCategory) {
+                    throw new Error(`ไม่พบหมวดหมู่ที่ชื่อว่า '${category}'`);
+                }
+                ingredientUpdates.category_id = foundCategory.category_id;
+            }
+
+            // ตรวจสอบและเตรียมข้อมูล unit
+            if (unit) {
+                const foundUnit = await tx.units.findFirst({
+                    where: { unit_name: unit },
+                });
+                if (!foundUnit) {
+                    throw new Error(`ไม่พบหน่วยนับที่ชื่อว่า '${unit}'`);
+                }
+                stockinUpdates.unit_id = foundUnit.unit_id;
+                ingredientUpdates.unit_id = foundUnit.unit_id;
+            }
+
+            // ตรวจสอบการเปลี่ยนชื่อ
+            if (name.trim() !== oldStockin.ingredient.name) {
+                ingredientUpdates.name = name.trim();
+            }
+            
+            // อัปเดต ingredient (ถ้ามีการเปลี่ยนแปลง)
+            if (Object.keys(ingredientUpdates).length > 0) {
+                await tx.ingredients.update({
+                    where: { ingredient_id: oldStockin.ingredient_id },
+                    data: ingredientUpdates,
+                });
+            }
+
+            // อัปเดต ingredient_now (ถ้ามีการเปลี่ยนแปลงปริมาณ)
+            const quantityDifference = updatedQuantity - oldStockin.quantity;
+            if (quantityDifference !== 0) {
+                await tx.ingredient_now.updateMany({
+                    where: { ingredient_id: oldStockin.ingredient_id },
+                    data: { quantity: { increment: quantityDifference } },
+                });
+            }
+
+            // อัปเดต stockin
+            const updatedStockin = await tx.stockin.update({
+                where: { stockin_id: stockinId },
+                data: {
+                    quantity: updatedQuantity,
+                    received_date: new Date(received_date),
+                    expiry_date: new Date(expiry_date),
+                    ...stockinUpdates,
+                },
+                include: {
+                    ingredient: { include: { category: true } },
+                    unit: true
+                }
+            });
+            
+            return updatedStockin;
+        }, {
+            maxWait: 5000, // รอ transaction ได้สูงสุด 5 วินาที
+            timeout: 10000, // timeout ที่ 10 วินาที
+        });
+
+        const formattedResult = {
+            id: result.stockin_id,
+            name: result.ingredient.name,
+            received_date: result.received_date,
+            expiry_date: result.expiry_date,
+            category: result.ingredient.category.category_name,
+            quantity: result.quantity,
+            unit: result.unit.unit_name,
+        };
+
+        return NextResponse.json({ 
+            message: `อัปเดตรายการ #${formattedResult.id} สำเร็จ`, 
+            updatedItem: formattedResult 
+        });
+
+    } catch (e) {
+        if (e.message.startsWith('ไม่พบหมวดหมู่') || e.message.startsWith('ไม่พบหน่วยนับ')) {
+            return NextResponse.json({ error: e.message }, { status: 404 });
+        }
+        if (e.code === 'P2028') {
+            return NextResponse.json({ 
+                error: 'การทำงานใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง' 
+            }, { status: 408 });
+        }
+        console.error('--- PUT STOCKIN ERROR ---', e);
+        return NextResponse.json({ 
+            error: e.message || 'เกิดข้อผิดพลาดในการแก้ไขข้อมูล' 
+        }, { status: 500 });
     }
-    console.error('--- PUT STOCKIN ERROR ---', e);
-    return NextResponse.json({ error: e.message || 'เกิดข้อผิดพลาดในการแก้ไขข้อมูล' }, { status: 500 });
-  }
 }
-
 
