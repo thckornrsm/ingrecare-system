@@ -1,4 +1,4 @@
-"id","zip_code","name_th","name_en","amphure_id","created_at","updated_at","deleted_at"
+"id","zipcode","name_th","name_en","districtId","created_at","updated_at","deleted_at"
 "100101","10200","พระบรมมหาราชวัง","Phra Borom Maha Ratchawang","1001","9/8/2019 03:33:09","16/5/2022 06:31:31",
 "100102","10200","วังบูรพาภิรมย์","Wang Burapha Phirom","1001","9/8/2019 03:33:09","16/5/2022 06:31:31",
 "100103","10200","วัดราชบพิธ","Wat Ratchabophit","1001","9/8/2019 03:33:09","16/5/2022 06:31:31",
