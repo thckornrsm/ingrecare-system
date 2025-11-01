@@ -22,7 +22,7 @@ function calcExpiryDate(received, value, unitName) {
     throw new Error('วันที่รับเข้าไม่ถูกต้อง');
   }
   const expiryDate = new Date(receivedDate);
-  const unitLower = (unitName || '').toLowerCase();
+  const unitLower = String(unitName || '').toLowerCase();
 
   switch (unitLower) {
     case 'วัน':
@@ -98,7 +98,10 @@ export async function GET(req) {
   }
 }
 
-/** ================= POST ================= */
+/** ================= POST =================
+ * เลิกใช้ $transaction(callback) ราย item → ลด P2028
+ * ใช้คำสั่ง atomic: connectOrCreate / upsert / nested write
+ */
 export async function POST(req) {
   try {
     const { session, error } = await getSessionFromReq(req);
@@ -112,7 +115,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'ไม่มีรายการนำเข้า' }, { status: 400 });
     }
 
-    // ✅ validation ก่อนเข้า DB
+    // ✅ validation ล่วงหน้า
     for (const item of items) {
       const isValidTimeUnit = TIME_UNITS.some(tu => tu.name === item.shelflife_unit_name);
       if (!isValidTimeUnit) {
@@ -143,37 +146,27 @@ export async function POST(req) {
 
     console.log('🚀 Starting batch creation for', items.length, 'items');
 
-    // ✅ Step 1: สร้าง Batch (tx สั้น + เพิ่ม timeout)
-    const batch = await prisma.$transaction(async (tx) => {
-      const lastStockinBatch = await tx.batch.findFirst({
-        where: {
-          type: 'STOCK_IN',
-          user: { store_id: storeId },
-          lot_number: { not: null },
-        },
-        orderBy: { lot_number: 'desc' },
-        select: { lot_number: true },
-      });
+    // === Step 1: สร้าง Batch แบบสั้นและจบในคำสั่งเดียว ===
+    // หาหมายเลข lot ล่าสุด (เฉพาะ STOCK_IN ของร้านนี้)
+    const last = await prisma.batch.findFirst({
+      where: { type: 'STOCK_IN', user: { store_id: storeId }, lot_number: { not: null } },
+      orderBy: { lot_number: 'desc' },
+      select: { lot_number: true },
+    });
+    const nextLotNumber = (last?.lot_number || 0) + 1;
 
-      const nextLotNumber = (lastStockinBatch?.lot_number || 0) + 1;
-
-      return await tx.batch.create({
-        data: {
-          type: 'STOCK_IN',
-          user_id: userId,
-          lot_number: nextLotNumber,
-          description: description || `Stock-in at ${new Date().toLocaleString('th-TH')}`,
-        },
-      });
-    }, {
-      maxWait: 10000,   // 10s
-      timeout: 30000,   // 30s
-      isolationLevel: 'ReadCommitted',
+    const batch = await prisma.batch.create({
+      data: {
+        type: 'STOCK_IN',
+        user_id: userId,
+        lot_number: nextLotNumber,
+        description: description || `Stock-in at ${new Date().toLocaleString('th-TH')}`,
+      },
     });
 
     console.log('📦 Batch created:', batch.batch_id);
 
-    // ✅ Step 2: ประมวลผลทีละ item (แยก tx + เพิ่ม timeout)
+    // === Step 2: ประมวลผลทีละ item: ไม่มี $transaction(callback) แล้ว ===
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       console.log(`🔄 [${i + 1}/${items.length}] Processing: ${item.name}`);
@@ -185,104 +178,93 @@ export async function POST(req) {
           item.shelflife_unit_name
         );
 
-        await prisma.$transaction(async (tx) => {
-          // category
-          const category = await tx.categories.findFirst({
-            where: { category_name: item.category_name },
-          });
-          if (!category) throw new Error(`ไม่พบหมวดหมู่: ${item.category_name}`);
+        // 2.1 หา category / unit โดยคำสั่งเดี่ยว (ควรมี unique ที่ชื่อ)
+        const category = await prisma.categories.findFirst({
+          where: { category_name: item.category_name },
+          select: { category_id: true },
+        });
+        if (!category) throw new Error(`ไม่พบหมวดหมู่: ${item.category_name}`);
 
-          // unit
-          const unit = await tx.units.findFirst({
-            where: { unit_name: item.unit_name },
-          });
-          if (!unit) throw new Error(`ไม่พบหน่วยนับ: ${item.unit_name}`);
+        const unit = await prisma.units.findFirst({
+          where: { unit_name: item.unit_name },
+          select: { unit_id: true },
+        });
+        if (!unit) throw new Error(`ไม่พบหน่วยนับ: ${item.unit_name}`);
 
-          // ingredient (หา/สร้าง)
-          let ingredient = await tx.ingredients.findFirst({
-            where: { name: item.name, category_id: category.category_id },
-          });
+        // 2.2 ingredient: พยายาม upsert (ต้องมี unique บางอย่าง เช่น (name, category_id))
+        // ถ้า schema ของคุณไม่มี unique composite ให้ใช้ findFirst -> create แบบเดิม
+        let ingredient = await prisma.ingredients.findFirst({
+          where: { name: item.name, category_id: category.category_id },
+          select: { ingredient_id: true },
+        });
 
-          if (!ingredient) {
-            ingredient = await tx.ingredients.create({
-              data: {
-                name: item.name,
-                shelflife_value: item.shelflife_value,
-                category: { connect: { category_id: category.category_id } },
-                unit: { connect: { unit_id: unit.unit_id } },
-                shelflife_unit_name: item.shelflife_unit_name,
-              },
-            });
-          }
-
-          // ✅ stockin + history เป็น "คำสั่งเดียว" (nested write) เพื่อตัดปัญหา tx หลุดก่อน history.create
-          const newStockin = await tx.stockin.create({
+        if (!ingredient) {
+          ingredient = await prisma.ingredients.create({
             data: {
+              name: item.name,
+              shelflife_value: item.shelflife_value,
+              category: { connect: { category_id: category.category_id } },
+              unit: { connect: { unit_id: unit.unit_id } },
+              shelflife_unit_name: item.shelflife_unit_name,
+            },
+            select: { ingredient_id: true },
+          });
+        }
+
+        // 2.3 stockin + nested history (คำสั่งเดียว atomic ระดับ row)
+        await prisma.stockin.create({
+          data: {
+            batch_id: batch.batch_id,
+            ingredient_id: ingredient.ingredient_id,
+            quantity: item.quantity,
+            unit_id: unit.unit_id,
+            received_date: receivedDate,
+            expiry_date: expiryDate,
+            user_id: userId,
+            histories: {
+              create: [{ action_type: 'stockin', user_id: userId }],
+            },
+          },
+        });
+
+        // 2.4 inventory: upsert (atomic ต่อ row) — ไม่มี tx callback
+        await prisma.ingredient_now.upsert({
+          where: { ingredient_id: ingredient.ingredient_id }, // ต้องมี unique ที่ ingredient_id
+          update: {
+            quantity: { increment: item.quantity },
+            last_update: new Date(),
+          },
+          create: {
+            batch_id: batch.batch_id,
+            ingredient_id: ingredient.ingredient_id,
+            quantity: item.quantity,
+            unit_id: unit.unit_id,
+            last_update: new Date(),
+          },
+        });
+
+        // 2.5 expiry tracking: upsert ด้วย composite unique (batch_id, ingredient_id)
+        await prisma.expiry_tack.upsert({
+          where: {
+            batch_id_ingredient_id: {
               batch_id: batch.batch_id,
               ingredient_id: ingredient.ingredient_id,
-              quantity: item.quantity,
-              unit_id: unit.unit_id,
-              received_date: receivedDate,
-              expiry_date: expiryDate,
-              user_id: userId,
-              // สร้าง history ภายในคำสั่งเดียว
-              histories: {
-                create: [
-                  {
-                    action_type: 'stockin',
-                    user_id: userId,
-                  },
-                ],
-              },
             },
-          });
-
-          // ✅ inventory: ใช้ upsert ลดรอบ query
-          await tx.ingredient_now.upsert({
-            where: { ingredient_id: ingredient.ingredient_id },
-            update: {
-              quantity: { increment: item.quantity },
-              last_update: new Date(),
-            },
-            create: {
-              batch_id: batch.batch_id,
-              ingredient_id: ingredient.ingredient_id,
-              quantity: item.quantity,
-              unit_id: unit.unit_id,
-              last_update: new Date(),
-            },
-          });
-
-          // expiry track
-          await tx.expiry_tack.upsert({
-            where: {
-              batch_id_ingredient_id: {
-                batch_id: batch.batch_id,
-                ingredient_id: ingredient.ingredient_id,
-              },
-            },
-            update: { expiry_date: expiryDate },
-            create: {
-              batch_id: batch.batch_id,
-              ingredient_id: ingredient.ingredient_id,
-              expiry_date: expiryDate,
-            },
-          });
-
-          // (ไม่ทำอะไรกับ newStockin ต่อ ลดโอกาสลากเวลาใน tx)
-        }, {
-          maxWait: 10000,  // 10s
-          timeout: 30000,  // 30s
-          isolationLevel: 'ReadCommitted',
+          },
+          update: { expiry_date: expiryDate },
+          create: {
+            batch_id: batch.batch_id,
+            ingredient_id: ingredient.ingredient_id,
+            expiry_date: expiryDate,
+          },
         });
 
         console.log(`✅ [${i + 1}/${items.length}] Item processed: ${item.name}`);
       } catch (itemError) {
         console.error(`❌ Failed to process item ${item.name}:`, itemError);
-        if (itemError && itemError.code === 'P2034') {
-          throw new Error(`รายการ "${item.name}" ใช้เวลานานเกินกำหนด โปรดลองใหม่อีกครั้ง`);
-        }
-        throw new Error(`ล้มเหลวที่รายการ: ${item.name} - ${itemError.message || String(itemError)}`);
+        // ไม่ลบ batch ทันที กันชน FK และกันข้อมูลค้าง — ให้ user ตัดสินใจจาก front
+        const msg = itemError?.message || String(itemError);
+        throw new Error(`ล้มเหลวที่รายการ: ${item.name} - ${msg}`);
       }
     }
 
@@ -297,7 +279,8 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (e) {
-    console.error('❌ STOCKIN ERROR:', e);
+    // log แบบเต็มเพื่อดีบัก
+    console.error('--- FULL STOCKIN ERROR OBJECT ---', e);
     const msg =
       e?.message ||
       (e?.code === 'P2034'
