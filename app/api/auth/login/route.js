@@ -14,8 +14,7 @@ export async function POST(request) {
             return NextResponse.json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, { status: 401 });
         }
 
-        // ✨ --- ส่วนที่แก้ไข --- ✨
-        // 1. สร้าง Payload ที่มีทั้ง user_id (uid) และ store_id (sid)
+ 
         const payload = { uid: user.user_id, sid: user.store_id };
 
         // 2. สร้าง Token โดยส่ง payload ทั้ง object เข้าไป
