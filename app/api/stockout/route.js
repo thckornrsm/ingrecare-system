@@ -82,24 +82,12 @@ export async function POST(req) {
         
         const outTime = new Date();
 
+        // ⚠️ แก้ไข: เพิ่ม timeout เป็น 30 วินาที (แก้ P2028)
         const newBatch = await prisma.$transaction(async (tx) => {
-            // 1. ตรวจสอบสต็อกทั้งหมดก่อนเริ่มทำรายการ
-            for (const item of items) {
-                const currentInventory = await tx.ingredient_now.findFirst({
-                    where: { ingredient_id: item.ingredient_id },
-                });
-
-                if (!currentInventory || currentInventory.quantity < item.quantity) {
-                    const ingredient = await tx.ingredients.findUnique({
-                        where: { ingredient_id: item.ingredient_id },
-                        select: { name: true }
-                    });
-                    const ingredientName = ingredient?.name || `ID ${item.ingredient_id}`;
-                    throw new Error(`สินค้าไม่พอ: '${ingredientName}' มีในสต็อก ${currentInventory?.quantity || 0} แต่ต้องการเบิก ${item.quantity}`);
-                }
-            }
-
-            // 2. สร้าง Batch
+            
+            // ⚠️ แก้ไข: ลบ Loop ตรวจสอบสต็อก (สเต็ป 1) ทิ้งไปเลย (แก้ Race Condition)
+            
+            // 1. สร้าง Batch
             const batch = await tx.batch.create({
                 data: {
                     type: 'STOCK_OUT',
@@ -108,9 +96,34 @@ export async function POST(req) {
                 },
             });
 
-            // 3. วนลูปเพื่อสร้าง stockout และอัปเดตสต็อก
+            // 2. วนลูปเพื่อสร้าง stockout และ "พยายาม" อัปเดตสต็อก
             for (const item of items) {
-                // สร้างรายการเบิกจ่าย
+                
+                // ⚠️ แก้ไข: รวม "เช็ก" และ "ตัด" สต็อกไว้ในคำสั่งเดียว
+                const updateResult = await tx.ingredient_now.updateMany({
+                    where: { 
+                        ingredient_id: item.ingredient_id,
+                        quantity: { gte: item.quantity } // <--- เพิ่มเงื่อนไข "ของต้องพอ"
+                    },
+                    data: { 
+                        quantity: { decrement: item.quantity },
+                        last_update: outTime 
+                    },
+                });
+
+                // ⚠️ แก้ไข: ตรวจสอบว่าตัดสำเร็จหรือไม่
+                if (updateResult.count === 0) {
+                    const ingredient = await tx.ingredients.findUnique({
+                        where: { ingredient_id: item.ingredient_id },
+                        select: { name: true }
+                    });
+                    const ingredientName = ingredient?.name || `ID ${item.ingredient_id}`;
+                    
+                    // ถ้าไม่สำเร็จ (ของไม่พอ) ให้ยกเลิกทั้งหมด
+                    throw new Error(`สินค้าไม่พอ: '${ingredientName}' (ต้องการ ${item.quantity} แต่ของอาจไม่พอ)`);
+                }
+
+                // สร้างรายการเบิกจ่าย (ถ้าตัดสต็อกสำเร็จ)
                 const newStockout = await tx.stockout.create({
                     data: {
                         batch_id: batch.batch_id,
@@ -119,15 +132,6 @@ export async function POST(req) {
                         unit_id: item.unit_id,
                         out_date: outTime,
                         user_id: userId,
-                    },
-                });
-
-                // **แก้ไข:** อัปเดตสต็อกด้วย updateMany เพื่อความเสถียร
-                await tx.ingredient_now.updateMany({
-                    where: { ingredient_id: item.ingredient_id },
-                    data: { 
-                        quantity: { decrement: item.quantity },
-                        last_update: outTime 
                     },
                 });
 
@@ -141,7 +145,9 @@ export async function POST(req) {
                 });
             }
             return batch;
-        });
+        }, {
+            timeout: 30000  // <-- เพิ่ม timeout 30 วินาที ตรงนี้
+        }); // <-- ปิด $transaction
 
         return NextResponse.json({ message: 'เบิกของสำเร็จ', batchId: newBatch.batch_id }, { status: 201 });
 
@@ -149,6 +155,10 @@ export async function POST(req) {
         console.error('--- STOCKOUT ERROR ---', e);
         if (e.message.startsWith('สินค้าไม่พอ:')) {
             return NextResponse.json({ error: e.message }, { status: 400 });
+        }
+        // ตรวจจับ Error P2028 เพิ่มเติม
+        if (e.code === 'P2028') {
+             return NextResponse.json({ error: 'Transaction หมดเวลา, กรุณาลองอีกครั้ง' }, { status: 504 });
         }
         return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการเบิกของ' }, { status: 500 });
     }
