@@ -1,80 +1,80 @@
 import { prisma } from '@/lib/prisma';
 import { verifySession } from '@/utils/auth';
 import { NextResponse } from 'next/server';
-import { TIME_UNITS } from '@/app/constants/timeUnits'; // ✅ เพิ่มบรรทัดนี้
+import { TIME_UNITS } from '@/app/constants/timeUnits';
 
 /**
  * @description ดึงข้อมูล Batch ของ Stock In เท่านั้น (สำหรับหน้า Dashboard)
  */
 export async function GET(req) {
-  try {
-    const token = req.cookies.get('token');
-    if (!token || !token.value) {
-      return NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 });
-    }
-    const session = await verifySession(token.value);
-    if (!session) {
-      return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
-    }
-    const { sid: storeId } = session;
+  try {
+    const token = req.cookies.get('token');
+    if (!token || !token.value) {
+      return NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 });
+    }
+    const session = await verifySession(token.value);
+    if (!session) {
+      return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
+    }
+    const { sid: storeId } = session;
 
-    const { searchParams } = new URL(req.url);
-    const categoryId = searchParams.get('categoryId');
+    const { searchParams } = new URL(req.url);
+    const categoryId = searchParams.get('categoryId');
 
-    const filterConditions = [
+    const filterConditions = [
         { user: { store_id: storeId } },
-        { type: 'STOCK_IN' } // ✨ กรองเอาเฉพาะ batch ของ Stock In เสมอ
+        { type: 'STOCK_IN' }
     ];
 
-    if (categoryId) {
+    if (categoryId) {
       filterConditions.push({
-        stockins: {
-          some: {
-            ingredient: {
-              category_id: parseInt(categoryId),
-            },
-          },
-        },
-      });
-    }
+        stockins: {
+          some: {
+            ingredient: {
+              category_id: parseInt(categoryId),
+            },
+          },
+        },
+      });
+    }
 
-    const batches = await prisma.batch.findMany({
-      where: { 
+    const batches = await prisma.batch.findMany({
+      where: { 
         AND: filterConditions 
       },
-      include: {
-        user: { select: { name: true, email: true } },
-        stockins: {
-          include: {
-            ingredient: {
-              select: {
-                ingredient_id: true,
-                name: true,
-                category: { select: { category_name: true } },
-              },
-            },
-            unit: { select: { unit_name: true } },
-          },
-        },
-      },
-      orderBy: { created_at: 'desc' },
-    });
+      include: {
+        user: { select: { name: true, email: true } },
+        stockins: {
+          include: {
+            ingredient: {
+              select: {
+                ingredient_id: true,
+                name: true,
+                category: { select: { category_name: true } },
+              },
+            },
+            unit: { select: { unit_name: true } },
+          },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
 
-    return NextResponse.json(batches);
+    return NextResponse.json(batches);
 
-  } catch (error) {
-    console.error('--- GET STOCKIN BATCHES ERROR ---', error);
-    return NextResponse.json(
-      { error: 'ไม่สามารถดึงข้อมูลการรับเข้าได้' },
-      { status: 500 }
-    );
-  }
+  } catch (error) {
+    console.error('--- GET STOCKIN BATCHES ERROR ---', error);
+    return NextResponse.json(
+      { error: 'ไม่สามารถดึงข้อมูลการรับเข้าได้' },
+      { status: 500 }
+    );
+  }
 }
 
 
 /**
- * @description สร้างรายการนำเข้าสินค้า (Stock In)
- */
+ * @description สร้างรายการนำเข้าสินค้า (Stock In)
+ */
 export async function POST(req) {
   try {
     const token = req.cookies?.get?.('token') ?? null;
@@ -93,6 +93,19 @@ export async function POST(req) {
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'ไม่มีรายการนำเข้า' }, { status: 400 });
+    }
+
+    // ✅ Validate time units ก่อนเข้า transaction
+    for (const item of items) {
+      const isValidTimeUnit = TIME_UNITS.some(
+        tu => tu.name === item.shelflife_unit_name
+      );
+      if (!isValidTimeUnit) {
+        return NextResponse.json(
+          { error: `ไม่พบหน่วยเวลา: ${item.shelflife_unit_name}` },
+          { status: 400 }
+        );
+      }
     }
 
     const newBatch = await prisma.$transaction(async (tx) => {
@@ -119,6 +132,7 @@ export async function POST(req) {
       });
 
       for (const item of items) {
+        // ✅ ใช้ tx แทน prisma ทุกจุด
         const category = await tx.categories.findFirst({
           where: { category_name: item.category_name },
         });
@@ -128,20 +142,6 @@ export async function POST(req) {
           where: { unit_name: item.unit_name },
         });
         if (!unit) throw new Error(`ไม่พบหน่วยนับ: ${item.unit_name}`);
-
-        // ❌ ลบส่วนนี้ออก
-        // const shelflifeUnit = await tx.time_units.findFirst({
-        //   where: { unit_name: item.shelflife_unit_name },
-        // });
-        // if (!shelflifeUnit) throw new Error(`ไม่พบหน่วยเวลา: ${item.shelflife_unit_name}`);
-
-        // ✅ ใช้การ validate กับ TIME_UNITS แทน
-        const isValidTimeUnit = TIME_UNITS.some(
-          tu => tu.name === item.shelflife_unit_name
-        );
-        if (!isValidTimeUnit) {
-          throw new Error(`ไม่พบหน่วยเวลา: ${item.shelflife_unit_name}`);
-        }
 
         let ingredient = await tx.ingredients.findFirst({
           where: { name: item.name, category_id: category.category_id },
@@ -154,10 +154,6 @@ export async function POST(req) {
               shelflife_value: item.shelflife_value,
               category: { connect: { category_id: category.category_id } },
               unit: { connect: { unit_id: unit.unit_id } },
-              // ❌ ลบบรรทัดนี้ออก
-              // shelflife_unit: { connect: { unit_id: shelflifeUnit.unit_id } },
-              
-              // ✅ เพิ่มบรรทัดนี้แทน (เก็บเป็น string)
               shelflife_unit_name: item.shelflife_unit_name,
             },
           });
@@ -166,7 +162,7 @@ export async function POST(req) {
         const receivedDate = new Date(item.received_date);
         const expiryDate = new Date(receivedDate);
 
-        // ใช้ item.shelflife_unit_name โดยตรง
+        // คำนวณวันหมดอายุ
         switch (item.shelflife_unit_name.toLowerCase()) {
           case 'วัน': 
             expiryDate.setDate(expiryDate.getDate() + item.shelflife_value); 
@@ -246,6 +242,8 @@ export async function POST(req) {
 
       return batch;
     }, {
+      maxWait: 5000, // ✅ เพิ่ม timeout settings
+      timeout: 10000,
       isolationLevel: 'Serializable'
     });
 
