@@ -3,45 +3,74 @@ import { verifySession } from '@/utils/auth';
 import { NextResponse } from 'next/server';
 import { TIME_UNITS } from '@/app/constants/timeUnits';
 
-/**
- * @description ดึงข้อมูล Batch ของ Stock In เท่านั้น (สำหรับหน้า Dashboard)
- */
+/** ===== Utils (ส่วนช่วยเหลือ) ===== */
+async function getSessionFromReq(req) {
+  const token = req.cookies?.get?.('token') ?? null;
+  if (!token || !token.value) {
+    return { error: NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 }) };
+  }
+  const session = await verifySession(token.value);
+  if (!session) {
+    return { error: NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 }) };
+  }
+  return { session };
+}
+
+function calcExpiryDate(received, value, unitName) {
+  const receivedDate = new Date(received);
+  if (isNaN(receivedDate.getTime())) {
+    throw new Error('วันที่รับเข้าไม่ถูกต้อง');
+  }
+  const expiryDate = new Date(receivedDate);
+  const unitLower = (unitName || '').toLowerCase();
+
+  switch (unitLower) {
+    case 'วัน':
+      expiryDate.setDate(expiryDate.getDate() + value);
+      break;
+    case 'สัปดาห์':
+      expiryDate.setDate(expiryDate.getDate() + value * 7);
+      break;
+    case 'เดือน':
+      expiryDate.setMonth(expiryDate.getMonth() + value);
+      break;
+    case 'ปี':
+      expiryDate.setFullYear(expiryDate.getFullYear() + value);
+      break;
+    default:
+      throw new Error(`Unsupported time unit: ${unitName}`);
+  }
+  return { receivedDate, expiryDate };
+}
+
+/** ================= GET (ดึงข้อมูล) ================= */
+// (โค้ด GET ของคุณถูกต้องอยู่แล้ว)
 export async function GET(req) {
   try {
-    const token = req.cookies.get('token');
-    if (!token || !token.value) {
-      return NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 });
-    }
-    const session = await verifySession(token.value);
-    if (!session) {
-      return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
-    }
+    const { session, error } = await getSessionFromReq(req);
+    if (error) return error;
     const { sid: storeId } = session;
 
     const { searchParams } = new URL(req.url);
     const categoryId = searchParams.get('categoryId');
 
     const filterConditions = [
-        { user: { store_id: storeId } },
-        { type: 'STOCK_IN' }
+      { user: { store_id: storeId } },
+      { type: 'STOCK_IN' },
     ];
 
     if (categoryId) {
       filterConditions.push({
         stockins: {
           some: {
-            ingredient: {
-              category_id: parseInt(categoryId),
-            },
+            ingredient: { category_id: parseInt(categoryId, 10) },
           },
         },
       });
     }
 
     const batches = await prisma.batch.findMany({
-      where: { 
-        AND: filterConditions 
-      },
+      where: { AND: filterConditions },
       include: {
         user: { select: { name: true, email: true } },
         stockins: {
@@ -61,9 +90,8 @@ export async function GET(req) {
     });
 
     return NextResponse.json(batches);
-
-  } catch (error) {
-    console.error('--- GET STOCKIN BATCHES ERROR ---', error);
+  } catch (err) {
+    console.error('--- GET STOCKIN BATCHES ERROR ---', err);
     return NextResponse.json(
       { error: 'ไม่สามารถดึงข้อมูลการรับเข้าได้' },
       { status: 500 }
@@ -71,56 +99,44 @@ export async function GET(req) {
   }
 }
 
-
-/**
- * @description สร้างรายการนำเข้าสินค้า (Stock In)
- * ✅ แก้ไข: แยก transaction เป็นส่วนย่อยเพื่อป้องกัน timeout
- */
+/** ================= POST (สร้าง Stock In) ================= */
 export async function POST(req) {
   try {
-    const token = req.cookies?.get?.('token') ?? null;
-    if (!token || !token.value) {
-      return NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 });
-    }
-
-    const session = await verifySession(token.value);
-    if (!session) {
-      return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
-    }
-
+    const { session, error } = await getSessionFromReq(req);
+    if (error) return error;
     const { uid: userId, sid: storeId } = session;
+
     const body = await req.json();
-    const { description, items } = body;
+    const { description, items } = body || {};
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'ไม่มีรายการนำเข้า' }, { status: 400 });
     }
 
-    // ✅ Validate time units ก่อนเข้า transaction
+    // ✅ Step 0: ตรวจสอบข้อมูล "ก่อน" เริ่ม Transaction
     for (const item of items) {
-      const isValidTimeUnit = TIME_UNITS.some(
-        tu => tu.name === item.shelflife_unit_name
-      );
+      const isValidTimeUnit = TIME_UNITS.some(tu => tu.name === item.shelflife_unit_name);
       if (!isValidTimeUnit) {
         return NextResponse.json(
           { error: `ไม่พบหน่วยเวลา: ${item.shelflife_unit_name}` },
           { status: 400 }
         );
       }
+      // (สามารถเพิ่มการตรวจสอบอื่นๆ ตรงนี้ได้)
     }
 
     console.log('🚀 Starting batch creation for', items.length, 'items');
 
-    // ✅ Step 1: สร้าง Batch ก่อน (transaction สั้น)
+    // ✅ Step 1: สร้าง Batch (Transaction สั้นๆ อันที่ 1)
     const batch = await prisma.$transaction(async (tx) => {
       const lastStockinBatch = await tx.batch.findFirst({
         where: {
           type: 'STOCK_IN',
           user: { store_id: storeId },
-          lot_number: { not: null }
+          lot_number: { not: null },
         },
         orderBy: { lot_number: 'desc' },
-        select: { lot_number: true }
+        select: { lot_number: true },
       });
 
       const nextLotNumber = (lastStockinBatch?.lot_number || 0) + 1;
@@ -134,20 +150,29 @@ export async function POST(req) {
         },
       });
     }, {
-      maxWait: 3000,
-      timeout: 5000,
+      maxWait: 10000, 
+      timeout: 30000, 
+      isolationLevel: 'ReadCommitted',
     });
 
     console.log('📦 Batch created:', batch.batch_id);
 
-    // ✅ Step 2: Process แต่ละ item (แยก transaction)
+    // ✅ Step 2: Loop อยู่ "ข้างนอก"
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       console.log(`🔄 [${i + 1}/${items.length}] Processing: ${item.name}`);
 
       try {
+        // คำนวณวันหมดอายุ (อยู่นอก tx)
+        const { receivedDate, expiryDate } = calcExpiryDate(
+          item.received_date,
+          item.shelflife_value,
+          item.shelflife_unit_name
+        );
+
+        // ✅ Step 3: สร้าง Transaction "ใหม่" (สั้นๆ) สำหรับ "แต่ละ" item
         await prisma.$transaction(async (tx) => {
-          // หา category และ unit
+          
           const category = await tx.categories.findFirst({
             where: { category_name: item.category_name },
           });
@@ -158,7 +183,6 @@ export async function POST(req) {
           });
           if (!unit) throw new Error(`ไม่พบหน่วยนับ: ${item.unit_name}`);
 
-          // หาหรือสร้าง ingredient
           let ingredient = await tx.ingredients.findFirst({
             where: { name: item.name, category_id: category.category_id },
           });
@@ -175,100 +199,70 @@ export async function POST(req) {
             });
           }
 
-          // คำนวณวันหมดอายุ
-          const receivedDate = new Date(item.received_date);
-          const expiryDate = new Date(receivedDate);
-
-          switch (item.shelflife_unit_name.toLowerCase()) {
-            case 'วัน': 
-              expiryDate.setDate(expiryDate.getDate() + item.shelflife_value); 
-              break;
-            case 'สัปดาห์': 
-              expiryDate.setDate(expiryDate.getDate() + item.shelflife_value * 7); 
-              break;
-            case 'เดือน': 
-              expiryDate.setMonth(expiryDate.getMonth() + item.shelflife_value); 
-              break;
-            case 'ปี': 
-              expiryDate.setFullYear(expiryDate.getFullYear() + item.shelflife_value); 
-              break;
-            default: 
-              throw new Error(`Unsupported time unit: ${item.shelflife_unit_name}`);
-          }
-
-          // สร้าง stockin
-          const newStockin = await tx.stockin.create({
+          // ✅ สร้าง Stockin และ History ในคำสั่งเดียว (Nested Write)
+          await tx.stockin.create({
             data: {
-              batch_id: batch.batch_id,
+              batch_id: batch.batch_id, // ใช้ ID จาก Step 1
               ingredient_id: ingredient.ingredient_id,
               quantity: item.quantity,
               unit_id: unit.unit_id,
               received_date: receivedDate,
               expiry_date: expiryDate,
               user_id: userId,
+              histories: { // สร้าง History ที่นี่
+                create: [
+                  {
+                    action_type: 'stockin',
+                    user_id: userId,
+                  },
+                ],
+              },
             },
           });
 
-          // บันทึก history
-          await tx.history.create({
-            data: {
-              action_type: 'stockin',
-              stockin_id: newStockin.stockin_id,
-              user_id: userId,
-            },
-          });
-
-          // อัปเดต inventory
-          const existingInventory = await tx.ingredient_now.findFirst({
+          // ✅ อัปเดต Inventory (ใช้ Upsert)
+          await tx.ingredient_now.upsert({
             where: { ingredient_id: ingredient.ingredient_id },
+            update: {
+              quantity: { increment: item.quantity },
+              last_update: new Date(),
+            },
+            create: {
+              batch_id: batch.batch_id, // ใช้ ID จาก Step 1
+              ingredient_id: ingredient.ingredient_id,
+              quantity: item.quantity,
+              unit_id: unit.unit_id,
+              last_update: new Date(),
+            },
           });
 
-          if (existingInventory) {
-            await tx.ingredient_now.update({
-              where: { inventory_id: existingInventory.inventory_id },
-              data: {
-                quantity: { increment: item.quantity },
-                last_update: new Date(),
-              },
-            });
-          } else {
-            await tx.ingredient_now.create({
-              data: {
-                batch_id: batch.batch_id,
-                ingredient_id: ingredient.ingredient_id,
-                quantity: item.quantity,
-                unit_id: unit.unit_id,
-                last_update: new Date(),
-              },
-            });
-          }
-
-          // อัปเดต expiry tracking
+          // อัปเดต Expiry Track
           await tx.expiry_tack.upsert({
             where: {
               batch_id_ingredient_id: {
-                batch_id: batch.batch_id,
+                batch_id: batch.batch_id, // ใช้ ID จาก Step 1
                 ingredient_id: ingredient.ingredient_id,
               },
             },
             update: { expiry_date: expiryDate },
             create: {
-              batch_id: batch.batch_id,
+              batch_id: batch.batch_id, // ใช้ ID จาก Step 1
               ingredient_id: ingredient.ingredient_id,
               expiry_date: expiryDate,
             },
           });
 
         }, {
-          maxWait: 2000,  // ✅ ลดเหลือ 2 วินาที
-          timeout: 5000,  // ✅ ลดเหลือ 5 วินาที
+          maxWait: 10000, 
+          timeout: 30000, 
+          isolationLevel: 'ReadCommitted',
         });
 
         console.log(`✅ [${i + 1}/${items.length}] Item processed: ${item.name}`);
 
       } catch (itemError) {
         console.error(`❌ Failed to process item ${item.name}:`, itemError);
-        // ถ้า item ใดล้มเหลว ให้ rollback batch
+        // ถ้า item ใดล้มเหลว ให้ Rollback Batch หลัก
         await prisma.batch.delete({ where: { batch_id: batch.batch_id } });
         throw new Error(`ล้มเหลวที่รายการ: ${item.name} - ${itemError.message}`);
       }
@@ -277,19 +271,16 @@ export async function POST(req) {
     console.log('✨ All items processed successfully');
 
     return NextResponse.json(
-      { 
-        message: 'รับเข้าสต็อกสำเร็จ', 
+      {
+        message: 'รับเข้าสต็อกสำเร็จ',
         batchId: batch.batch_id,
-        lotNumber: batch.lot_number 
+        lotNumber: batch.lot_number,
       },
       { status: 201 }
     );
-
   } catch (e) {
     console.error('❌ STOCKIN ERROR:', e);
-    return NextResponse.json(
-      { error: e.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' },
-      { status: 500 }
-    );
+    const msg = e?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
