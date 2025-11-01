@@ -43,6 +43,9 @@ function calcExpiryDate(received, value, unitName) {
   return { receivedDate, expiryDate };
 }
 
+// ✅ Helper: delay เล็กน้อยเพื่อให้ Prisma ทำงานได้
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 /** ================= GET ================= */
 export async function GET(req) {
   try {
@@ -114,7 +117,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'ไม่มีรายการนำเข้า' }, { status: 400 });
     }
 
-    // ตรวจสอบข้อมูลก่อน
+    // ✅ ตรวจสอบข้อมูลก่อน
     for (const item of items) {
       const isValidTimeUnit = TIME_UNITS.some(tu => tu.name === item.shelflife_unit_name);
       if (!isValidTimeUnit) {
@@ -127,7 +130,7 @@ export async function POST(req) {
 
     console.log('🚀 Starting batch creation for', items.length, 'items');
 
-    // Step 1: สร้าง Batch
+    // ✅ Step 1: สร้าง Batch
     const lastStockinBatch = await prisma.batch.findFirst({
       where: {
         type: 'STOCK_IN',
@@ -152,7 +155,7 @@ export async function POST(req) {
     batchId = batch.batch_id;
     console.log('📦 Batch created:', batchId);
 
-    // Step 2: เตรียมข้อมูล
+    // ✅ Step 2: เตรียมข้อมูล
     const categoryNames = [...new Set(items.map(i => i.category_name))];
     const unitNames = [...new Set(items.map(i => i.unit_name))];
 
@@ -167,7 +170,7 @@ export async function POST(req) {
     const categoryMap = new Map(categories.map(c => [c.category_name, c]));
     const unitMap = new Map(units.map(u => [u.unit_name, u]));
 
-    // Step 3: Process แต่ละ item
+    // ✅ Step 3: Process แต่ละ item
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       console.log(`🔄 [${i + 1}/${items.length}] Processing: ${item.name}`);
@@ -184,7 +187,7 @@ export async function POST(req) {
         item.shelflife_unit_name
       );
 
-      // หา/สร้าง Ingredient
+      // ✅ หา/สร้าง Ingredient
       let ingredient = await prisma.ingredients.findFirst({
         where: { name: item.name, category_id: category.category_id },
       });
@@ -199,9 +202,10 @@ export async function POST(req) {
             shelflife_unit_name: item.shelflife_unit_name,
           },
         });
+        await delay(50); // delay เล็กน้อย
       }
 
-      // สร้าง Stockin
+      // ✅ สร้าง Stockin
       const stockin = await prisma.stockin.create({
         data: {
           batch_id: batchId,
@@ -213,8 +217,9 @@ export async function POST(req) {
           user_id: userId,
         },
       });
+      await delay(50);
 
-      // สร้าง History
+      // ✅ สร้าง History
       await prisma.history.create({
         data: {
           stockin_id: stockin.stockin_id,
@@ -222,8 +227,9 @@ export async function POST(req) {
           user_id: userId,
         },
       });
+      await delay(50);
 
-      // อัปเดต Inventory
+      // ✅ อัปเดต Inventory
       const existingInventory = await prisma.ingredient_now.findFirst({
         where: { ingredient_id: ingredient.ingredient_id },
       });
@@ -247,8 +253,9 @@ export async function POST(req) {
           },
         });
       }
+      await delay(50);
 
-      // อัปเดต Expiry Track
+      // ✅ อัปเดต Expiry Track
       const existingExpiry = await prisma.expiry_tack.findFirst({
         where: {
           batch_id: batchId,
@@ -275,6 +282,7 @@ export async function POST(req) {
           },
         });
       }
+      await delay(50);
 
       console.log(`✅ [${i + 1}/${items.length}] Item processed: ${item.name}`);
     }
