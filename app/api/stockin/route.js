@@ -43,9 +43,7 @@ function calcExpiryDate(received, value, unitName) {
   return { receivedDate, expiryDate };
 }
 
-/** ================= GET =================
- * ดึงเฉพาะ Batch ประเภท STOCK_IN (หน้า Dashboard)
- */
+/** ================= GET ================= */
 export async function GET(req) {
   try {
     const { session, error } = await getSessionFromReq(req);
@@ -100,12 +98,7 @@ export async function GET(req) {
   }
 }
 
-/** ================= POST =================
- * สร้างรายการนำเข้า (Stock In)
- * - ยืด timeout/ maxWait
- * - Validate input ก่อนเข้า DB
- * - ไม่ลบ batch ทันทีเมื่อ item ใดล้มเหลว (กัน FK/ข้อมูลค้าง)
- */
+/** ================= POST ================= */
 export async function POST(req) {
   try {
     const { session, error } = await getSessionFromReq(req);
@@ -222,7 +215,7 @@ export async function POST(req) {
             });
           }
 
-          // สร้าง stockin
+          // ✅ stockin + history เป็น "คำสั่งเดียว" (nested write) เพื่อตัดปัญหา tx หลุดก่อน history.create
           const newStockin = await tx.stockin.create({
             data: {
               batch_id: batch.batch_id,
@@ -232,42 +225,33 @@ export async function POST(req) {
               received_date: receivedDate,
               expiry_date: expiryDate,
               user_id: userId,
+              // สร้าง history ภายในคำสั่งเดียว
+              histories: {
+                create: [
+                  {
+                    action_type: 'stockin',
+                    user_id: userId,
+                  },
+                ],
+              },
             },
           });
 
-          // history
-          await tx.history.create({
-            data: {
-              action_type: 'stockin',
-              stockin_id: newStockin.stockin_id,
-              user_id: userId,
-            },
-          });
-
-          // inventory
-          const existingInventory = await tx.ingredient_now.findFirst({
+          // ✅ inventory: ใช้ upsert ลดรอบ query
+          await tx.ingredient_now.upsert({
             where: { ingredient_id: ingredient.ingredient_id },
+            update: {
+              quantity: { increment: item.quantity },
+              last_update: new Date(),
+            },
+            create: {
+              batch_id: batch.batch_id,
+              ingredient_id: ingredient.ingredient_id,
+              quantity: item.quantity,
+              unit_id: unit.unit_id,
+              last_update: new Date(),
+            },
           });
-
-          if (existingInventory) {
-            await tx.ingredient_now.update({
-              where: { inventory_id: existingInventory.inventory_id },
-              data: {
-                quantity: { increment: item.quantity },
-                last_update: new Date(),
-              },
-            });
-          } else {
-            await tx.ingredient_now.create({
-              data: {
-                batch_id: batch.batch_id,
-                ingredient_id: ingredient.ingredient_id,
-                quantity: item.quantity,
-                unit_id: unit.unit_id,
-                last_update: new Date(),
-              },
-            });
-          }
 
           // expiry track
           await tx.expiry_tack.upsert({
@@ -284,6 +268,8 @@ export async function POST(req) {
               expiry_date: expiryDate,
             },
           });
+
+          // (ไม่ทำอะไรกับ newStockin ต่อ ลดโอกาสลากเวลาใน tx)
         }, {
           maxWait: 10000,  // 10s
           timeout: 30000,  // 30s
@@ -293,7 +279,6 @@ export async function POST(req) {
         console.log(`✅ [${i + 1}/${items.length}] Item processed: ${item.name}`);
       } catch (itemError) {
         console.error(`❌ Failed to process item ${item.name}:`, itemError);
-        // ไม่ลบ batch ทันที (ป้องกันชน FK)
         if (itemError && itemError.code === 'P2034') {
           throw new Error(`รายการ "${item.name}" ใช้เวลานานเกินกำหนด โปรดลองใหม่อีกครั้ง`);
         }
