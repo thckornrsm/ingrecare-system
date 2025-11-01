@@ -43,6 +43,9 @@ function calcExpiryDate(received, value, unitName) {
   return { receivedDate, expiryDate };
 }
 
+// ✅ Helper: delay เล็กน้อยเพื่อให้ Prisma ทำงานได้
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 /** ================= GET ================= */
 export async function GET(req) {
   try {
@@ -100,6 +103,8 @@ export async function GET(req) {
 
 /** ================= POST ================= */
 export async function POST(req) {
+  let batchId = null;
+  
   try {
     const { session, error } = await getSessionFromReq(req);
     if (error) return error;
@@ -126,32 +131,31 @@ export async function POST(req) {
     console.log('🚀 Starting batch creation for', items.length, 'items');
 
     // ✅ Step 1: สร้าง Batch
-    const batch = await prisma.$transaction(async (tx) => {
-      const lastStockinBatch = await tx.batch.findFirst({
-        where: {
-          type: 'STOCK_IN',
-          user: { store_id: storeId },
-          lot_number: { not: null },
-        },
-        orderBy: { lot_number: 'desc' },
-        select: { lot_number: true },
-      });
-
-      const nextLotNumber = (lastStockinBatch?.lot_number || 0) + 1;
-
-      return await tx.batch.create({
-        data: {
-          type: 'STOCK_IN',
-          user_id: userId,
-          lot_number: nextLotNumber,
-          description: description || `Stock-in at ${new Date().toLocaleString('th-TH')}`,
-        },
-      });
+    const lastStockinBatch = await prisma.batch.findFirst({
+      where: {
+        type: 'STOCK_IN',
+        user: { store_id: storeId },
+        lot_number: { not: null },
+      },
+      orderBy: { lot_number: 'desc' },
+      select: { lot_number: true },
     });
 
-    console.log('📦 Batch created:', batch.batch_id);
+    const nextLotNumber = (lastStockinBatch?.lot_number || 0) + 1;
 
-    // ✅ Step 2: เตรียมข้อมูล (ดึงครั้งเดียว)
+    const batch = await prisma.batch.create({
+      data: {
+        type: 'STOCK_IN',
+        user_id: userId,
+        lot_number: nextLotNumber,
+        description: description || `Stock-in at ${new Date().toLocaleString('th-TH')}`,
+      },
+    });
+
+    batchId = batch.batch_id;
+    console.log('📦 Batch created:', batchId);
+
+    // ✅ Step 2: เตรียมข้อมูล
     const categoryNames = [...new Set(items.map(i => i.category_name))];
     const unitNames = [...new Set(items.map(i => i.unit_name))];
 
@@ -166,115 +170,121 @@ export async function POST(req) {
     const categoryMap = new Map(categories.map(c => [c.category_name, c]));
     const unitMap = new Map(units.map(u => [u.unit_name, u]));
 
-    // ✅ Step 3: Process แต่ละ item (ไม่ใช้ Transaction เลย - แต่ทำเป็นลำดับ)
-    const createdStockins = [];
-
+    // ✅ Step 3: Process แต่ละ item
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       console.log(`🔄 [${i + 1}/${items.length}] Processing: ${item.name}`);
 
-      try {
-        const category = categoryMap.get(item.category_name);
-        if (!category) throw new Error(`ไม่พบหมวดหมู่: ${item.category_name}`);
+      const category = categoryMap.get(item.category_name);
+      if (!category) throw new Error(`ไม่พบหมวดหมู่: ${item.category_name}`);
 
-        const unit = unitMap.get(item.unit_name);
-        if (!unit) throw new Error(`ไม่พบหน่วยนับ: ${item.unit_name}`);
+      const unit = unitMap.get(item.unit_name);
+      if (!unit) throw new Error(`ไม่พบหน่วยนับ: ${item.unit_name}`);
 
-        const { receivedDate, expiryDate } = calcExpiryDate(
-          item.received_date,
-          item.shelflife_value,
-          item.shelflife_unit_name
-        );
+      const { receivedDate, expiryDate } = calcExpiryDate(
+        item.received_date,
+        item.shelflife_value,
+        item.shelflife_unit_name
+      );
 
-        // ✅ หา/สร้าง Ingredient (ไม่ใช้ Transaction)
-        let ingredient = await prisma.ingredients.findFirst({
-          where: { name: item.name, category_id: category.category_id },
-        });
+      // ✅ หา/สร้าง Ingredient
+      let ingredient = await prisma.ingredients.findFirst({
+        where: { name: item.name, category_id: category.category_id },
+      });
 
-        if (!ingredient) {
-          ingredient = await prisma.ingredients.create({
-            data: {
-              name: item.name,
-              shelflife_value: item.shelflife_value,
-              category_id: category.category_id,
-              unit_id: unit.unit_id,
-              shelflife_unit_name: item.shelflife_unit_name,
-            },
-          });
-        }
-
-        // ✅ สร้าง Stockin (ไม่ใช้ Transaction)
-        const stockin = await prisma.stockin.create({
+      if (!ingredient) {
+        ingredient = await prisma.ingredients.create({
           data: {
-            batch_id: batch.batch_id,
-            ingredient_id: ingredient.ingredient_id,
-            quantity: item.quantity,
+            name: item.name,
+            shelflife_value: item.shelflife_value,
+            category_id: category.category_id,
             unit_id: unit.unit_id,
-            received_date: receivedDate,
-            expiry_date: expiryDate,
-            user_id: userId,
+            shelflife_unit_name: item.shelflife_unit_name,
           },
         });
+        await delay(50); // delay เล็กน้อย
+      }
 
-        // ✅ สร้าง History (ไม่ใช้ Transaction)
-        await prisma.history.create({
-          data: {
-            stockin_id: stockin.stockin_id,
-            action_type: 'stockin',
-            user_id: userId,
-          },
-        });
+      // ✅ สร้าง Stockin
+      const stockin = await prisma.stockin.create({
+        data: {
+          batch_id: batchId,
+          ingredient_id: ingredient.ingredient_id,
+          quantity: item.quantity,
+          unit_id: unit.unit_id,
+          received_date: receivedDate,
+          expiry_date: expiryDate,
+          user_id: userId,
+        },
+      });
+      await delay(50);
 
-        // ✅ อัปเดต Inventory (ไม่ใช้ Transaction)
-        await prisma.ingredient_now.upsert({
+      // ✅ สร้าง History
+      await prisma.history.create({
+        data: {
+          stockin_id: stockin.stockin_id,
+          action_type: 'stockin',
+          user_id: userId,
+        },
+      });
+      await delay(50);
+
+      // ✅ อัปเดต Inventory
+      const existingInventory = await prisma.ingredient_now.findFirst({
+        where: { ingredient_id: ingredient.ingredient_id },
+      });
+
+      if (existingInventory) {
+        await prisma.ingredient_now.update({
           where: { ingredient_id: ingredient.ingredient_id },
-          update: {
+          data: {
             quantity: { increment: item.quantity },
             last_update: new Date(),
           },
-          create: {
-            batch_id: batch.batch_id,
+        });
+      } else {
+        await prisma.ingredient_now.create({
+          data: {
+            batch_id: batchId,
             ingredient_id: ingredient.ingredient_id,
             quantity: item.quantity,
             unit_id: unit.unit_id,
             last_update: new Date(),
           },
         });
+      }
+      await delay(50);
 
-        // ✅ อัปเดต Expiry Track (ไม่ใช้ Transaction)
-        await prisma.expiry_tack.upsert({
+      // ✅ อัปเดต Expiry Track
+      const existingExpiry = await prisma.expiry_tack.findFirst({
+        where: {
+          batch_id: batchId,
+          ingredient_id: ingredient.ingredient_id,
+        },
+      });
+
+      if (existingExpiry) {
+        await prisma.expiry_tack.update({
           where: {
             batch_id_ingredient_id: {
-              batch_id: batch.batch_id,
+              batch_id: batchId,
               ingredient_id: ingredient.ingredient_id,
             },
           },
-          update: { expiry_date: expiryDate },
-          create: {
-            batch_id: batch.batch_id,
+          data: { expiry_date: expiryDate },
+        });
+      } else {
+        await prisma.expiry_tack.create({
+          data: {
+            batch_id: batchId,
             ingredient_id: ingredient.ingredient_id,
             expiry_date: expiryDate,
           },
         });
-
-        createdStockins.push({ stockin, ingredient });
-        console.log(`✅ [${i + 1}/${items.length}] Item processed: ${item.name}`);
-
-      } catch (itemError) {
-        console.error(`❌ Failed to process item ${item.name}:`, itemError);
-        
-        // Rollback: ลบ Batch (cascade delete stockins)
-        try {
-          await prisma.batch.delete({ 
-            where: { batch_id: batch.batch_id }
-          });
-          console.log('🔄 Rollback completed');
-        } catch (deleteError) {
-          console.error('❌ Failed to rollback:', deleteError);
-        }
-        
-        throw new Error(`ล้มเหลวที่รายการ: ${item.name} - ${itemError.message}`);
       }
+      await delay(50);
+
+      console.log(`✅ [${i + 1}/${items.length}] Item processed: ${item.name}`);
     }
 
     console.log('✨ All items processed successfully');
@@ -282,14 +292,25 @@ export async function POST(req) {
     return NextResponse.json(
       {
         message: 'รับเข้าสต็อกสำเร็จ',
-        batchId: batch.batch_id,
+        batchId: batchId,
         lotNumber: batch.lot_number,
-        itemsProcessed: createdStockins.length,
+        itemsProcessed: items.length,
       },
       { status: 201 }
     );
   } catch (e) {
     console.error('❌ STOCKIN ERROR:', e);
+    
+    // Rollback: ลบ Batch ถ้ามี
+    if (batchId) {
+      try {
+        await prisma.batch.delete({ where: { batch_id: batchId } });
+        console.log('🔄 Rollback completed');
+      } catch (deleteError) {
+        console.error('❌ Failed to rollback:', deleteError);
+      }
+    }
+    
     const msg = e?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
