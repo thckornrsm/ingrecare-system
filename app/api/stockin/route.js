@@ -3,7 +3,7 @@ import { verifySession } from '@/utils/auth';
 import { NextResponse } from 'next/server';
 import { TIME_UNITS } from '@/app/constants/timeUnits';
 
-/** ===== Utils (ส่วนช่วยเหลือ) ===== */
+/** ===== Utils ===== */
 async function getSessionFromReq(req) {
   const token = req.cookies?.get?.('token') ?? null;
   if (!token || !token.value) {
@@ -43,7 +43,7 @@ function calcExpiryDate(received, value, unitName) {
   return { receivedDate, expiryDate };
 }
 
-/** ================= GET (ดึงข้อมูล) ================= */
+/** ================= GET ================= */
 export async function GET(req) {
   try {
     const { session, error } = await getSessionFromReq(req);
@@ -98,7 +98,7 @@ export async function GET(req) {
   }
 }
 
-/** ================= POST (สร้าง Stock In) ================= */
+/** ================= POST ================= */
 export async function POST(req) {
   try {
     const { session, error } = await getSessionFromReq(req);
@@ -112,7 +112,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'ไม่มีรายการนำเข้า' }, { status: 400 });
     }
 
-    // ✅ Step 0: ตรวจสอบข้อมูล "ก่อน" เริ่ม Transaction
+    // ✅ ตรวจสอบข้อมูลก่อน
     for (const item of items) {
       const isValidTimeUnit = TIME_UNITS.some(tu => tu.name === item.shelflife_unit_name);
       if (!isValidTimeUnit) {
@@ -125,7 +125,7 @@ export async function POST(req) {
 
     console.log('🚀 Starting batch creation for', items.length, 'items');
 
-    // ✅ Step 1: สร้าง Batch
+    // ✅ Step 1: สร้าง Batch (Transaction สั้น)
     const batch = await prisma.$transaction(async (tx) => {
       const lastStockinBatch = await tx.batch.findFirst({
         where: {
@@ -147,39 +147,48 @@ export async function POST(req) {
           description: description || `Stock-in at ${new Date().toLocaleString('th-TH')}`,
         },
       });
-    }, {
-      maxWait: 5000, 
-      timeout: 10000,
     });
 
     console.log('📦 Batch created:', batch.batch_id);
 
-    // ✅ Step 2: Loop แต่ละ item
+    // ✅ Step 2: เตรียมข้อมูล Categories และ Units (ดึงครั้งเดียว)
+    const categoryNames = [...new Set(items.map(i => i.category_name))];
+    const unitNames = [...new Set(items.map(i => i.unit_name))];
+
+    const categories = await prisma.categories.findMany({
+      where: { category_name: { in: categoryNames } },
+    });
+
+    const units = await prisma.units.findMany({
+      where: { unit_name: { in: unitNames } },
+    });
+
+    const categoryMap = new Map(categories.map(c => [c.category_name, c]));
+    const unitMap = new Map(units.map(u => [u.unit_name, u]));
+
+    // ✅ Step 3: Loop แต่ละ item (ใช้ Transaction สั้นๆ แยกกัน)
+    const createdStockins = [];
+
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       console.log(`🔄 [${i + 1}/${items.length}] Processing: ${item.name}`);
 
       try {
-        // คำนวณวันหมดอายุ
+        const category = categoryMap.get(item.category_name);
+        if (!category) throw new Error(`ไม่พบหมวดหมู่: ${item.category_name}`);
+
+        const unit = unitMap.get(item.unit_name);
+        if (!unit) throw new Error(`ไม่พบหน่วยนับ: ${item.unit_name}`);
+
         const { receivedDate, expiryDate } = calcExpiryDate(
           item.received_date,
           item.shelflife_value,
           item.shelflife_unit_name
         );
 
-        // ✅ Step 3: Transaction สั้นๆ สำหรับแต่ละ item
-        await prisma.$transaction(async (tx) => {
-          
-          const category = await tx.categories.findFirst({
-            where: { category_name: item.category_name },
-          });
-          if (!category) throw new Error(`ไม่พบหมวดหมู่: ${item.category_name}`);
-
-          const unit = await tx.units.findFirst({
-            where: { unit_name: item.unit_name },
-          });
-          if (!unit) throw new Error(`ไม่พบหน่วยนับ: ${item.unit_name}`);
-
+        // ✅ Transaction สั้นมาก (แค่ create/update อย่างเดียว)
+        const result = await prisma.$transaction(async (tx) => {
+          // หา/สร้าง Ingredient
           let ingredient = await tx.ingredients.findFirst({
             where: { name: item.name, category_id: category.category_id },
           });
@@ -189,14 +198,14 @@ export async function POST(req) {
               data: {
                 name: item.name,
                 shelflife_value: item.shelflife_value,
-                category: { connect: { category_id: category.category_id } },
-                unit: { connect: { unit_id: unit.unit_id } },
+                category_id: category.category_id,
+                unit_id: unit.unit_id,
                 shelflife_unit_name: item.shelflife_unit_name,
               },
             });
           }
 
-          // ✅ สร้าง Stockin (ไม่มี Nested Write)
+          // สร้าง Stockin
           const stockin = await tx.stockin.create({
             data: {
               batch_id: batch.batch_id,
@@ -209,7 +218,7 @@ export async function POST(req) {
             },
           });
 
-          // ✅ สร้าง History แยกต่างหาก
+          // สร้าง History
           await tx.history.create({
             data: {
               stockin_id: stockin.stockin_id,
@@ -218,7 +227,7 @@ export async function POST(req) {
             },
           });
 
-          // ✅ อัปเดต Inventory
+          // อัปเดต Inventory
           await tx.ingredient_now.upsert({
             where: { ingredient_id: ingredient.ingredient_id },
             update: {
@@ -234,7 +243,7 @@ export async function POST(req) {
             },
           });
 
-          // ✅ อัปเดต Expiry Track
+          // อัปเดต Expiry Track
           await tx.expiry_tack.upsert({
             where: {
               batch_id_ingredient_id: {
@@ -250,17 +259,29 @@ export async function POST(req) {
             },
           });
 
+          return { stockin, ingredient };
         }, {
-          maxWait: 5000, 
-          timeout: 10000,
+          timeout: 5000, // Transaction สั้นมาก
         });
 
+        createdStockins.push(result);
         console.log(`✅ [${i + 1}/${items.length}] Item processed: ${item.name}`);
 
       } catch (itemError) {
         console.error(`❌ Failed to process item ${item.name}:`, itemError);
-        // ถ้า item ใดล้มเหลว ให้ลบ Batch
-        await prisma.batch.delete({ where: { batch_id: batch.batch_id } });
+        
+        // Rollback: ลบ Batch และ Stockins ที่สร้างไปแล้ว
+        try {
+          await prisma.batch.delete({ 
+            where: { batch_id: batch.batch_id },
+            include: {
+              stockins: true, // cascade delete
+            }
+          });
+        } catch (deleteError) {
+          console.error('Failed to rollback:', deleteError);
+        }
+        
         throw new Error(`ล้มเหลวที่รายการ: ${item.name} - ${itemError.message}`);
       }
     }
@@ -272,6 +293,7 @@ export async function POST(req) {
         message: 'รับเข้าสต็อกสำเร็จ',
         batchId: batch.batch_id,
         lotNumber: batch.lot_number,
+        itemsProcessed: createdStockins.length,
       },
       { status: 201 }
     );
