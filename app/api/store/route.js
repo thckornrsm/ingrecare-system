@@ -1,23 +1,25 @@
 import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server'; // <--- 1. Import NextResponse
+import { sendStoreSubmissionEmail } from '@/utils/emailService'; // <--- 2. Import ฟังก์ชันอีเมล
 
-// ตรวจความถูกต้อง จังหวัด-อำเภอ-ตำบล
+// ... (ฟังก์ชัน validateAddress และ getNames ของคุณเหมือนเดิม) ...
+
 async function validateAddress({ provinceId, districtId, subdistrictId }) {
-  if (districtId && provinceId) {
-    const dist = await prisma.district.findUnique({ where: { id: Number(districtId) } });
-    if (!dist || dist.provinceId !== Number(provinceId)) {
-      return { ok: false, error: 'อำเภอไม่อยู่ในจังหวัดที่เลือก' };
-    }
-  }
-  if (subdistrictId && districtId) {
-    const sub = await prisma.subdistrict.findUnique({ where: { id: Number(subdistrictId) } });
-    if (!sub || sub.districtId !== Number(districtId)) {
-      return { ok: false, error: 'ตำบลไม่อยู่ในอำเภอที่เลือก' };
-    }
-  }
-  return { ok: true };
+  if (districtId && provinceId) {
+    const dist = await prisma.district.findUnique({ where: { id: Number(districtId) } });
+    if (!dist || dist.provinceId !== Number(provinceId)) {
+      return { ok: false, error: 'อำเภอไม่อยู่ในจังหวัดที่เลือก' };
+    }
+  }
+  if (subdistrictId && districtId) {
+    const sub = await prisma.subdistrict.findUnique({ where: { id: Number(subdistrictId) } });
+    if (!sub || sub.districtId !== Number(districtId)) {
+      return { ok: false, error: 'ตำบลไม่อยู่ในอำเภอที่เลือก' };
+    }
+  }
+  return { ok: true };
 }
 
-// ดึงชื่อมาเก็บ snapshot (ถ้ามีฟิลด์ *_name_th)
 async function getNames({ provinceId, districtId, subdistrictId }) {
   const [p, d, s] = await Promise.all([
     provinceId ? prisma.province.findUnique({ where: { id: Number(provinceId) } }) : null,
