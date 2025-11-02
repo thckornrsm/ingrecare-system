@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import { sendStoreSubmissionEmail } from '@/utils/emailService.js'; // <--- ⚠️ แก้ไข: ต้อง .js
+import { sendStoreSubmissionEmail } from '@/lib/emailService.js'; // <--- ⚠️ แก้ไข: ต้อง .js
 
 // ... (ฟังก์ชัน validateAddress และ getNames ของคุณเหมือนเดิม) ...
 
