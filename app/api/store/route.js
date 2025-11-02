@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server'; // <--- 1. Import NextResponse
-import { sendStoreSubmissionEmail } from '@/utils/emailService'; // <--- 2. Import ฟังก์ชันอีเมล
+import { NextResponse } from 'next/server';
+import { sendStoreSubmissionEmail } from '@/utils/emailService.js'; // <--- ⚠️ แก้ไข: ต้อง .js
 
 // ... (ฟังก์ชัน validateAddress และ getNames ของคุณเหมือนเดิม) ...
 
@@ -13,6 +13,7 @@ async function validateAddress({ provinceId, districtId, subdistrictId }) {
   }
   if (subdistrictId && districtId) {
     const sub = await prisma.subdistrict.findUnique({ where: { id: Number(subdistrictId) } });
+    // ⚠️ แก้ไข: ลบจุด '.' ที่อยู่หน้า if ออก
     if (!sub || sub.districtId !== Number(districtId)) {
       return { ok: false, error: 'ตำบลไม่อยู่ในอำเภอที่เลือก' };
     }
@@ -71,7 +72,7 @@ export async function POST(req) {
     // ดึงชื่อ snapshot
     const names = await getNames({ provinceId, districtId, subdistrictId });
 
-    // 3. บันทึกข้อมูลร้านค้า (เหมือนเดิม)
+    // 3. บันทึกข้อมูลร้านค้า
     const store = await prisma.store.create({
       data: {
         name,
@@ -97,16 +98,21 @@ export async function POST(req) {
       },
     });
 
-    // 4. ⬇️ ส่งอีเมลแจ้งเตือน (หลังจากบันทึกสำเร็จ)
-    try {
-        await sendStoreSubmissionEmail(store); // <--- ส่งข้อมูลร้านค้าที่เพิ่งสร้าง
-    } catch (emailError) {
-        // แม้อีเมลจะล่ม แต่การสร้างร้านค้าสำเร็จแล้ว
-        // เราจะแค่ log error ไว้ แต่ไม่ return 500
-        console.error('--- FAILED TO SEND ADMIN NOTIFICATION ---', emailError);
-    }
+    // 4. ⬇️ ส่งอีเมลแจ้งเตือน (หลังจากบันทึกสำเร็จ)
+    console.log('--- STORE CREATED, ATTEMPTING TO SEND EMAIL ---'); // <--- ผมขอใส่ Log ไว้นะครับ
+    try {
+        await sendStoreSubmissionEmail(store); // <--- ส่งข้อมูลร้านค้าที่เพิ่งสร้าง
+        console.log('--- ADMIN NOTIFICATION EMAIL FUNCTION CALLED SUCCESSFULLY ---');
+    } catch (emailError) {
+        // แม้อีเมลจะล่ม แต่การสร้างร้านค้าสำเร็จแล้ว
+        // เราจะแค่ log error ไว้ แต่ไม่ return 500
+        console.error('##################################################');
+        console.error('--- FAILED TO SEND ADMIN NOTIFICATION EMAIL ---');
+        console.error(emailError);
+        console.error('##################################################');
+    }
 
-    // 5. ตอบกลับ client ว่าสำเร็จ
+    // 5. ตอบกลับ client ว่าสำเร็จ
     return NextResponse.json({ store }, { status: 201 });
 
   } catch (err) {
@@ -131,3 +137,4 @@ export async function GET() {
   });
   return NextResponse.json({ stores });
 }
+
