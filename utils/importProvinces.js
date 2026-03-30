@@ -104,6 +104,7 @@
 // importProvinces();
 
 /* eslint-disable no-console */
+// 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -114,13 +115,37 @@ const prisma = new PrismaClient();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ---------- helpers ----------
+function cleanValue(value) {
+  if (typeof value !== 'string') return value;
+  return value.trim();
+}
+
+function cleanRow(row) {
+  return Object.fromEntries(
+    Object.entries(row).map(([k, v]) => [k.trim(), cleanValue(v)])
+  );
+}
+
+function toInt(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isInteger(n) ? n : null;
+}
+
 function readCsv(filePath, mapRow) {
   return new Promise((resolve, reject) => {
     const rows = [];
+
     fs.createReadStream(filePath)
       .pipe(csv())
-      .on('data', (row) => rows.push(mapRow(row)))
+      .on('data', (row) => {
+        try {
+          const cleaned = cleanRow(row);
+          rows.push(mapRow(cleaned));
+        } catch (error) {
+          reject(error);
+        }
+      })
       .on('end', () => resolve(rows))
       .on('error', reject);
   });
@@ -129,75 +154,125 @@ function readCsv(filePath, mapRow) {
 async function insertInBatches(modelCreateMany, data, batchSize = 2000) {
   for (let i = 0; i < data.length; i += batchSize) {
     const chunk = data.slice(i, i + batchSize);
-    if (chunk.length === 0) continue;
+    if (!chunk.length) continue;
+
     await modelCreateMany({
       data: chunk,
-      // ต้องมี unique/primary key จึงจะข้ามซ้ำได้ (เช่น id)
       skipDuplicates: true,
     });
   }
 }
 
-// ---------- main ----------
 async function main() {
-  const provincesPath    = path.resolve(__dirname, '../csv/thai_provinces.csv');
-  const districtsPath    = path.resolve(__dirname, '../csv/thai_amphures.csv');
+  const provincesPath = path.resolve(__dirname, '../csv/thai_provinces.csv');
+  const districtsPath = path.resolve(__dirname, '../csv/thai_amphures.csv');
   const subdistrictsPath = path.resolve(__dirname, '../csv/thai_tambons.csv');
 
   console.time('read-csv');
 
-  const [provinces, districtsRaw, subdistrictsRaw] = await Promise.all([
+  const [provincesRaw, districtsRaw, subdistrictsRaw] = await Promise.all([
     readCsv(provincesPath, (r) => ({
-      id: Number(r.id),
-      name_th: r.name_th,
-      name_en: r.name_en,
+      id: toInt(r.id),
+      name_th: r.name_th || null,
+      name_en: r.name_en || null,
     })),
     readCsv(districtsPath, (r) => ({
-      id: Number(r.id),
-      name_th: r.name_th,
-      name_en: r.name_en,
-      provinceId: Number(r.province_id),
+      id: toInt(r.id),
+      name_th: r.name_th || null,
+      name_en: r.name_en || null,
+      provinceId: toInt(r.provinceId),
     })),
     readCsv(subdistrictsPath, (r) => ({
-      id: Number(r.id),
-      name_th: r.name_th,
-      name_en: r.name_en,
-      districtId: Number(r.amphure_id), // ใช้ amphure_id เป็น FK
-      zipcode: r.zip_code,
+      id: toInt(r.id),
+      name_th: r.name_th || null,
+      name_en: r.name_en || null,
+      districtId: toInt(r.districtId),
+      zipcode: r.zipcode || null,
     })),
   ]);
 
   console.timeEnd('read-csv');
-  console.log(`Loaded: provinces=${provinces.length}, districts=${districtsRaw.length}, subdistricts=${subdistrictsRaw.length}`);
 
-  // insert province
-  await insertInBatches(prisma.province.createMany, provinces);
-
-  // insert district
-  await insertInBatches(prisma.district.createMany, districtsRaw);
-
-  // ✅ โหลด district id ที่มีจริง แล้วกรอง subdistrict
-  const existingDistricts = await prisma.district.findMany({ select: { id: true } });
-  const districtIdSet = new Set(existingDistricts.map((d) => d.id));
-
-  const subdistrictsOk = subdistrictsRaw.filter(
-    (s) => Number.isInteger(s.id) && Number.isInteger(s.districtId) && districtIdSet.has(s.districtId)
+  const provinces = provincesRaw.filter(
+    (p) =>
+      Number.isInteger(p.id) &&
+      p.name_th &&
+      p.name_en
   );
 
-  const dropped = subdistrictsRaw.length - subdistrictsOk.length;
-  if (dropped > 0) {
-    console.warn(`⚠️ Dropped ${dropped} subdistrict rows due to missing/invalid districtId`);
+  await insertInBatches(prisma.province.createMany, provinces);
+
+  const existingProvinces = await prisma.province.findMany({
+    select: { id: true },
+  });
+  const provinceIdSet = new Set(existingProvinces.map((p) => p.id));
+
+  const districts = districtsRaw.filter(
+    (d) =>
+      Number.isInteger(d.id) &&
+      d.name_th &&
+      d.name_en &&
+      Number.isInteger(d.provinceId) &&
+      provinceIdSet.has(d.provinceId)
+  );
+
+  const droppedDistricts = districtsRaw.length - districts.length;
+  if (droppedDistricts > 0) {
+    console.warn(`⚠️ Dropped ${droppedDistricts} invalid district rows`);
+    console.log(
+      districtsRaw.filter(
+        (d) =>
+          !Number.isInteger(d.id) ||
+          !d.name_th ||
+          !d.name_en ||
+          !Number.isInteger(d.provinceId) ||
+          !provinceIdSet.has(d.provinceId)
+      ).slice(0, 10)
+    );
   }
 
-  // insert subdistrict (เฉพาะที่ FK ถูกต้อง)
-  await insertInBatches(prisma.subdistrict.createMany, subdistrictsOk);
+  await insertInBatches(prisma.district.createMany, districts);
+
+  const existingDistricts = await prisma.district.findMany({
+    select: { id: true },
+  });
+  const districtIdSet = new Set(existingDistricts.map((d) => d.id));
+
+  const subdistricts = subdistrictsRaw.filter(
+    (s) =>
+      Number.isInteger(s.id) &&
+      s.name_th &&
+      s.name_en &&
+      Number.isInteger(s.districtId) &&
+      districtIdSet.has(s.districtId)
+  );
+
+  const droppedSubdistricts = subdistrictsRaw.length - subdistricts.length;
+  if (droppedSubdistricts > 0) {
+    console.warn(`⚠️ Dropped ${droppedSubdistricts} invalid subdistrict rows`);
+    console.log(
+      subdistrictsRaw.filter(
+        (s) =>
+          !Number.isInteger(s.id) ||
+          !s.name_th ||
+          !s.name_en ||
+          !Number.isInteger(s.districtId) ||
+          !districtIdSet.has(s.districtId)
+      ).slice(0, 10)
+    );
+  }
+
+  await insertInBatches(prisma.subdistrict.createMany, subdistricts);
 
   console.log('✅ Seed done.');
+  console.log(
+    `Inserted: provinces=${provinces.length}, districts=${districts.length}, subdistricts=${subdistricts.length}`
+  );
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Seed failed:', e);
     process.exit(1);
   })
   .finally(async () => {

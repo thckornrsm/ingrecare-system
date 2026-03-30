@@ -113,39 +113,48 @@ export default function AllIngredientsPage() {
         );
 
         // 3) วันหมดอายุล่าสุด
-        const latestExpiryMap = allStockins.reduce((map, s) => {
-          if (!s.ingredient?.ingredient_id) return map;
-          const id = s.ingredient.ingredient_id;
-          const expiry = new Date(s.expiry_date);
-          if (!map[id] || expiry > map[id]) map[id] = expiry;
-          return map;
-        }, {});
+        // 3) วันหมดอายุตามล็อต (batch)
+const expiryByBatchMap = allStockins.reduce((map, s) => {
+  const batchId = s.batch_id;
+  if (!batchId) return map;
+  map[batchId] = new Date(s.expiry_date);
+  return map;
+}, {});
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         // 4) จัดรูปข้อมูล
         const formatted = inventoryData
-          .map((row) => {
-            if (!row.ingredient?.category || !row.unit) return null;
-            const id = row.ingredient.ingredient_id;
-            const latestEx = latestExpiryMap[id];
-            let daysLeft = Infinity;
-            if (latestEx) {
-              const diffTime = latestEx - today;
-              daysLeft = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            }
-            return {
-              id,
-              name: row.ingredient.name,
-              expiryDate: latestEx || null,
-              daysLeft,
-              category_id: row.ingredient.category.category_name,
-              quantity: row.quantity,
-              unit_type: row.unit.unit_name,
-              shelflife_day: row.ingredient.shelflife_day ?? shelfLifeMap[id] ?? "",
-            };
-          })
-          .filter(Boolean);
+  .map((row) => {
+    if (!row.ingredient?.category || !row.unit) return null;
+
+    const ingredientId = row.ingredient.ingredient_id;
+    const inventoryId = row.inventory_id ?? null;
+    const batchId = row.batch_id ?? null;
+
+    const expiryDate = batchId ? expiryByBatchMap[batchId] : null;
+
+    let daysLeft = Infinity;
+    if (expiryDate) {
+      const diffTime = expiryDate - today;
+      daysLeft = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    return {
+      id: inventoryId ?? ingredientId,
+      ingredient_id: ingredientId,
+      inventory_id: inventoryId,
+      batch_id: batchId,
+      name: row.ingredient.name,
+      expiryDate: expiryDate || null,
+      daysLeft,
+      category_id: row.ingredient.category.category_name,
+      quantity: row.quantity,
+      unit_type: row.unit.unit_name,
+      shelflife_day: row.ingredient.shelflife_day ?? shelfLifeMap[ingredientId] ?? "",
+    };
+  })
+  .filter(Boolean);
 
         setIngredients(formatted);
 

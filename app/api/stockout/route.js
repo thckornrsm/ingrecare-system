@@ -63,12 +63,13 @@ export async function POST(req) {
         if (!token || !token.value) {
             return NextResponse.json({ error: 'ไม่พบ token' }, { status: 401 });
         }
-        
+
         const session = await verifySession(token.value);
         if (!session) {
             return NextResponse.json({ error: 'ไม่ได้รับอนุญาต' }, { status: 401 });
         }
-        const { uid: userId } = session;
+
+        const { uid: userId, sid: storeId } = session;
 
         const body = await req.json();
         const { description, items } = body;
@@ -79,15 +80,11 @@ export async function POST(req) {
                 { status: 400 }
             );
         }
-        
+
         const outTime = new Date();
 
-        // ⚠️ แก้ไข: เพิ่ม timeout เป็น 30 วินาที (แก้ P2028)
         const newBatch = await prisma.$transaction(async (tx) => {
-            
-            // ⚠️ แก้ไข: ลบ Loop ตรวจสอบสต็อก (สเต็ป 1) ทิ้งไปเลย (แก้ Race Condition)
-            
-            // 1. สร้าง Batch
+            // 1) สร้าง batch เบิกออก 1 ครั้ง
             const batch = await tx.batch.create({
                 data: {
                     type: 'STOCK_OUT',
@@ -96,46 +93,107 @@ export async function POST(req) {
                 },
             });
 
-            // 2. วนลูปเพื่อสร้าง stockout และ "พยายาม" อัปเดตสต็อก
+            // 2) วนทีละ item ที่ผู้ใช้เบิก
             for (const item of items) {
-                
-                // ⚠️ แก้ไข: รวม "เช็ก" และ "ตัด" สต็อกไว้ในคำสั่งเดียว
-                const updateResult = await tx.ingredient_now.updateMany({
-                    where: { 
-                        ingredient_id: item.ingredient_id,
-                        quantity: { gte: item.quantity } // <--- เพิ่มเงื่อนไข "ของต้องพอ"
+                const ingredientId = Number(item.ingredient_id);
+                const requestQty = Number(item.quantity);
+
+                if (!ingredientId || !requestQty || requestQty <= 0) {
+                    throw new Error('ข้อมูลรายการเบิกไม่ถูกต้อง');
+                }
+
+                // 3) หา stock ของวัตถุดิบนี้ทุก lot ที่ยังเหลือ > 0
+                const inventories = await tx.ingredient_now.findMany({
+                    where: {
+                        ingredient_id: ingredientId,
+                        quantity: { gt: 0 },
+                        batch: {
+                            user: {
+                                store_id: storeId,
+                            },
+                        },
                     },
-                    data: { 
-                        quantity: { decrement: item.quantity },
-                        last_update: outTime 
+                    include: {
+                        batch: {
+                            include: {
+                                expiry: true, // expiry_tack[]
+                            },
+                        },
+                        ingredient: {
+                            select: { name: true },
+                        },
                     },
                 });
 
-                // ⚠️ แก้ไข: ตรวจสอบว่าตัดสำเร็จหรือไม่
-                if (updateResult.count === 0) {
-                    const ingredient = await tx.ingredients.findUnique({
-                        where: { ingredient_id: item.ingredient_id },
-                        select: { name: true }
+                // 4) จับ expiry ของ lot นี้สำหรับ ingredient นี้ แล้ว sort FEFO
+                const lots = inventories
+                    .map((inv) => {
+                        const expiryRow = inv.batch?.expiry?.find(
+                            (e) => e.ingredient_id === ingredientId
+                        );
+
+                        return {
+                            inventory_id: inv.inventory_id,
+                            batch_id: inv.batch_id,
+                            ingredient_id: inv.ingredient_id,
+                            quantity: Number(inv.quantity),
+                            expiry_date: expiryRow?.expiry_date
+                                ? new Date(expiryRow.expiry_date)
+                                : null,
+                            ingredient_name: inv.ingredient?.name || `ID ${ingredientId}`,
+                        };
+                    })
+                    .sort((a, b) => {
+                        const aTime = a.expiry_date ? a.expiry_date.getTime() : Number.MAX_SAFE_INTEGER;
+                        const bTime = b.expiry_date ? b.expiry_date.getTime() : Number.MAX_SAFE_INTEGER;
+                        return aTime - bTime;
                     });
-                    const ingredientName = ingredient?.name || `ID ${item.ingredient_id}`;
-                    
-                    // ถ้าไม่สำเร็จ (ของไม่พอ) ให้ยกเลิกทั้งหมด
-                    throw new Error(`สินค้าไม่พอ: '${ingredientName}' (ต้องการ ${item.quantity} แต่ของอาจไม่พอ)`);
+
+                const totalAvailable = lots.reduce((sum, lot) => sum + lot.quantity, 0);
+
+                if (totalAvailable < requestQty) {
+                    const ingredientName = lots[0]?.ingredient_name || `ID ${ingredientId}`;
+                    throw new Error(
+                        `สินค้าไม่พอ: '${ingredientName}' (ต้องการ ${requestQty} แต่มี ${totalAvailable})`
+                    );
                 }
 
-                // สร้างรายการเบิกจ่าย (ถ้าตัดสต็อกสำเร็จ)
+                // 5) ตัด stock ทีละ lot ตาม FEFO
+                let remain = requestQty;
+
+                for (const lot of lots) {
+                    if (remain <= 0) break;
+
+                    const deductQty = Math.min(remain, lot.quantity);
+
+                    await tx.ingredient_now.update({
+                        where: {
+                            inventory_id: lot.inventory_id,
+                        },
+                        data: {
+                            quantity: {
+                                decrement: deductQty,
+                            },
+                            last_update: outTime,
+                        },
+                    });
+
+                    remain -= deductQty;
+                }
+
+                // 6) บันทึก stockout รวม 1 แถวต่อ 1 item ที่ผู้ใช้เบิก
                 const newStockout = await tx.stockout.create({
                     data: {
                         batch_id: batch.batch_id,
-                        ingredient_id: item.ingredient_id,
-                        quantity: item.quantity,
+                        ingredient_id: ingredientId,
+                        quantity: requestQty,
                         unit_id: item.unit_id,
                         out_date: outTime,
                         user_id: userId,
                     },
                 });
 
-                // บันทึก history
+                // 7) บันทึก history
                 await tx.history.create({
                     data: {
                         action_type: 'stockout',
@@ -144,23 +202,33 @@ export async function POST(req) {
                     },
                 });
             }
+
             return batch;
         }, {
-            timeout: 30000  // <-- เพิ่ม timeout 30 วินาที ตรงนี้
-        }); // <-- ปิด $transaction
+            timeout: 30000,
+        });
 
-        return NextResponse.json({ message: 'เบิกของสำเร็จ', batchId: newBatch.batch_id }, { status: 201 });
-
+        return NextResponse.json(
+            { message: 'เบิกของสำเร็จ', batchId: newBatch.batch_id },
+            { status: 201 }
+        );
     } catch (e) {
         console.error('--- STOCKOUT ERROR ---', e);
-        if (e.message.startsWith('สินค้าไม่พอ:')) {
+
+        if (typeof e?.message === 'string' && e.message.startsWith('สินค้าไม่พอ:')) {
             return NextResponse.json({ error: e.message }, { status: 400 });
         }
-        // ตรวจจับ Error P2028 เพิ่มเติม
+
         if (e.code === 'P2028') {
-             return NextResponse.json({ error: 'Transaction หมดเวลา, กรุณาลองอีกครั้ง' }, { status: 504 });
+            return NextResponse.json(
+                { error: 'Transaction หมดเวลา, กรุณาลองอีกครั้ง' },
+                { status: 504 }
+            );
         }
-        return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการเบิกของ' }, { status: 500 });
+
+        return NextResponse.json(
+            { error: e?.message || 'เกิดข้อผิดพลาดในการเบิกของ' },
+            { status: 500 }
+        );
     }
 }
-

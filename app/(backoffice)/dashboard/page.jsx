@@ -143,14 +143,19 @@ export default function DashboardPage() {
                 
                 // สร้าง Map เก็บปริมาณคงเหลือตาม ingredient_id
                 const quantityMap = {};
-                inventoryData.forEach(item => {
-                    if (item.ingredient?.ingredient_id) {
-                        quantityMap[item.ingredient.ingredient_id] = {
-                            quantity: item.quantity,
-                            unit: item.unit?.unit_name || ''
-                        };
-                    }
-                });
+inventoryData.forEach((item) => {
+  const batchId = item.batch_id ?? null;
+  const ingredientId = item.ingredient?.ingredient_id ?? item.ingredient_id ?? null;
+
+  if (batchId && ingredientId) {
+    const key = `${batchId}-${ingredientId}`;
+    quantityMap[key] = {
+      quantity: item.quantity,
+      unit: item.unit?.unit_name || "",
+      inventory_id: item.inventory_id ?? null,
+    };
+  }
+});
 
                 // Process stock data
                 const batches = await stockRes.json();
@@ -170,8 +175,15 @@ export default function DashboardPage() {
                         else if (diffDays <= 3) status = 'warning';
 
                         // ใช้ปริมาณคงเหลือจริงจาก inventory
-                        const ingredientId = stockin.ingredient.ingredient_id;
-                        const inventoryInfo = quantityMap[ingredientId] || { quantity: 0, unit: stockin.unit.unit_name };
+                        const batchId = stockin.batch_id ?? batch.batch_id;
+const ingredientId = stockin.ingredient?.ingredient_id ?? null;
+const quantityKey = `${batchId}-${ingredientId}`;
+
+const inventoryInfo = quantityMap[quantityKey] || {
+  quantity: 0,
+  unit: stockin.unit?.unit_name || "",
+  inventory_id: null,
+};
 
                         return {
                             name: stockin.ingredient.name,
